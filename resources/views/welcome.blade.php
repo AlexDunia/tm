@@ -43,7 +43,7 @@
 
     <div id="newslide" class="slideshow-container">
         @foreach($welcome->reverse()->take(3) as $index => $onewelcome)
-        <a href="{{$onewelcome->date}}" class="slide-content"> {{$onewelcome['herolink']}}</a>
+        <a href="/events/{{$onewelcome['id']}}" class="slide-content">  {{$onewelcome['herolink']}}</a>
         <div class="newslideshow fade">
             <div class="slide-image" style="background-image: url('{{ asset('storage/' . $onewelcome->heroimage) }}')"></div>
         </div>
@@ -58,21 +58,34 @@
       <div class="latest"> <h1> Latest Events and Movies .</h1> </div>
 
         <div class="t_grids">
+            @foreach($welcome as $onewelcome)
+            {{-- <a href="/events/{{$onewelcome['id']}}"> {{$onewelcome['name']}} </a>
+            <form action="{{url('/addtocart', $onewelcome->id)}}" method="POST">
+                @csrf
+                <input type="submit" value="Add to cart!"/>
+            </form>
+            <br/> --}}
       <div class="one_e">
       <ul>
-      <li class="mypimage">  <img src="/images/kizz.png" alt="Logo"/> </li>
-        <li class="noe"> WIZKID LIVE IN CONCERT  WIZKID LIVE IN CONCERT  </li>
-          <div class="toe"> <i class="fa-solid fa-location-dot"> </i>   Genesis Event Center, Lagos, Nigeria. </div>
+      <li class="mypimage">  <img  src="{{asset('storage/' . $onewelcome->image)}}"> </li>
+        <li class="noe">   {{$onewelcome['name']}}  </li>
+          <div class="toe"> <i class="fa-solid fa-location-dot"> </i> {{$onewelcome['location']}} </div>
+          <div class="toe"> <i class="fa-solid fa-calendar-days"></i>  {{$onewelcome['date']}} </div>
 
-         <div class="toe"> <i class="fa-solid fa-calendar-days"></i> December 15 @6:30pm </div>
+         {{-- <div class="toe"> <i class="fa-solid fa-calendar-days"></i> 15 December, 6:30pm </div> --}}
 
          <div class="toe"> <i class="fa-solid fa-ticket"></i> Starting @5000 </div>
-        {{-- <li class="toe"> {{ oneticket.Price }} </li> --}}
-        <button class="b_t"> Buy Ticket </button>
+
+        <button class="b_t"> <a href="/events/{{$onewelcome['id']}}"> View Event </a>  </button>
         </ul>
       </div>
 
-      <div class="one_e">
+      @endforeach
+
+
+
+
+      {{-- <div class="one_e">
         <ul>
         <li class="mypimage">  <img src="/images/asake.jpg" alt="Logo"/> </li>
           <li class="noe"> WIZKID LIVE IN CONCERT </li>
@@ -82,8 +95,6 @@
 
            <div class="toe"> <i class="fa-solid fa-ticket"></i> Starting @5000 </div>
 
-
-          {{-- <li class="toe"> {{ oneticket.Price }} </li> --}}
           <button class="b_t"> Buy Ticket </button>
           </ul>
         </div>
@@ -97,8 +108,6 @@
                <div class="toe"> <i class="fa-solid fa-calendar-days"></i> December 15 @6:30pm </div>
                <div class="toe"> <i class="fa-solid fa-ticket"></i> Starting @5000 </div>
 
-
-              {{-- <li class="toe"> {{ oneticket.Price }} </li> --}}
               <button class="b_t"> Buy Ticket </button>
               </ul>
             </div>
@@ -111,9 +120,6 @@
 
                    <div class="toe"> <i class="fa-solid fa-calendar-days"></i> December 15 @6:30pm </div>
                    <div class="toe"> <i class="fa-solid fa-ticket"></i> Starting @5000 </div>
-
-
-                  {{-- <li class="toe"> {{ oneticket.Price }} </li> --}}
                   <button class="b_t"> Buy Ticket </button>
                   </ul>
                 </div>
@@ -127,56 +133,9 @@
                        <div class="toe"> <i class="fa-solid fa-calendar-days"></i> December 15 @6:30pm </div>
                        <div class="toe"> <i class="fa-solid fa-ticket"></i> Starting @5000 </div>
 
-
-                      {{-- <li class="toe"> {{ oneticket.Price }} </li> --}}
                       <button class="b_t"> Buy Ticket </button>
                       </ul>
-                    </div>
-
-                    <div class="one_e">
-                        <ul>
-                        <li class="mypimage">  <img src="/images/kizz.png" alt="Logo"/> </li>
-                          <li class="noe"> WIZKID LIVE IN CONCERT </li>
-                            <div class="toe"> <i class="fa-solid fa-location-dot"> </i>   Genesis Event Center, Lagos, Nigeria. </div>
-
-                           <div class="toe"> <i class="fa-solid fa-calendar-days"></i> December 15 @6:30pm </div>
-                           <div class="toe"> <i class="fa-solid fa-ticket"></i> Starting @5000 </div>
-
-
-                          {{-- <li class="toe"> {{ oneticket.Price }} </li> --}}
-                          <button class="b_t"> Buy Ticket </button>
-                          </ul>
-                        </div>
-
-                        <div class="one_e">
-                            <ul>
-                            <li class="mypimage">  <img src="/images/kizz.png" alt="Logo"/> </li>
-                              <li class="noe"> WIZKID LIVE IN CONCERT </li>
-                                <div class="toe"> <i class="fa-solid fa-location-dot"> </i>   Genesis Event Center, Lagos, Nigeria. </div>
-
-                               <div class="toe"> <i class="fa-solid fa-calendar-days"></i> December 15 @6:30pm </div>
-                               <div class="toe"> <i class="fa-solid fa-ticket"></i> Starting @5000 </div>
-
-
-                              {{-- <li class="toe"> {{ oneticket.Price }} </li> --}}
-                              <button class="b_t"> Buy Ticket </button>
-                              </ul>
-                            </div>
-
-                            <div class="one_e">
-                                <ul>
-                                <li class="mypimage">  <img src="/images/kizz.png" alt="Logo"/> </li>
-                                  <li class="noe"> WIZKID LIVE IN CONCERT </li>
-                                    <div class="toe"> <i class="fa-solid fa-location-dot"> </i>   Genesis Event Center, Lagos, Nigeria. </div>
-
-                                   <div class="toe"> <i class="fa-solid fa-calendar-days"></i> December 15 @6:30pm </div>
-                                   <div class="toe"> <i class="fa-solid fa-ticket"></i> Starting @5000 </div>
-
-
-                                  {{-- <li class="toe"> {{ oneticket.Price }} </li> --}}
-                                  <h3 class="b_t"> Buy Ticket </h3>
-                                  </ul>
-                                </div>
+                    </div> --}}
 
 
      </div>

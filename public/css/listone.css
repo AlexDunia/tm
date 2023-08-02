@@ -131,10 +131,19 @@
     padding-bottom: 50px;
  }
 
- .bcimg img {
-    width: 250px;
- }
+ .bcimg {
+   width: 250px; /* Set the desired fixed width */
+   height: 250px; /* Set the desired fixed height */
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
 
+.bcimg img {
+   max-width: 100%; /* Allow the image to adjust within the fixed dimensions */
+   max-height: 100%; /* Allow the image to adjust within the fixed dimensions */
+   object-fit: contain; /* Maintain aspect ratio without cropping */
+}
  .bcflex {
     padding-top: 60px;
     width: 88%;
