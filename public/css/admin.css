@@ -1,0 +1,378 @@
+.slideshow-container {
+    position: relative;
+  width:100%;
+    margin: auto;
+    /* overflow: hidden; */
+}
+
+.newslideshow {
+    position: absolute;
+    width: 100%;
+    height: 300px; /* Adjust the height as needed */
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+.slide-content {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    /* color: white; */
+    z-index:1;
+    font-size: 18px;
+    top:150;
+    font-size:100px;
+    /* background-color: rgba(0, 0, 0, 0.7); */
+    padding: 10px;
+    /* max-width: 100%; */
+    border-radius: 5px;
+}
+
+.slide-image {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Now the copy and paste begins */
+
+* {
+    margin: 0;
+    padding: 0
+ }
+
+ body {
+    background: #18171f;
+    font-family: "Montserrat",
+       sans-serif;
+    -webkit-font-smoothing: antialiased;
+    /* font-family: 'Ubuntu',
+       sans-serif; */
+ }
+
+ .flogow img {
+    width: 180px;
+ }
+
+ /* .container {
+    width: 95%;
+    margin: auto;
+    align-items: center;
+    position: relative;
+    background: linear-gradient(180deg, #1e1d28, #14131c 100.98%);
+ } */
+
+ .ctna {
+    width: 100%;
+    margin: auto;
+    align-items: center;
+    position: relative;
+    background: linear-gradient(180deg, #1e1d28, #14131c 100.98%);
+ }
+
+ .navflex {
+    width: 95%;
+    /* background: linear-gradient(180deg, #1e1d28, #14131c 100.98%); */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: auto;
+ }
+
+ /* .navflex.active{
+
+    background:white;
+    z-index:2;
+ } */
+
+ .navflex.active {
+    --tw-bg-opacity: 1;
+    --tw-drop-shadow: drop-shadow(0px 9px 18px rgba(0, 0, 0, .15));
+
+    background-color: rgb(255 255 255/var(--tw-bg-opacity));
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: white;
+    width: 80%;
+    /* background: #5d5b5b;
+    width: 100%;
+    /* margin: auto; */
+    padding-left: 12%;
+    padding-right: 12%;
+    transition: 0.5s;
+    z-index: 2;
+ }
+
+ .navlinks ul li {
+    display: inline;
+    list-style: none;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0;
+    padding-right: 45px;
+ }
+
+ .navlinks ul li a {
+    color: white;
+    text-decoration: none;
+ }
+
+ .navlinks ul li.active {
+    display: inline;
+    list-style: none;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0;
+    width: 100%;
+    padding-right: 45px;
+    /* background:red; */
+    text-decoration: none;
+ }
+
+ .navlinksinner{
+    width:95%;
+ }
+
+ .btn {
+    background-color: #C04888;
+    border-radius: 1px;
+    cursor: pointer;
+    border: none;
+    font-family: 'ubuntu';
+    font-size: 17px;
+    /* margin: -5px 0 10px; */
+    padding: 10px 30px;
+ }
+
+ .btn a {
+    color: white;
+    text-decoration: none;
+ }
+
+ /* Body inner background */
+
+ .innerbodybg {
+    /* background-color: #252432; */
+    background: linear-gradient(180deg, #1e1d28, #252432 100.98%);
+    width: 100%;
+    height: 100%;
+    padding-top: 40px;
+    margin-top: 20px;
+ }
+
+ /* .spacearound {
+    padding: 20px;
+ } */
+
+ .spacearound img {
+    width: 100%;
+ }
+
+ /* products */
+
+ .latest h1 {
+    color: white;
+    text-align: center;
+    /* padding-top: 40px; */
+    padding-bottom: 10px;
+    font-size: 35px;
+    font-weight: 600;
+    margin-bottom: 50px;
+ }
+
+ /* .t_grids {
+    display: grid;
+    gap: 80px;
+    grid-template-columns: repeat(auto-fit, 330px);
+    color: white;
+ } */
+
+ .view {
+    margin: auto;
+    width: 98%;
+ }
+
+ .t_grids {
+   display: grid;
+   gap: 20px; /* Add some gap between grid items */
+   grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); /* Responsive columns */
+   color: white;
+   padding: 20px; /* Add padding to the grid container */
+}
+
+.one_e {
+   padding: 15px;
+   background: rgba(0, 0, 0, 0.2); /* Adding a background to event cards */
+   border-radius: 10px; /* Adding rounded corners */
+   box-shadow: 0 0 1px rgba(0, 0, 0, 0.1); /* Adding a subtle shadow */
+}
+
+.one_e ul li {
+   list-style-type: none;
+}
+
+.noe {
+   font-size: 18px;
+   font-weight: 700;
+   margin-top: 10px; /* Adjust spacing */
+}
+
+.toe {
+   font-size: 11.5px;
+   margin-top:8px;
+   font-weight: 400;
+}
+
+.toe i {
+   margin-right: 5px; /* Adjust spacing */
+}
+
+
+ /* .lmainflex {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+ } */
+
+ .lflex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    width: 87%;
+ }
+
+ .lflexsecond {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    gap: 10px;
+    width: 70%;
+ }
+
+ .fdes {
+    flex-basis: 80%;
+    text-align: left;
+ }
+
+ .fd {
+    flex-basis: 20%;
+    text-align: left;
+ }
+
+ .b_t {
+    /* background-color: Transparent; */
+    background-color: #C04888;
+    border-radius: 1px;
+    border: 3px solid #C04888;
+    cursor: pointer;
+    /* font-family: 'ubuntu'; */
+    /* margin: -5px 0 10px; */
+    /* width: fit-content; */
+    margin-top: 12px;
+    padding: 10px 10px;
+    width: 100%;
+    color: white;
+    font-weight: 900;
+    font-size: 15px;
+    /* margin-bottom: 10px; */
+ }
+
+ /* .b_t {
+    color: white;
+    border: none;
+    background: none;
+    font-size: 19px;
+    font-weight: 400;
+ } */
+
+ .mypimage img {
+    /* width: 260px; */
+    width: 100%;
+    height: 60%;
+    object-fit: cover;
+ }
+
+ /* countdown styling */
+
+ .circular {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin-top: 40px;
+    width: 100%;
+    height: 200em;
+   padding-top:100px;
+    background-attachment: fixed;
+ }
+
+ .circularbg{
+    width:100%;
+    top:700;
+    position:absolute;
+ }
+
+
+/*
+.container {
+    width: 95%;
+    margin: auto;
+    align-items: center;
+    position: relative;
+}
+
+.navflex {
+    width: 100%;
+    background: linear-gradient(180deg, #1e1d28, #14131c 100.98%);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: auto;
+}
+
+.flogow img {
+    width: 140px;
+}
+
+.navlinks ul li {
+    display: inline;
+    list-style: none;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0;
+    padding-right: 45px;
+}
+
+.navlinks ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+.btn {
+    background-color: #C04888;
+    border-radius: 1px;
+    cursor: pointer;
+    border: none;
+    font-family: 'ubuntu';
+    font-size: 17px;
+    padding: 10px 30px;
+}
+
+.btn a {
+    color: white;
+    text-decoration: none;
+} */
+
+/* Add media queries for responsiveness */
+@media (max-width: 768px) {
+   .t_grids {
+       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+   }
+}

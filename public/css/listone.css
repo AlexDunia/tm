@@ -1,0 +1,245 @@
+* {
+    margin: 0;
+    padding: 0
+ }
+
+ body {
+    /* background: red; */
+    font-family: "Montserrat",
+       sans-serif;
+    -webkit-font-smoothing: antialiased;
+ }
+
+
+ .custom-table {
+    border-collapse: collapse;
+    width: 85%;
+    margin:auto;
+    margin-top:20px;
+  }
+
+  .custom-table th,
+  .custom-table td {
+    border: 1px solid rgb(105, 104, 104);
+    padding: 10px;
+    text-align: left;
+  }
+
+  .timg img{
+    width:80px;
+  }
+
+  .custom-table th{
+    background:#252432;
+    color:white;
+    /* background: #f3f2f2; */
+    font-size:16px;
+  }
+
+  .custom-table td{
+   font-size:13px;
+   color:white;
+   padding-top:20px;
+  }
+
+  .checkout button {
+    background: none;
+    color: white;
+    border: 0;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    margin: auto;
+    text-align: center;
+    width: 85%;
+    border: 1px solid rgb(116, 115, 115);
+    /* margin:auto;
+    align-items:center; */
+    font-size: 17px;
+    font-weight: bold; /* Change font-weight to "bold" for a thicker font */
+    margin-top: 30px;
+    cursor: pointer;
+    /* margin-bottom: 10px; */
+ }
+
+ .checkoutt{
+    display: flex;
+   justify-content: center;
+ }
+
+ .checkoutt button {
+    background: #c2c1c1;
+    color: black;
+    border: 0;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    margin: auto;
+    text-align: center;
+    width: 85%;
+    /* margin:auto;
+    align-items:center; */
+    font-size: 17px;
+    font-weight: bold; /* Change font-weight to "bold" for a thicker font */
+    margin-top: 13px;
+    cursor: pointer;
+    margin-bottom: 10px;
+ }
+
+ .checkout{
+   display: flex;
+   justify-content: center;
+ }
+
+ .checkoutt{
+    display: flex;
+   justify-content: center;
+ }
+
+  /* ul {
+    list-style-type: none;
+  }
+
+  ul li{
+    padding-bottom:18px;
+  }
+
+  ul li:before {
+    content: "-";
+    margin-right: 20px;
+  } */
+
+ .circular {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 100em;
+    /* background-position: center;
+    text-align: center; */
+    /* height: 20em; */
+    background-attachment: fixed;
+ }
+
+ .blurcontainer {
+    /* background-color: red, 100%; */
+    background: rgba(37, 36, 50, .8);
+    /* background: #252432; */
+    color: white;
+    width: 95%;
+    margin: auto;
+    margin-top: 30px;
+    padding-top: 50px;
+    padding-bottom: 50px;
+ }
+
+ .bcimg img {
+    width: 250px;
+ }
+
+ .bcflex {
+    padding-top: 60px;
+    width: 88%;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+ }
+
+ .bctext {
+    flex-basis: 57%;
+ }
+
+ .cat {
+    font-size: 14px;
+    margin-bottom: 20px;
+    opacity: 0.8;
+    font-weight: 600;
+ }
+
+ .bctext h1 {
+    font-size: 40px;
+    margin-top: 12px;
+    margin-bottom: 18px;
+ }
+
+ .infoticket {
+    font-size: 15px;
+    line-height: 1.7rem;
+    margin-bottom: 22px;
+    font-weight: 300;
+    opacity: 0.8;
+ }
+
+ .infodate {
+    font-size: 14px;
+    font-weight: 300;
+    opacity: 0.7;
+ }
+
+ /* countdown main text */
+
+ .cdbg{
+    margin-top:80px;
+    background:#15141A;
+    padding-top:70px;
+    padding-bottom:70px;
+ }
+
+ .cdflex{
+    display:flex;
+    width:65%;
+    margin:auto;
+    justify-content:space-between;
+ }
+
+ .dtgflex{
+    display:flex;
+    align-items:center;
+ }
+
+ .nodtg h1{
+    color:#C04888;
+    font-weight:700;
+    font-size:100px;
+    margin-right:15px;
+ }
+
+ .dtg{
+    font-size:20px;
+    color:white;
+ }
+
+ .dtg h2{
+    font-weight:500;
+ }
+
+ .maincdtextflex{
+    display:flex;
+    justify-content:space-between;
+    flex-basis: 70%;
+    /* width:55%; */
+ }
+ .maincdtext{
+    background:#3C3B4D;
+    color:white;
+    border-radius:30px;
+    padding:40px 55px;
+ }
+
+ .maincdtext h1{
+    font-size:60px;
+    font-weight:400;
+ }
+
+ /* .maincdtext{
+    width:10%;
+ } */
+
+ /* width: 100%;
+    height: 60%;
+    object-fit: cover; */
+
+ .maincdtext h3{
+    color:#C04888;
+    font-weight:700;
+    font-size:16px;
+    margin-top:5px;
+ }
