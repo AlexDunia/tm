@@ -16,9 +16,10 @@ return new class extends Migration
             $table->string('cname');
             $table->string('clocation');
             $table->string('cdescription');
-            $table->int('quantity_earlybird');
-            $table->int('quantity_regular');
-            $table->int('quantity_earlybird');
+            $table->string('cquantity');
+            // $table->int('quantity_earlybird');
+            // $table->int('quantity_regular');
+            // $table->int('quantity_earlybird');
             $table->timestamps();
         });
     }
