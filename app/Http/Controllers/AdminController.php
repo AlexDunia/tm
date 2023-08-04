@@ -78,4 +78,22 @@ class AdminController extends Controller
 
         return redirect('/');
     }
+
+    public function authenticate(Request $request){
+        // dd($request);
+        $Formfield = $request->validate([
+            'email'=>['required', 'email'],
+            'password'=>'required',
+            // 'date'=>'required',
+        ]);
+
+        if (auth()->attempt($Formfield)) {
+          $request->session()->regenerate();
+          return redirect('/');
+            // $profilePicPath = $request->file('profilepic')->store('uploadedimage', 'public');
+            // $Formfield['profilepic'] = $profilePicPath;
+        }
+
+        return back();
+    }
 }

@@ -53,6 +53,9 @@ Route::get('/createpost', [AdminController::class, 'adminform']);
 // This gives the admin the ability to edit posts.
 Route::post('/creationsuccess', [AdminController::class, 'store']);
 
+// Users can now Login
+Route::post('/authenticated', [AdminController::class, 'authenticate']);
+
 
 // create ghon ghon
 // Route::get('/alexadmin', function () {

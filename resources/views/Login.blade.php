@@ -19,7 +19,7 @@
             <h1 class="newsletterhead"> Create Your Account </h1>
             <p> Enter your personal details to get started </p>
             <br/>
-            <form method="post" class="fstyle" action="/createnewadmin" enctype="multipart/form-data">
+            <form method="post" class="fstyle" action="/authenticated" enctype="multipart/form-data">
 
                 {{ csrf_field() }}
                 <div>

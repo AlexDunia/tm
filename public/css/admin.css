@@ -9,21 +9,22 @@
 }
 
 .ud-avatar {
-   background: #2d2f31;
+   background-color: #C04888;
    display: inline-flex;
    align-items: center;
    justify-content: center;
    border-radius: 50%;
    object-fit: cover;
-   color: var(--color-white);
+   color:white;
+   border:1px solid white;
 }
 
 .ud-heading-sm {
    font-family: var(--font-stack-heading);
    font-weight: 700;
-   line-height: 1.2;
+   line-height: 1;
    letter-spacing: -.02rem;
-   font-size: 1.4rem;
+   font-size: 1.2rem;
 }
 
 .circle-clip {
@@ -105,7 +106,7 @@
  }
 
  .userandcart .user i{
-   font-size:20px;
+   font-size:30px;
 
    /* display: flex;
     justify-content: center;
