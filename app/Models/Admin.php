@@ -12,7 +12,8 @@ class Admin extends Authenticatable
     // Your Admin model code here
     use HasApiTokens, HasFactory, Notifiable;
     protected $fillable = [
-       'name',
+       'firstname',
+       'lastname',
        'email',
        'password',
        'profilepic',

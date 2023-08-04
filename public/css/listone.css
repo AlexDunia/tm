@@ -4,12 +4,13 @@
  }
 
  body {
-    /* background: red; */
-    font-family: "Montserrat",
-       sans-serif;
-    -webkit-font-smoothing: antialiased;
- }
-
+   background: #18171f;
+   font-family: "Montserrat",
+      sans-serif;
+   -webkit-font-smoothing: antialiased;
+   /* font-family: 'Ubuntu',
+      sans-serif; */
+}
 
  .custom-table {
     border-collapse: collapse;

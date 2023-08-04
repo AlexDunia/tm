@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\DuniaController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\MainadminController;
@@ -38,21 +37,22 @@ use App\Http\Controllers\MainadminController;
 // });
 
 
-Route::get('/', [ListingController::class, 'index'] );
+Route::get('/', [ListingController::class, 'index'] )->name('wc');;
 Route::get('/payment', [PaymentController::class, 'index'] );
 Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'] );
 
+// View Admin Panel
+Route::get('/dunia', [AdminController::class, 'index']);
+
 // This stores the user. and note that admin is user here.
-Route::get('/dunia', [DuniaController::class, 'index']);
+Route::post('/createnewadmin', [AdminController::class, 'storeuser']);
 
 // This is the form that gives admin ability to make posts.
-Route::get('/createpost', [ListingController::class, 'adminform']);
+Route::get('/createpost', [AdminController::class, 'adminform']);
 
 // This gives the admin the ability to edit posts.
-Route::post('/creationsuccess', [ListingController::class, 'store']);
+Route::post('/creationsuccess', [AdminController::class, 'store']);
 
-// This stores the user. and note that admin is user here.
-Route::post('/createnewadmin', [AdminController::class, 'store']);
 
 // create ghon ghon
 // Route::get('/alexadmin', function () {
@@ -65,8 +65,12 @@ Route::get('/cart', [ListingController::class, 'cartpage'] );
 
 
 // USER REGISTRATION
-Route::get('/createa', function(){
-    return view('Admin');
+Route::get('/signup', function(){
+    return view('Signup');
+});
+
+Route::get('/login', function(){
+    return view('Login');
 });
 
 // Make the create admin button work

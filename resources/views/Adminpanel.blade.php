@@ -7,6 +7,7 @@
         <script src="https://kit.fontawesome.com/9ff47ec0f8.js" crossorigin="anonymous"> </script>
 </head>
 <body>
+
     {{-- Navigation panel --}}
 
     <div class="ctna">
@@ -38,7 +39,7 @@
     {{-- <h1> Hi admin </h1> --}}
 
 
-    <div id="newslide" class="slideshow-container">
+    {{-- <div id="newslide" class="slideshow-container">
         @foreach($welcome->reverse()->take(3) as $index => $onewelcome)
         <a href="{{$onewelcome->date}}" class="slide-content"> {{$onewelcome['herolink']}}</a>
         <div class="newslideshow fade">
@@ -46,7 +47,7 @@
         </div>
     @endforeach
     </div>
-</div>
+</div> --}}
     <br/>
             <div class="circularbg">
 

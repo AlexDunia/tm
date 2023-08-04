@@ -36,29 +36,33 @@ class ListingController extends Controller
     public function index()
     {
         if (Auth::check()) {
-            $username = Auth::user()->name;
+            $status = Auth::user()->isadmin;
             $welcomeData = mctlists::all();
-            if ($username == 'duniaadmin') {
+            if ($status == 1) {
                 return view('Adminpanel',[
                     'heading' => 'My Laravel Application',
                     'welcome' => $welcomeData,
                 ]);
-            } else if ($username == 'dunia') {
-                $carts = Cart::get();
-                // $welcomeData = mctlists::all();
-                return view('Cartuser', [
-                    // 'heading' => 'My laravel application',
-                    'mycart' => $carts,
+            }
+            else if ($status == 0) {
+                // $carts = Cart::get();
+                // return view('Cartuser', [
+                //     'mycart' => $carts,
+                // ]);
+
+                return view('welcome',[
+                    'heading' => 'My Laravel Application',
+                    'welcome' => $welcomeData,
                 ]);
             }
         }
 
         $cartItemCount = Cart::count();
-        $welcomeData = mctlists::all();
+        $welcome = mctlists::all();
 
         return view('welcome', [
             'heading' => 'My Laravel Application',
-            'welcome' => $welcomeData,
+            'welcome' => $welcome,
             'cartItemCount' => $cartItemCount,
         ]);
     }
@@ -87,44 +91,6 @@ class ListingController extends Controller
     $cdelete = Cart::find($id);
     $cdelete->delete();
     return redirect()->back();
-    }
-
-    public function adminform(){
-        return view('Adminedit');
-    }
-
-    public function store(Request $request)
-    {
-        if (Auth::check()) {
-            $username = Auth::user()->name;
-            if ($username == 'duniaadmin') {
-                $Addevent = $request->validate([
-                    'name' => 'required',
-                    'description' => 'required',
-                    'location' => 'required',
-                    'date' => 'required',
-                    'herolink' => 'required',
-                ]);
-
-                // Now for the file image upload, quite staright forward.
-                if($request->hasFile('image')){
-                    $Addevent['image'] = $request->file('image')->store('uploadedimage', 'public');
-                };
-
-                if($request->hasFile('heroimage')){
-                    $Addevent['heroimage'] = $request->file('heroimage')->store('herouploadedimage', 'public');
-                };
-
-                $Addevent['id'] = auth()->id();
-                mctlists::create($Addevent);
-
-                return redirect('/');
-            }
-        } else {
-            // return redirect()->route('Adminedit');
-            return view('Adminedit');
-        }
-
     }
 
 }
