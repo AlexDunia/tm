@@ -98,18 +98,19 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
          $cart = new Cart;
          $cart->cname = $product->name;
          $cart->clocation = $product->location;
-        //  $cart->cdescription = $product->description;
-        $descriptionParts = explode(',', $product->description);
-        $secondPart = trim($descriptionParts[1]);
-        $cart->cdescription = $secondPart;
-         $cart->cquantity = $request->quantity;
+         $cart->cdescription = $product->description;
+
+        // $descriptionParts = explode(',', $product->description);
+        // $secondPart = trim($descriptionParts[1]);
+        // $cart->cdescription = $secondPart;
+        //  $cart->cquantity = $request->quantity;
          $cart->save();
 
          // Now, count the items in the cart and pass it to the view
         //  $cartItemCount = Cart::count();
 
          // Return the view with the $cartItemCount variable
-         return redirect('/');
+         return redirect()->back();
      } else {
          // Handle the case when the product with the given $id is not found
          return redirect('/')->with('error', 'Product not found.');

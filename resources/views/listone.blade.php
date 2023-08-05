@@ -135,32 +135,30 @@ live metaverse concert. </td>
 
     </tr>
 
-    <tr>
-    {{-- <td> Table for 10 </td>
-    <td> 10000 </td> --}}
-    @foreach(explode(',', $listonee['description']) as $part)
-        <td>{{ trim($part) }}</td>
+    @php
+    $tableNames = ['startingprice', 'earlybirds', 'tableone', 'tabletwo', 'tablethree', 'tablefour', 'tablefive', 'tablesix', 'tableseven', 'tableeight'];
+@endphp
 
-    @endforeach
+@foreach ($tableNames as $tableName)
+    @if (!empty($listonee[$tableName]))
+        <tr>
+            @foreach (explode(',', $listonee[$tableName]) as $part)
+                <td>{{ trim($part) }}</td>
+            @endforeach
 
-    {{-- <form action="{{url('/addtocart', $listonee->id)}}" method="POST">
-        @csrf
-        <td> <input type="number" value="1" min="1" style="width:100px" name="quantity"/> </td>
-        <td> <input type="submit" value="Add to cart!"/> </td>
-    </form> --}}
+            <form action="{{ url('/addtocart', $listonee->id) }}" method="POST">
+                @csrf
+                <td>
+                    <input type="number" value="1" min="1" style="width:100px" name="quantity">
+                </td>
+                <td>
+                    <input type="submit" value="Add to cart!">
+                </td>
+            </form>
+        </tr>
+    @endif
+@endforeach
 
-    <form action="{{url('/addtocart', $listonee->id)}}" method="POST">
-        @csrf <!-- Add this line to include the CSRF token -->
-        <td>
-            <input type="number" value="1" min="1" style="width:100px" name="quantity">
-        </td>
-        <td>
-            <input type="submit" value="Add to cart!">
-        </td>
-    </form>
-
-    {{-- <td> N30,0000 </td> --}}
-    </tr>
 
     {{-- <form action="{{url('/addtocart', $listonee->id)}}" method="POST">
         @csrf <!-- Add this line to include the CSRF token -->

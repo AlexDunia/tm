@@ -110,7 +110,9 @@
 @endforeach
 </div>
 </div>
+
 <br/>
+
   <div class="circularbg">
 
   <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">

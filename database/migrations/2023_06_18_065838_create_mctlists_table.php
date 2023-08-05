@@ -20,6 +20,16 @@ return new class extends Migration
             $table->string('location');
             $table->string('description');
             $table->string('date');
+            $table->string('startingprice')->nullable();
+            $table->string('earlybirds')->nullable();
+            $table->string('tableone')->nullable();
+            $table->string('tabletwo')->nullable();
+            $table->string('tablethree')->nullable();
+            $table->string('tablefour')->nullable();
+            $table->string('tablefive')->nullable();
+            $table->string('tablesix')->nullable();
+            $table->string('tableseven')->nullable();
+            $table->string('tableeight')->nullable();
             $table->string('image')->nullable();
             $table->string('heroimage')->nullable();
             $table->string('herolink')->nullable();
