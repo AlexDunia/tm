@@ -19,6 +19,43 @@
     margin-top:20px;
   }
 
+  .custom-table .pricedata{
+   font-size:20px;
+   font-weight:400;
+  }
+
+  .custom-table tbody tr th{
+   font-size:25px;
+   font-weight:500;
+  }
+
+.pricequantity input[type="number"] {
+   width: 50% !important;
+   padding: 10px; /* Add some padding for better appearance */
+   border: 1px solid #ccc; /* Add a border around the input field */
+   border-radius: 5px; /* Round the corners of the input field */
+   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+   background: #252432;
+   color: white;
+   font-size: 16px; /* Set the font size */
+}
+
+.checkoutt{
+   background: #c2c1c1;
+    color: black;
+    border: 0;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    margin: auto;
+    text-align: center;
+    width: 85%;
+    font-size: 17px;
+    font-weight: bold;
+    margin-top: 13px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
   .custom-table th,
   .custom-table td {
     border: 1px solid rgb(105, 104, 104);
@@ -38,7 +75,8 @@
   }
 
   .custom-table td{
-   font-size:13px;
+   font-size: 18px;
+   width: 70%;
    color:white;
    padding-top:20px;
   }
@@ -252,4 +290,37 @@
     font-weight:700;
     font-size:16px;
     margin-top:5px;
+ }
+
+ .eventinfo{
+   background:#3C3B4D;
+   width:80%;
+   padding:50px;
+   margin:auto;
+ }
+
+ .eventinfoflex{
+   display:flex;
+   justify-content: space-around;
+ }
+
+ .eventinfotext .pinktext{
+   color:#C04888;
+   font-size:17px;
+   font-weight:700;
+   margin-top:40px;
+   margin-bottom:7px;
+ }
+
+ .eventinfo h1{
+   color:white;
+   font-size:20px;
+   margin-bottom:30px;
+ }
+
+ .eventinfotext .ntext{
+   color:white;
+   font-size:17px;
+   padding-bottom:10px;
+   font-weight:400;
  }

@@ -67,6 +67,12 @@ class ListingController extends Controller
         ]);
     }
 
+    public function payform(){
+        $tname = session()->get('tname');
+        $tprice = session()->get('tprice');
+        $totalprice = session()->get('totalprice');
+        return view('Checkout', compact('tname', 'tprice', 'totalprice'));
+    }
 
     public function show($id) {
         return view('listone', [
@@ -84,6 +90,7 @@ class ListingController extends Controller
             'mycart' => $carts,
         ]);
     }
+
 
     // Delete
     public function delete($id){

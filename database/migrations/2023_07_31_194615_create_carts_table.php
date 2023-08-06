@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('clocation');
             $table->string('cdescription');
             $table->string('cquantity')->nullable();
+            $table->string('cprice')->nullable();
+            $table->string('ctotalprice')->nullable();
             // $table->int('quantity_earlybird');
             // $table->int('quantity_regular');
             // $table->int('quantity_earlybird');

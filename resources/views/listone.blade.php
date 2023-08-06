@@ -8,16 +8,6 @@
 </head>
 <body>
 
-{{-- <h1> {{$listonee['name']}} </h1>
-<h1> {{$listonee['location']}} </h1>
-<form action="{{url('/addtocart', $listonee->id)}}" method="POST">
-    @csrf <!-- Add this line to include the CSRF token -->
-    <input type="submit" value="Add to cart!"/>
-</form> --}}
-
-
-{{-- <a href="/event/{{$listonee['id']}}/ticket"> Edit </a> --}}
-
 <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
 
     <div class="blurcontainer">
@@ -41,7 +31,7 @@
     </div>
     {{-- <img src="/images/kizz.png"/> --}}
 
-    <table class="custom-table">
+    {{-- <table class="custom-table">
 
 <tr>
 <th>  </th>
@@ -75,7 +65,7 @@ live metaverse concert. </td>
 </table>
 
 <div class="checkout"><button> Total: N300,000 </button></div>
-<div class="checkoutt"><button> CHECKOUT </button></div>
+<div class="checkoutt"><button> CHECKOUT </button></div> --}}
 
 <div class="cdbg">
 
@@ -125,66 +115,75 @@ live metaverse concert. </td>
 </div>
 
 
-<table class="custom-table">
 
-    <tr>
-    <th> Name </th>
-    <th> Type </th>
-    <th> Quantity </th>
-    <th> Price </th>
-
-    </tr>
-
-    @php
-    $tableNames = ['startingprice', 'earlybirds', 'tableone', 'tabletwo', 'tablethree', 'tablefour', 'tablefive', 'tablesix', 'tableseven', 'tableeight'];
-@endphp
-
-@foreach ($tableNames as $tableName)
-    @if (!empty($listonee[$tableName]))
+<form action="{{ url('/addtocart') }}" method="POST">
+    @csrf
+    <table class="custom-table">
         <tr>
-            @foreach (explode(',', $listonee[$tableName]) as $part)
-                <td>{{ trim($part) }}</td>
-            @endforeach
-
-            <form action="{{ url('/addtocart', $listonee->id) }}" method="POST">
-                @csrf
-                <td>
-                    <input type="number" value="1" min="1" style="width:100px" name="quantity">
-                </td>
-                <td>
-                    <input type="submit" value="Add to cart!">
-                </td>
-            </form>
+            <th> Pricing </th>
+            <th> Quantity </th>
         </tr>
-    @endif
-@endforeach
-
-
-    {{-- <form action="{{url('/addtocart', $listonee->id)}}" method="POST">
-        @csrf <!-- Add this line to include the CSRF token -->
-        <input type="submit" value="Add to cart!"/>
-    </form> --}}
-
-    {{-- <tr>
-    <td class="timg">  <img src="/images/kizz.png"/> </td>
-    <td> Omah lay live liechester Athena city
-    live metaverse concert. </td>
-    <td> Regular </td>
-    <td> 4 </td>
-    <td> N30,0000 </td>
-    <td> X </td>
-    </tr> --}}
-
+        @php
+            $tableNames = ['startingprice', 'earlybirds', 'tableone', 'tabletwo', 'tablethree', 'tablefour', 'tablefive', 'tablesix', 'tableseven', 'tableeight'];
+        @endphp
+        @foreach ($tableNames as $tableName)
+            @if (!empty($listonee[$tableName]))
+                <tr>
+                    <td class="pricedata">
+                        {{ trim($listonee[$tableName]) }}
+                        <input type="hidden" name="product_ids[]" value="{{ $listonee->id }}">
+                        <input type="hidden" name="table_names[]" value="{{ $listonee[$tableName] }}">
+                    </td>
+                    <td class="pricequantity">
+                        <input type="number" value="0" min="0" style="width:50px" name="quantities[]">
+                    </td>
+                </tr>
+            @endif
+        @endforeach
     </table>
+    <input class="checkoutt" type="submit" value="Add Selected Items to Cart">
+</form>
+
+<div class="eventinfo">
+<h1> Event information </h1>
+<hr/>
+
+<div class="eventinfoflex">
+
+<div class="eventinfotext">
+    <h3 class="pinktext"> Start Date </h3>
+    <h3 class="ntext"> 19/20/21 </h3>
+</div>
+
+<div class="eventinfotext">
+    <h3 class="pinktext"> Start Date </h3>
+    <h3 class="ntext"> 19/20/21 </h3>
+</div>
+
+<div class="eventinfotext">
+    <h3 class="pinktext"> Start Date </h3>
+    <h3 class="ntext"> 19/20/21 </h3>
+</div>
+
+<div class="eventinfotext">
+    <h3 class="pinktext"> Start Date </h3>
+    <h3 class="ntext"> 19/20/21 </h3>
+</div>
+
+<div class="eventinfotext">
+    <h3 class="pinktext"> Start Date </h3>
+    <h3 class="ntext"> 19/20/21 </h3>
+</div>
+
+<div class="eventinfotext">
+    <h3 class="pinktext"> Start Date </h3>
+    <h3 class="ntext"> 19/20/21 </h3>
+</div>
 
 </div>
 
-
-
-
-{{-- @verbatim
-    <div id="apk"></div>
-@endverbatim --}}
+</div>
+</div>
 
 </body>
 

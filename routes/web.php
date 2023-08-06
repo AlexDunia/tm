@@ -65,7 +65,8 @@ Route::post('/authenticated', [AdminController::class, 'authenticate']);
 // Cart view.
 Route::get('/cart', [ListingController::class, 'cartpage'] );
 
-
+// Cart view.
+Route::get('/checkout', [ListingController::class, 'payform'] );
 
 // USER REGISTRATION
 Route::get('/signup', function(){
@@ -76,6 +77,10 @@ Route::get('/login', function(){
     return view('Login');
 });
 
+Route::get('/cartitem', function(){
+    return view('checkout');
+});
+
 // Make the create admin button work
 
 
@@ -84,39 +89,54 @@ Route::get('/login', function(){
 Route::get('/delete/{id}', [ListingController::class, 'delete'] );
 
 
-
-
  // View create
 
- Route::post('/addtocart/{id}', function (Request $request, $id) {
-     // First of all, find the product with the given $id
 
-     $product = mctlists::find($id);
+ Route::post('/addtocart', function (Request $request) {
+    $productIds = $request->input('product_ids');
+    $tableNames = $request->input('table_names');
+    $quantities = $request->input('quantities');
 
-     if ($product) {
-         // If the product is found, add it to the cart
-         $cart = new Cart;
-         $cart->cname = $product->name;
-         $cart->clocation = $product->location;
-         $cart->cdescription = $product->description;
+    // Loop through the selected items and add them to the cart if quantity > 0
+    foreach ($productIds as $index => $productId) {
+        $quantity = $quantities[$index];
+        if ($quantity > 0) {
+            $product = mctlists::find($productId);
+            $tableName = $tableNames[$index];
 
-        // $descriptionParts = explode(',', $product->description);
-        // $secondPart = trim($descriptionParts[1]);
-        // $cart->cdescription = $secondPart;
-        //  $cart->cquantity = $request->quantity;
-         $cart->save();
+            if ($product) {
+                $cart = new Cart;
+                $realtn = explode(',', $tableName);
+                $namepart = trim($realtn[0]);
+                $pricepart = trim($realtn[1]);
 
-         // Now, count the items in the cart and pass it to the view
-        //  $cartItemCount = Cart::count();
+                if (auth()->check()) {
+                    // User is authenticated, store in the cart
+                    $cart->cname = $namepart;
+                    $cart->cprice = $pricepart;
+                    $ctotalprice = $pricepart * $quantity;
+                    $cart->ctotalprice = $ctotalprice;
+                    $cart->clocation = $product->location;
+                    $cart->cdescription = $product->description;
+                    $cart->cquantity = $quantity;
+                    $cart->save();
+                } else {
+                    // User is not authenticated, store in the session
+                    $request->session()->put('tname', $namepart);
+                    $request->session()->put('tprice', $pricepart);
+                    $request->session()->put('totalprice', $pricepart * $quantity);
+                }
+            } else {
+                // Handle the case when the product with the given ID is not found
+                return redirect()->back()->with('error', 'Product not found.');
+            }
+        }
+    }
 
-         // Return the view with the $cartItemCount variable
-         return redirect()->back();
-     } else {
-         // Handle the case when the product with the given $id is not found
-         return redirect('/')->with('error', 'Product not found.');
-     }
- });
 
+    // Return to the previous page or a specific success page
+    return redirect()->back()->with('success', 'Items added to cart successfully');
+});
 
 
 // View create
