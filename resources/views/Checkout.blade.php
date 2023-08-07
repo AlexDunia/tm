@@ -10,6 +10,7 @@
 
   <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
 
+
     <div class="ft">
 
     <div class="form">
@@ -44,6 +45,65 @@
 
         </div>
 
+        @auth
+
+         {{-- <h1> Cart page </h1>
+        @foreach($mycart as $onewelcome)
+        <a> {{$onewelcome['cname']}} </a>
+        <a href="{{url('/delete', $onewelcome->id)}}""> Delete me </a>
+        <br/>
+        @endforeach --}}
+
+        <div class="tabledetailsbg">
+
+            <div class="tabledetailsbghead">
+            <h2> Ticket Information </h2>
+            </div>
+
+            <?php
+            // Where A stands for authenticated User
+            $atotalPrice = 0; // Initialize the total price variable
+            ?>
+
+         @foreach($mycart as $onewelcome)
+        <div class="tabledetailsflex">
+
+
+        <div class="tabledetails">
+            {{-- <p> Table for 10 </p> --}}
+            <p> {{$onewelcome['cname']}}  X  {{$onewelcome['cquantity']}}</p>
+        </div>
+
+        <div class="tabledetails">
+            <p> {{$onewelcome['cprice']}}</p>
+        </div>
+        <?php
+        // where a stands for authenticated user.
+        $atotalPrice += $onewelcome['ctotalprice']; // Add the item's price to the total
+        ?>
+ <a href="{{url('/delete', $onewelcome->id)}}"> Remove </a>
+       </div>
+       @endforeach
+
+       <div class="tabledetailsflex">
+
+        <div class="tabledetails">
+            <p> Total </p>
+        </div>
+
+        <div class="tabledetails">
+             <p> {{$atotalPrice}} </p>
+        </div>
+
+       </div>
+
+
+
+    </div>
+
+     </div>
+
+        @else
 
         <div class="tabledetailsbg">
 
@@ -80,6 +140,7 @@
 
      </div>
 
+     @endauth
     {{-- end of circular bg --}}
 </div>
 

@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 use App\Models\User;
-
-use App\Models\Admin;
 use App\Models\mctlists;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -94,6 +92,14 @@ class AdminController extends Controller
             // $Formfield['profilepic'] = $profilePicPath;
         }
 
+        return back();
+    }
+
+    public function disauthenticate(Request $request){
+        // logout here
+      auth()->logout();
+      $request->session()->invalidate();
+      $request->session()->regenerateToken();
         return back();
     }
 }

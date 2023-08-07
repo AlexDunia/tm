@@ -11,7 +11,7 @@
 
         <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
     <div class="popupwithdraww" id="popupwhitewithdraww">
-       <a href="{{ route('wc') }}">  <div class="xmark"><i class="fa-solid fa-xmark"></i></div>
+       <a href="{{ route('login') }}">  <div class="xmark"><i class="fa-solid fa-xmark"></i></div>
        </a>
 
 

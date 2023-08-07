@@ -37,7 +37,7 @@ use App\Http\Controllers\MainadminController;
 // });
 
 
-Route::get('/', [ListingController::class, 'index'] )->name('wc');;
+Route::get('/', [ListingController::class, 'index'] )->name('login');;
 Route::get('/payment', [PaymentController::class, 'index'] );
 Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'] );
 
@@ -55,6 +55,9 @@ Route::post('/creationsuccess', [AdminController::class, 'store']);
 
 // Users can now Login
 Route::post('/authenticated', [AdminController::class, 'authenticate']);
+
+// Users can now Log out
+Route::post('/logout', [AdminController::class, 'disauthenticate']);
 
 
 // create ghon ghon
@@ -118,8 +121,10 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
                     $cart->ctotalprice = $ctotalprice;
                     $cart->clocation = $product->location;
                     $cart->cdescription = $product->description;
+                    $cart->user_id = auth()->id();
                     $cart->cquantity = $quantity;
                     $cart->save();
+                    return redirect('/checkout');
                 } else {
                     // User is not authenticated, store in the session
                     $request->session()->put('tname', $namepart);

@@ -37,11 +37,12 @@ class ListingController extends Controller
     {
         if (Auth::check()) {
             $status = Auth::user()->isadmin;
-            $welcomeData = mctlists::all();
+            // $welcomeData = mctlists::latest()->get();
             if ($status == 1) {
                 return view('Adminpanel',[
                     'heading' => 'My Laravel Application',
-                    'welcome' => $welcomeData,
+                    'welcome' => mctlists::latest()->filter(request(['search']))->get()
+
                 ]);
             }
             else if ($status == 0) {
@@ -52,7 +53,8 @@ class ListingController extends Controller
 
                 return view('welcome',[
                     'heading' => 'My Laravel Application',
-                    'welcome' => $welcomeData,
+                    'welcome' => mctlists::latest()->filter(request(['search']))->get()
+
                 ]);
             }
         }
@@ -62,12 +64,22 @@ class ListingController extends Controller
 
         return view('welcome', [
             'heading' => 'My Laravel Application',
-            'welcome' => $welcome,
+            'welcome' => mctlists::latest()->filter(request(['search']))->get(),
+
             'cartItemCount' => $cartItemCount,
         ]);
     }
 
     public function payform(){
+        // $carts = Cart::get();
+        // $welcomeData = mctlists::all();
+        if (Auth::check()) {
+        return view('Checkout', [
+            // 'heading' => 'My laravel application',
+            'mycart' => auth()->user()->relatewithcart()->get(),
+            // I just used relate with cart cause that was the fucntion i literally put in the user model.
+        ]);
+    }
         $tname = session()->get('tname');
         $tprice = session()->get('tprice');
         $totalprice = session()->get('totalprice');

@@ -28,4 +28,20 @@ class mctlists extends Model
         'heroimage',
         'herolink'
     ];
+
+    public function scopeFilter($query, array $filters){
+        if($filters['search'] ?? false){
+            $query->where('name', 'like',  '%' . $filters['search'] . '%');
+        }
+    }
+
+//     public function scopeFilter($query, $filters)
+// {
+//     // Implement your filtering logic here based on the $filters parameter
+//     // For example, if you want to filter by a 'name' column:
+//     if ($filters['search']) {
+//         $query->where('name', 'like', '%' . $filters['search'] . '%');
+//     }
+//     return $query;
+// }
 }

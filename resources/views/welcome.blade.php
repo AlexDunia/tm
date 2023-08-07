@@ -47,21 +47,28 @@
   <img src="/images/tdlogo.png" alt="Logo"/>
 </div>
 
-{{-- <div class="selectandsearch">
+<div class="selectandsearch">
   <form class="example">
     <input type="text" placeholder="Search.." name="search" class="custom-input">
     <i class="fas fa-search search-icon"></i>
   </form>
-</div> --}}
+</div>
 
-<div class="navlinks">
+<form method="POST" action="/logout">
+  @csrf
+  <button>
+    Log out
+  </button>
+</form>
+
+{{-- <div class="navlinks">
   <ul>
     <li><a> Home </a> </li>
     <li><a> Music </a></li>
     <li><a> Movies </a></li>
     <li><a> Contact us </a></li>
   </ul>
-</div>
+</div> --}}
 
 
 
