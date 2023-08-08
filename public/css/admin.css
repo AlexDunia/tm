@@ -65,16 +65,31 @@
     border-radius: 5px;
 }
 
+.slideshow-container a{
+   color:rgb(227, 226, 226);
+   text-decoration:none;
+   font-size:50px;
+   /* color: #18171f; */
+   font-weight:700;
+}
+
 .slide-image {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100vh;
+    height: 85vh;
     background-size: cover;
     background-position: center;
 }
 
 /* Now the copy and paste begins */
+
+.searchbox{
+   width: 100%;
+   top: 500;
+   position: absolute;
+   background:red;
+}
 
 * {
     margin: 0;
@@ -119,18 +134,31 @@
  }
 
  .lisu{
-   width:10%;
+   width:15%;
    position:absolute;
    top:80;
    padding-top:20px;
    padding-bottom:25px;
-   right:20;
+   right:0;
    background: linear-gradient(180deg, #1e1d28, #14131c 100.98%);
   color:white;
   margin:auto;
   display: none;
   align-items:center;
   text-align:center;
+ }
+
+ .lisu button{
+   background:none;
+   border:none;
+ }
+
+ .lisu button a{
+   color:white;
+   font-size: 16px;
+    margin-top: 30px;
+    font-weight: 400;
+    text-decoration: none;
  }
 
  #cancelpop{
@@ -490,7 +518,7 @@ form.example input[type=text] {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    margin-top: 40px;
+    /* margin-top: 40px; */
     width: 100%;
     height: 200em;
    padding-top:100px;

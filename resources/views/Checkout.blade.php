@@ -60,30 +60,37 @@
             <h2> Ticket Information </h2>
             </div>
 
+            {{-- <ul>
+                <li>Product Name: {{ $mycart->cname }}</li>
+                <li>Product Price: {{ $mycart->cprice }}</li>
+                <!-- Add more properties as needed -->
+            </ul> --}}
+
             <?php
             // Where A stands for authenticated User
             $atotalPrice = 0; // Initialize the total price variable
             ?>
 
-         @foreach($mycart as $onewelcome)
+
         <div class="tabledetailsflex">
 
 
         <div class="tabledetails">
             {{-- <p> Table for 10 </p> --}}
-            <p> {{$onewelcome['cname']}}  X  {{$onewelcome['cquantity']}}</p>
+            <p> {{ $mycart->cname }} X  {{ $mycart->cquantity }} </p>
         </div>
 
         <div class="tabledetails">
-            <p> {{$onewelcome['cprice']}}</p>
+            <p> {{ $mycart->cprice }} </p>
         </div>
         <?php
         // where a stands for authenticated user.
-        $atotalPrice += $onewelcome['ctotalprice']; // Add the item's price to the total
+        $atotalPrice += $mycart->ctotalprice;
         ?>
- <a href="{{url('/delete', $onewelcome->id)}}"> Remove </a>
+
+       {{-- <a href="{{url('/delete', $onewelcome->id)}}"> Remove </a> --}}
        </div>
-       @endforeach
+
 
        <div class="tabledetailsflex">
 

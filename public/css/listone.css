@@ -222,6 +222,10 @@
     opacity: 0.7;
  }
 
+ .soldout{
+   Color: #d368a1;
+ }
+
  /* countdown main text */
 
  .cdbg{

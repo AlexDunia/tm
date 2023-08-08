@@ -70,21 +70,51 @@ class ListingController extends Controller
         ]);
     }
 
-    public function payform(){
-        // $carts = Cart::get();
-        // $welcomeData = mctlists::all();
+    public function payform()
+    {
         if (Auth::check()) {
-        return view('Checkout', [
-            // 'heading' => 'My laravel application',
-            'mycart' => auth()->user()->relatewithcart()->get(),
-            // I just used relate with cart cause that was the fucntion i literally put in the user model.
-        ]);
-    }
+            $latestCartItem = auth()->user()->relatewithcart()->latest()->first();
+
+            return view('Checkout', [
+                'mycart' => $latestCartItem,
+            ]);
+        }
         $tname = session()->get('tname');
         $tprice = session()->get('tprice');
         $totalprice = session()->get('totalprice');
         return view('Checkout', compact('tname', 'tprice', 'totalprice'));
     }
+
+
+    // public function payform(){
+    //     if (Auth::check()) {
+
+    //         $cartItems = auth()->user()->relatewithcart()->get();
+
+    //         // Check if there's more than one item in the cart
+    //         if ($cartItems->count() > 1) {
+    //             // Delete each cart item
+    //             foreach ($cartItems as $cartItem) {
+    //                 $cartItem->delete();
+    //             }
+    //         }
+
+    //         return view('Checkout', [
+    //             'mycart' => $cartItems,
+    //         ]);
+    //     }
+
+    //     // Rest of your code...
+    //     $tname = session()->get('tname');
+    //     $tprice = session()->get('tprice');
+    //     $totalprice = session()->get('totalprice');
+    //     return view('Checkout', compact('tname', 'tprice', 'totalprice'));
+    // }
+
+
+
+
+
 
     public function show($id) {
         return view('listone', [

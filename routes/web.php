@@ -94,7 +94,6 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
 
  // View create
 
-
  Route::post('/addtocart', function (Request $request) {
     $productIds = $request->input('product_ids');
     $tableNames = $request->input('table_names');
@@ -110,8 +109,9 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
             if ($product) {
                 $cart = new Cart;
                 $realtn = explode(',', $tableName);
-                $namepart = trim($realtn[0]);
-                $pricepart = trim($realtn[1]);
+$namepart = trim($realtn[0]);
+$priceparts = explode('.', trim($realtn[1])); // Split by period
+$pricepart = $priceparts[0]; // Take the first part
 
                 if (auth()->check()) {
                     // User is authenticated, store in the cart

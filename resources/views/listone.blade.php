@@ -7,9 +7,9 @@
         <script src="https://kit.fontawesome.com/9ff47ec0f8.js" crossorigin="anonymous"> </script>
 </head>
 <body>
+    @include('_nav')
 
 <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
-
     <div class="blurcontainer">
 
     <div class="bcflex">
@@ -130,13 +130,23 @@ live metaverse concert. </td>
             @if (!empty($listonee[$tableName]))
                 <tr>
                     <td class="pricedata">
-                        {{ trim($listonee[$tableName]) }}
+                        {{ explode('.', trim($listonee[$tableName]))[0] }}
                         <input type="hidden" name="product_ids[]" value="{{ $listonee->id }}">
-                        <input type="hidden" name="table_names[]" value="{{ $listonee[$tableName] }}">
+                        <input type="hidden" name="table_names[]" value="{{ explode('.', $listonee[$tableName])[0] }} ">
                     </td>
                     <td class="pricequantity">
-                        <input type="number" value="0" min="0" style="width:50px" name="quantities[]">
+                    @if (strpos($listonee[$tableName], '.') !== false)
+                    {{-- Text contains a period --}}
+                    {{-- {{ "Sold out " . explode('.', $yourVariable)[1] }} --}}
+                  <h3 class="soldout">  {{ explode('.', $listonee[$tableName])[1] }} </h3>
+                    @else
+                   {{-- Text does not contain a period --}}
+                   <input type="number" value="0" min="0" style="width:50px" name="quantities[]">
+                  @endif
                     </td>
+                    {{-- <td class="pricequantity">
+                        <input type="number" value="0" min="0" style="width:50px" name="quantities[]">
+                    </td> --}}
                 </tr>
             @endif
         @endforeach

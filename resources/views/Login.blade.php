@@ -16,8 +16,8 @@
 
 
         <div class="newsform">
-            <h1 class="newsletterhead"> Create Your Account </h1>
-            <p> Enter your personal details to get started </p>
+            <h1 class="newsletterhead"> Log in</h1>
+            <p> Enter your Login details </p>
             <br/>
             <form method="post" class="fstyle" action="/authenticated" enctype="multipart/form-data">
 
@@ -31,7 +31,7 @@
                     <a> Forgot Password </a>
                 </div>
                       <div>
-                    <button class="newsbtn" type="submit">Sign up</button>
+                    <button class="newsbtn" type="submit"> Log In </button>
                       </div>
                     </form>
                     <p class="createact"> Already have an account? Log in </p>
