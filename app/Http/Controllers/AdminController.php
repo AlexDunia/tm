@@ -58,7 +58,7 @@ class AdminController extends Controller
         $Formfield = $request->validate([
             'firstname' => 'required',
             'lastname' => 'required',
-            'email' => 'required',
+            'email'=>['required', 'email'],
             'password' => 'required',
         ]);
 

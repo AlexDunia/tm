@@ -24,10 +24,18 @@
                 {{ csrf_field() }}
                 <div>
                     <input id="email" class="nlstyle" type="email" name="email" placeholder="Your Email">
+                    @error('email')
+                    <p class="inputeerror"> {{$message}} </p>
+                    @enderror
+
                 </div>
 
                 <div>
                     <input id="email" class="nlstyle" type="password" name="password" placeholder="Your Password">
+                    @error('password')
+                    <p class="inputeerror"> {{$message}} </p>
+                    @enderror
+
                     <a> Forgot Password </a>
                 </div>
                       <div>

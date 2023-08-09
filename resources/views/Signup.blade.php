@@ -28,20 +28,32 @@
                 <div>
                     <input class="nlstyle" type="text" name="firstname" placeholder="First Name" value="{{ old('firstname') }}">
                     {{-- <input class="nlstyle" type="text" name="firstname" placeholder="First Name"> --}}
+                    @error('firstname')
+                    <p class="inputerror"> {{$message}} </p>
+                    @enderror
+
             </div>
             <div>
                 <input class="nlstyle" type="text" name="lastname" placeholder="Last Name" value="{{ old('lastname') }}">
+                @error('lastname')
+                <p class="inputeerror"> {{$message}} </p>
+                @enderror
 
-                {{-- <input class="nlstyle" type="text" name="lastname" placeholder="Last Name"> --}}
         </div>
                 <div>
                     <input class="nlstyle" type="email" name="email" placeholder="Email" value="{{ old('email') }}">
+                    @error('email')
+                    <p class="inputeerror"> {{$message}} </p>
+                    @enderror
 
                     {{-- <input  class="nlstyle" type="email" name="email" placeholder="Your Email"> --}}
                 </div>
 
                 <div>
                     <input class="nlstyle" type="password" name="password" placeholder="Password" value="{{ old('password') }}">
+                    @error('password')
+                    <p class="inputeerror"> {{$message}} </p>
+                    @enderror
 
                     {{-- <input class="nlstyle" type="password" name="password" placeholder="Your Password"> --}}
                 </div>
