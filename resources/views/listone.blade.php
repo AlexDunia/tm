@@ -4,12 +4,22 @@
         rel="stylesheet"
         href="\css\listone.css"/>
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/solid.css">
+        <script src="//unpkg.com/alpinejs" defer></script>
         <script src="https://kit.fontawesome.com/9ff47ec0f8.js" crossorigin="anonymous"> </script>
 </head>
 <body>
+
     @include('_nav')
 
 <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
+
+    @if(session()->Has("message")){
+        <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 3000)" x-show="show">
+            <p> AT LEAST ONE QUANTITY MUST BE ADDED BEFORE PROCEEDING! </p>
+            </div>
+    }
+    @endif
+
     <div class="blurcontainer">
 
     <div class="bcflex">
@@ -166,6 +176,21 @@ live metaverse concert. </td>
 </div>
 
 <div class="eventinfotext">
+    <h3 class="pinktext"> Time </h3>
+    <h3 class="ntext"> 19/20/21 </h3>
+</div>
+
+<div class="eventinfotext">
+    <h3 class="pinktext"> End Date  </h3>
+    <h3 class="ntext"> 19/20/21 </h3>
+</div>
+
+<div class="eventinfotext">
+    <h3 class="pinktext"> Category  </h3>
+    <h3 class="ntext"> 19/20/21 </h3>
+</div>
+
+{{-- <div class="eventinfotext">
     <h3 class="pinktext"> Start Date </h3>
     <h3 class="ntext"> 19/20/21 </h3>
 </div>
@@ -178,17 +203,7 @@ live metaverse concert. </td>
 <div class="eventinfotext">
     <h3 class="pinktext"> Start Date </h3>
     <h3 class="ntext"> 19/20/21 </h3>
-</div>
-
-<div class="eventinfotext">
-    <h3 class="pinktext"> Start Date </h3>
-    <h3 class="ntext"> 19/20/21 </h3>
-</div>
-
-<div class="eventinfotext">
-    <h3 class="pinktext"> Start Date </h3>
-    <h3 class="ntext"> 19/20/21 </h3>
-</div>
+</div> --}}
 
 </div>
 
@@ -211,7 +226,7 @@ live metaverse concert. </td>
         const currentDate = new Date();
         const timeRemaining = targetDate - currentDate;
 
-        if (timeRemaining > 0) {
+        if (timeRemaining > 0 ) {
             const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
             const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
@@ -221,6 +236,11 @@ live metaverse concert. </td>
             hoursElement.innerText = hours;
             minutesElement.innerText = minutes;
             secondsElement.innerText = seconds;
+        } else if(timeRemaining < 0){
+            daysElement.innerText = "0";
+            hoursElement.innerText = "0";
+            minutesElement.innerText = "0";
+            clearInterval(countdownInterval);
         } else {
             daysElement.innerText = "0";
             hoursElement.innerText = "0";

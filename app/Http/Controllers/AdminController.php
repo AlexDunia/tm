@@ -52,23 +52,28 @@ class AdminController extends Controller
 
     }
 
-    public function storeuser(Request $request){
-        // dd($request);
+    public function storeuser(Request $request)
+    {
+        // Validate the form data, excluding 'profilepic'
         $Formfield = $request->validate([
-            'firstname'=>'required',
-            'lastname'=>'required',
-            'email'=>'required',
-            'password'=>'required',
-            // 'date'=>'required',
+            'firstname' => 'required',
+            'lastname' => 'required',
+            'email' => 'required',
+            'password' => 'required',
         ]);
 
+        // Check if 'profilepic' file exists in the request
         if ($request->hasFile('profilepic')) {
+            // Validate and store the uploaded file
+            $request->validate([
+                'profilepic' => 'image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust mime types and max file size as needed
+            ]);
+
             $profilePicPath = $request->file('profilepic')->store('uploadedimage', 'public');
             $Formfield['profilepic'] = $profilePicPath;
         }
 
         $Formfield['password'] = bcrypt($Formfield['password']);
-        // Admin::create($Formfield);
 
         $adminuser = User::create($Formfield);
 
@@ -76,6 +81,8 @@ class AdminController extends Controller
 
         return redirect('/');
     }
+
+
 
     public function authenticate(Request $request){
         // dd($request);

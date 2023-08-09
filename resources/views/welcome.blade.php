@@ -26,7 +26,21 @@
     <br/>
 
     <div class="searchbox">
-      <h1> Seach here </h1>
+
+      <div class="selectandsearch">
+        <form class="example"  type="get" action="{{url('/search')}}">
+          <input type="text" placeholder="Search.." name="name" class="custom-input">
+          <i class="fas fa-search search-icon"></i>
+        </form>
+        </div>
+
+      {{-- <div class="selectandsearch">
+<form class="example">
+  <input type="text" placeholder="Search.." name="search" class="custom-input">
+  <i class="fas fa-search search-icon"></i>
+</form>
+</div> --}}
+
     </div>
 
     <br/>

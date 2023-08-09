@@ -41,7 +41,8 @@ class ListingController extends Controller
             if ($status == 1) {
                 return view('Adminpanel',[
                     'heading' => 'My Laravel Application',
-                    'welcome' => mctlists::latest()->filter(request(['search']))->get()
+                    'welcome' => mctlists::latest()->get(),
+                    // 'welcome' => mctlists::latest()->filter(request(['search']))->get()
 
                 ]);
             }
@@ -53,7 +54,8 @@ class ListingController extends Controller
 
                 return view('welcome',[
                     'heading' => 'My Laravel Application',
-                    'welcome' => mctlists::latest()->filter(request(['search']))->get()
+                    'welcome' => mctlists::latest()->get(),
+                    // 'welcome' => mctlists::latest()->filter(request(['search']))->get()
 
                 ]);
             }
@@ -64,16 +66,77 @@ class ListingController extends Controller
 
         return view('welcome', [
             'heading' => 'My Laravel Application',
-            'welcome' => mctlists::latest()->filter(request(['search']))->get(),
+            'welcome' => mctlists::latest()->get(),
+            // 'welcome' => mctlists::latest()->filter(request(['search']))->get(),
 
             'cartItemCount' => $cartItemCount,
         ]);
     }
 
+    public function search(Request $request) {
+        // Retrieve the user input and sanitize it using trim()
+        $si = trim($request->input('name'));
+
+        // Ensure $si is not empty before proceeding
+        if (!empty($si)) {
+            // Use Laravel's query builder to construct a secure query
+            $products = mctlists::where('name', 'like', '%' . $si . '%')
+                ->orWhere('description', 'like', '%' . $si . '%')
+                ->get();
+
+            // Check if the query result is empty
+
+            if ($products->isEmpty()) {
+                $si = trim($request->input('name'));
+                // Return a different view for no results found
+                return view('Snf', compact('si'));
+            }
+
+            return view('search', compact('products', 'si'));
+        } else {
+            // Handle the case where the search input is empty
+            // We need to customise a page where they will be told nothing is found here.
+            return redirect()->back()->with('error', 'Please enter a valid search term.');
+        }
+    }
+
+
+
+    // public function search(Request $request) {
+    //     // Retrieve the user input and sanitize it using trim()
+    //     $si = trim($request->input('name'));
+    //     // Ensure $si is not empty before proceeding
+    //     if (!empty($si)) {
+    //         // Use Laravel's query builder to construct a secure query
+    //         $products = mctlists::where('name', 'like', '%' . $si . '%')
+    //             ->get();
+
+    //         return view('search', compact('products'));
+    //     } else {
+    //         // Handle the case where the search input is empty
+    //         // We need to customise a page where they will be told nothing is found here.
+    //         $si = trim($request->input('name'));
+    //         return view('Snf', compact('si'));
+    //     }
+    // }
+
+    public function searchnotfound(){
+        return view("Snf");
+    }
+
+    // public function viewone(mctlists $listonee){
+    //     return view('Editpost', [
+    //         'lexlist'=> $listonee
+    //     ]);
+    // }
+
+
+
     public function payform()
     {
         if (Auth::check()) {
             $latestCartItem = auth()->user()->relatewithcart()->latest()->first();
+            // dd($latestCartItem);
 
             return view('Checkout', [
                 'mycart' => $latestCartItem,
@@ -84,6 +147,7 @@ class ListingController extends Controller
         $totalprice = session()->get('totalprice');
         return view('Checkout', compact('tname', 'tprice', 'totalprice'));
     }
+
 
 
     // public function payform(){
@@ -121,6 +185,23 @@ class ListingController extends Controller
             'listonee' => mctlists::find($id)
         ]);
     }
+
+    // public function show($id) {
+    //     $listonee = mctlists::find($id);
+
+    //     if (!empty($listonee->description)) {
+    //         // If the 'description' field is not empty, return a different view.
+    //         return view('expiredlistone', [
+    //             'listonee' => $listonee
+    //         ]);
+    //     } else {
+    //         // If the 'description' field is empty, return the original view.
+    //         return view('listone', [
+    //             'listonee' => $listonee
+    //         ]);
+    //     }
+    // }
+
 
     // The next controller shows the cart page.
     // After you have done authentication,. its going to show according to users email.

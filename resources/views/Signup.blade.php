@@ -1,4 +1,7 @@
+<html>
 <head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link
         rel="stylesheet"
@@ -9,7 +12,7 @@
 <body>
 
 
-        <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
+        <div class="circularsign" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
     <div class="popupwithdraww" id="popupwhitewithdraww">
        <a href="{{ route('login') }}">  <div class="xmark"><i class="fa-solid fa-xmark"></i></div>
        </a>
@@ -23,17 +26,24 @@
 
                 {{ csrf_field() }}
                 <div>
-                    <input id="name" class="nlstyle" type="text" name="firstname" placeholder="First Name">
+                    <input class="nlstyle" type="text" name="firstname" placeholder="First Name" value="{{ old('firstname') }}">
+                    {{-- <input class="nlstyle" type="text" name="firstname" placeholder="First Name"> --}}
             </div>
             <div>
-                <input id="name" class="nlstyle" type="text" name="lastname" placeholder="Last Name">
+                <input class="nlstyle" type="text" name="lastname" placeholder="Last Name" value="{{ old('lastname') }}">
+
+                {{-- <input class="nlstyle" type="text" name="lastname" placeholder="Last Name"> --}}
         </div>
                 <div>
-                    <input id="email" class="nlstyle" type="email" name="email" placeholder="Your Email">
+                    <input class="nlstyle" type="email" name="email" placeholder="Email" value="{{ old('email') }}">
+
+                    {{-- <input  class="nlstyle" type="email" name="email" placeholder="Your Email"> --}}
                 </div>
 
                 <div>
-                    <input id="email" class="nlstyle" type="password" name="password" placeholder="Your Password">
+                    <input class="nlstyle" type="password" name="password" placeholder="Password" value="{{ old('password') }}">
+
+                    {{-- <input class="nlstyle" type="password" name="password" placeholder="Your Password"> --}}
                 </div>
                       <div>
                     <button class="newsbtn" type="submit">Sign up</button>
@@ -46,6 +56,7 @@
 </div>
 
 </body>
+</html>
 
 
 

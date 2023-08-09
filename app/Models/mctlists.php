@@ -29,11 +29,13 @@ class mctlists extends Model
         'herolink'
     ];
 
-    public function scopeFilter($query, array $filters){
-        if($filters['search'] ?? false){
-            $query->where('name', 'like',  '%' . $filters['search'] . '%');
-        }
-    }
+    // public function scopeFilter($query, array $filters){
+    //     if($filters['search'] ?? false){
+    //         $query->where('name', 'like',  '%' . $filters['search'] . '%');
+    //     }
+    // }
+
+
 
 //     public function scopeFilter($query, $filters)
 // {

@@ -39,13 +39,25 @@ use App\Http\Controllers\MainadminController;
 
 Route::get('/', [ListingController::class, 'index'] )->name('login');;
 Route::get('/payment', [PaymentController::class, 'index'] );
+Route::get('/search', [ListingController::class, 'search'] );
+Route::get('/searchnotfound', [ListingController::class, 'searchnotfound'] );
 Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'] );
 
 // View Admin Panel
 Route::get('/dunia', [AdminController::class, 'index']);
 
-// This stores the user. and note that admin is user here.
-Route::post('/createnewadmin', [AdminController::class, 'storeuser']);
+Route::middleware(['web'])->group(function () {
+    // Define your routes here
+    // USER REGISTRATION
+Route::get('/signup', function(){
+    return view('Signup');
+});
+  // This stores the user. and note that admin is user here.
+   Route::post('/createnewadmin', [AdminController::class, 'storeuser']);
+    // Add other routes as needed
+});
+
+
 
 // This is the form that gives admin ability to make posts.
 Route::get('/createpost', [AdminController::class, 'adminform']);
@@ -69,12 +81,11 @@ Route::post('/logout', [AdminController::class, 'disauthenticate']);
 Route::get('/cart', [ListingController::class, 'cartpage'] );
 
 // Cart view.
-Route::get('/checkout', [ListingController::class, 'payform'] );
+Route::get('/checkout', [ListingController::class, 'payform'] )->name('checkout');;
 
-// USER REGISTRATION
-Route::get('/signup', function(){
-    return view('Signup');
-});
+
+
+
 
 Route::get('/login', function(){
     return view('Login');
@@ -102,16 +113,19 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
     // Loop through the selected items and add them to the cart if quantity > 0
     foreach ($productIds as $index => $productId) {
         $quantity = $quantities[$index];
-        if ($quantity > 0) {
+        if($quantity < 1){
+         return redirect()->back()->with('message', "Error");
+        }
+        else if ($quantity > 0) {
             $product = mctlists::find($productId);
             $tableName = $tableNames[$index];
 
             if ($product) {
                 $cart = new Cart;
                 $realtn = explode(',', $tableName);
-$namepart = trim($realtn[0]);
-$priceparts = explode('.', trim($realtn[1])); // Split by period
-$pricepart = $priceparts[0]; // Take the first part
+            $namepart = trim($realtn[0]);
+            $priceparts = explode('.', trim($realtn[1])); // Split by period
+            $pricepart = $priceparts[0]; // Take the first part
 
                 if (auth()->check()) {
                     // User is authenticated, store in the cart
@@ -124,12 +138,14 @@ $pricepart = $priceparts[0]; // Take the first part
                     $cart->user_id = auth()->id();
                     $cart->cquantity = $quantity;
                     $cart->save();
-                    return redirect('/checkout');
+                    return redirect()->route('checkout')->with('message', 'Product added to cart successfully');
+
                 } else {
                     // User is not authenticated, store in the session
                     $request->session()->put('tname', $namepart);
                     $request->session()->put('tprice', $pricepart);
                     $request->session()->put('totalprice', $pricepart * $quantity);
+                    return redirect()->route('checkout')->with('message', 'Product added to cart successfully');
                 }
             } else {
                 // Handle the case when the product with the given ID is not found
@@ -174,13 +190,7 @@ Route::POST('/createticket', function (Request $request) {
 
 
 // I belive it would be easier to work on the edit now that i know where the error was actually coming from.
- Route::get('/event/{listonee}/ticket', function(mctlists $listonee){
-    // dd($listonee->name);
-    return view('Editpost', [
-        'lexlist'=> $listonee
-    ]);
- });
-
+Route::get('/event/{listonee}/ticket', [ListingController::class, 'viewone']);
 
 Route::get('/events/{name}', [ListingController::class, 'show'] );
 // Route::get('/addtocart/{id}', [ListingController::class, 'cart'] );
