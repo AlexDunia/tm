@@ -11,7 +11,7 @@
 
     @include('_nav')
 
-<div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
+<div class="circularr" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
 
     @if(session()->Has("message")){
         <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 3000)" x-show="show">

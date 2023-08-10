@@ -25,7 +25,7 @@
                 <div>
                     <input id="email" class="nlstyle" type="email" name="email" placeholder="Your Email">
                     @error('email')
-                    <p class="inputeerror"> {{$message}} </p>
+                    <p class="inputeerror" style="color:rgb(252, 80, 80)"> {{$message}} </p>
                     @enderror
 
                 </div>
@@ -33,7 +33,7 @@
                 <div>
                     <input id="email" class="nlstyle" type="password" name="password" placeholder="Your Password">
                     @error('password')
-                    <p class="inputeerror"> {{$message}} </p>
+                    <p class="inputeerror" style="color:rgb(252, 80, 80)"> {{$message}} </p>
                     @enderror
 
                     <a> Forgot Password </a>

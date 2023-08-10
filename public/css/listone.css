@@ -146,7 +146,7 @@
     margin-right: 20px;
   } */
 
- .circular {
+ .circularr {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -363,6 +363,29 @@
       margin: auto;
       display: flex;
       justify-content: space-between; */
+  }
+
+  .custom-table tbody tr th {
+   font-size: 20px;
+   font-weight: 500;
+}
+
+.eventinfoflex {
+   display: block;
+}
+
+.eventinfo {
+   margin-top:50px;
+}
+
+.custom-table .pricedata {
+   font-size: 17px;
+   font-weight: 400;
+}
+
+  .bcimg {
+   width: 100%;
+   /* height:100%; */
   }
 
   .dtgflex {

@@ -106,6 +106,16 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
  // View create
 
  Route::post('/addtocart', function (Request $request) {
+
+    $validationRules = [
+        'quantities.*' => 'numeric|min:0',
+        'product_ids.*' => 'exists:mctlists,id', // Ensure that the product ID exists in the database.
+        // Add more validation rules as needed.
+    ];
+
+    // Validate the request data
+    $request->validate($validationRules);
+
     $productIds = $request->input('product_ids');
     $tableNames = $request->input('table_names');
     $quantities = $request->input('quantities');
@@ -124,11 +134,10 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
                 $cart = new Cart;
                 $realtn = explode(',', $tableName);
             $namepart = trim($realtn[0]);
-            $priceparts = explode('.', trim($realtn[1])); // Split by period
-            $pricepart = $priceparts[0]; // Take the first part
+            $priceparts = explode('.', trim($realtn[1]));
+            $pricepart = $priceparts[0];
 
                 if (auth()->check()) {
-                    // User is authenticated, store in the cart
                     $cart->cname = $namepart;
                     $cart->cprice = $pricepart;
                     $ctotalprice = $pricepart * $quantity;

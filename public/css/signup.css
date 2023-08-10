@@ -134,6 +134,10 @@
         z-index: 200;
     } */
 
+    .fstyle .inputerror{
+        color:red;
+    }
+
    .popupwithdraww    {
        background: linear-gradient(180deg, #1e1d28, #11101a 100.98%);
         border-radius: 8px;
