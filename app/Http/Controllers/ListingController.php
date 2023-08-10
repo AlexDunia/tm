@@ -124,6 +124,10 @@ class ListingController extends Controller
         return view("Snf");
     }
 
+    public function notfound(){
+        return view("404");
+    }
+
     // public function viewone(mctlists $listonee){
     //     return view('Editpost', [
     //         'lexlist'=> $listonee
@@ -145,7 +149,9 @@ class ListingController extends Controller
         $tname = session()->get('tname');
         $tprice = session()->get('tprice');
         $totalprice = session()->get('totalprice');
-        return view('Checkout', compact('tname', 'tprice', 'totalprice'));
+        $tquantity = session()->get('tquantity');
+        $eventname = session()->get('eventname');
+        return view('Checkout', compact('tname', 'tprice', 'totalprice', 'tquantity', 'eventname'));
     }
 
 

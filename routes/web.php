@@ -84,7 +84,9 @@ Route::get('/cart', [ListingController::class, 'cartpage'] );
 Route::get('/checkout', [ListingController::class, 'payform'] )->name('checkout');;
 
 
+Route::get('/success', [PaymentController::class, 'success'] );
 
+Route::get('/notfound', [ListingController::class, 'notfound'] );
 
 
 Route::get('/login', function(){
@@ -132,6 +134,7 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
 
             if ($product) {
                 $cart = new Cart;
+                $eventname = $product->location;
                 $realtn = explode(',', $tableName);
             $namepart = trim($realtn[0]);
             $priceparts = explode('.', trim($realtn[1]));
@@ -139,6 +142,7 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
 
                 if (auth()->check()) {
                     $cart->cname = $namepart;
+                    $cart->eventname = $eventname;
                     $cart->cprice = $pricepart;
                     $ctotalprice = $pricepart * $quantity;
                     $cart->ctotalprice = $ctotalprice;
@@ -153,6 +157,8 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
                     // User is not authenticated, store in the session
                     $request->session()->put('tname', $namepart);
                     $request->session()->put('tprice', $pricepart);
+                    $request->session()->put('tquantity', $quantity);
+                    $request->session()->put('eventname', $eventname);
                     $request->session()->put('totalprice', $pricepart * $quantity);
                     return redirect()->route('checkout')->with('message', 'Product added to cart successfully');
                 }

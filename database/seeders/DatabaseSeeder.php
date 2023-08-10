@@ -28,7 +28,8 @@ class DatabaseSeeder extends Seeder
             'Description'=>"Lorem Ipsum is simply dummy text of the printing and typesetting industry.
             Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
             'Date'=>'December 15 @6:30pm',
-            'herolink'=>"Slideone"
+            'herolink'=>"Slideone",
+            'earlybirds'=>'Table for 10, 5000'
         ]);
 
         mctlists::create(  [

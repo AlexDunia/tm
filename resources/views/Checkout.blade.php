@@ -58,7 +58,7 @@
 
     <div class="form">
         <div class="formhead">
-            <h3> Buyer Information </h3>
+            <h3> Buyer Information. </h3>
         </div>
     {{-- <form method="post" class="coformbg" action="/" enctype="multipart/form-data"> --}}
         {{-- <form method="post" class="coformbg" action="/" enctype="multipart/form-data"> --}}
@@ -72,6 +72,19 @@
                   {{-- <label for="amount">Amount</label> --}}
                   <input type="hidden" id="amount"  value="{{$atotalPrice}}" required />
                 </div>
+                <div class="form-group">
+                  {{-- <label for="amount">Amount</label> --}}
+                  <input type="hidden" id="cn"  value="{{$mycart->cname}}" required />
+                </div>
+                <div class="form-group">
+                  {{-- <label for="amount">Amount</label> --}}
+                  <input type="hidden" id="cq"  value="{{$mycart->cquantity}}" required />
+                </div>
+                <div class="form-group">
+                  {{-- <label for="amount">Amount</label> --}}
+                  <input type="hidden" id="en"  value="{{$mycart->eventname}}" required />
+                </div>
+
                 <div class="form-group">
                   <label for="first-name">First Name</label>
                   <input type="text" id="first-name" />
@@ -175,6 +188,19 @@
                       <input type="hidden" id="amount"  value="{{$totalprice}}" required />
                     </div>
                     <div class="form-group">
+                      {{-- <label for="amount">Amount</label> --}}
+                      <input type="hidden" id="cn"  value="{{$tname}}" required />
+                    </div>
+                    <div class="form-group">
+                      {{-- <label for="amount">Amount</label> --}}
+                      <input type="hidden" id="cq"  value="{{$tquantity}}" required />
+                    </div>
+                    <div class="form-group">
+                      {{-- <label for="amount">Amount</label> --}}
+                      <input type="hidden" id="en"  value="{{$eventname}}" required />
+                    </div>
+
+                    <div class="form-group">
                       <label for="first-name">First Name</label>
                       <input type="text" id="first-name" />
                     </div>
@@ -266,7 +292,25 @@ function payWithPaystack(e) {
     key: 'pk_test_a23671022344a4de4ca87e5b42f68b3f5d84bfd9', // Replace with your public key
     email: document.getElementById("email-address").value,
     amount: document.getElementById("amount").value * 100,
-
+    "metadata": {
+    "custom_fields": [
+      {
+        "display_name": "Event-name",
+        "variable_name": "Event-name",
+        "value": document.getElementById("cn").value,
+      },
+      {
+        "display_name": "Quantity",
+        "variable_name": "Quantity",
+        "value": document.getElementById("cq").value,
+      },
+      {
+        "display_name": "Quantity",
+        "variable_name": "eventname",
+        "value": document.getElementById("en").value,
+      }
+    ]
+  },
     ref: 'TD'+Math.floor((Math.random() * 1000000000) + 1), // generates a pseudo-unique reference. Please replace with a reference you generated. Or remove the line entirely so our API will generate one for you
     // label: "Optional string that replaces customer email"
     onClose: function(){

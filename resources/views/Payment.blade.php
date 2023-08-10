@@ -46,6 +46,20 @@ function payWithPaystack(e) {
     key: 'pk_test_a23671022344a4de4ca87e5b42f68b3f5d84bfd9', // Replace with your public key
     email: document.getElementById("email-address").value,
     amount: document.getElementById("amount").value * 100,
+    "metadata": {
+    "custom_fields": [
+      {
+        "display_name": "Invoice ID",
+        "variable_name": "Invoice ID",
+        "value": 209
+      },
+      {
+        "display_name": "Cart Items",
+        "variable_name": "cart_items",
+        "value": "3 bananas, 12 mangoes"
+      }
+    ]
+  },
     ref: 'TD'+Math.floor((Math.random() * 1000000000) + 1), // generates a pseudo-unique reference. Please replace with a reference you generated. Or remove the line entirely so our API will generate one for you
     // label: "Optional string that replaces customer email"
     onClose: function(){

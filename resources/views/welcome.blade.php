@@ -134,9 +134,26 @@
 
       </div>
        </div>
+
+
+
+       @include('_footer')
     </div>
 
+    {{-- @include('_footer') --}}
+
   </div>
+</div>
+
+  {{-- Footer --}}
+
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+
 
 </body>
 <script>
