@@ -54,7 +54,8 @@ class ListingController extends Controller
 
                 return view('welcome',[
                     'heading' => 'My Laravel Application',
-                    'welcome' => mctlists::latest()->get(),
+                    'welcome' => mctlists::latest()->simplePaginate(5),
+                    // 'welcome' => mctlists::latest()->get(),
                     // 'welcome' => mctlists::latest()->filter(request(['search']))->get()
 
                 ]);
@@ -66,7 +67,8 @@ class ListingController extends Controller
 
         return view('welcome', [
             'heading' => 'My Laravel Application',
-            'welcome' => mctlists::latest()->get(),
+            // 'welcome' => mctlists::latest()->get(),
+            'welcome' => mctlists::latest()->simplePaginate(5),
             // 'welcome' => mctlists::latest()->filter(request(['search']))->get(),
 
             'cartItemCount' => $cartItemCount,
@@ -99,6 +101,37 @@ class ListingController extends Controller
             return redirect()->back()->with('error', 'Please enter a valid search term.');
         }
     }
+
+    // public function filterByCategory(string $category)
+    // {
+    //     $posts = mctlists::where('description', $category)->get();
+
+    //     return view('posts.index', compact('posts'));
+    // }
+
+
+    // public function showByCategory($category)
+    // {
+    //     $posts = mctlists::where('description', $category)->get();
+
+    //     return view('Filter', compact('posts', 'category'));
+    // }
+
+      public function showByCategory($category){
+        $sr = mctlists::where('description', $category)->get();
+        if($sr->isEmpty()){
+            return view('Nofilter');
+        }
+        else{
+            return view('Filter', [
+                // 'heading' => 'My Laravel Application',
+                // 'welcome' => mctlists::latest()->get(),
+                'posts' => $sr,
+                'category' => $category,
+            ]);
+        }
+    }
+
 
 
 

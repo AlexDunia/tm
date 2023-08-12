@@ -120,6 +120,24 @@
     background-attachment: fixed;
  }
 
+ .checkoutimage{
+   display:flex;
+   justify-content: center;
+   margin:auto;
+   margin-top:60px;
+   margin-bottom:30px;
+ }
+
+ .checkoutname{
+   color:white;
+   text-align:center;
+   width:80%;
+   margin:auto;
+ }
+
+
+
+
  .coform{
     background-color:#252432;
     border:none;
@@ -203,3 +221,24 @@
     width:85%;
     margin:auto;
  }
+
+
+ /* Add media queries for responsiveness */
+@media (max-width:700px) {
+ .checkoutname{
+   font-size:15px;
+ }
+
+ .ft{
+   padding-top: 50px;
+   /* flex-direction: column !important; */
+   flex-direction: column-reverse;
+
+}
+
+.form{
+   margin-top:30px;
+   order: -1 !important;
+}
+
+}

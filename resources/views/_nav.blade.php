@@ -60,12 +60,14 @@
 
 <div class="navlinks">
   <ul>
-    <li><a> Home </a> </li>
-    <li><a> Music </a></li>
-    <li><a> Movies </a></li>
-    <li><a> Theatre/Comedy</a></li>
-    <li><a> Sports </a></li>
-    <li><a> Contact us </a></li>
+    <li> <a href="index.html"> Home </a> </li>
+      <li> <a href="/category/music"> Music </a></li>
+      <li> <a href="/category/movies"> Movies </a></li>
+      <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
+      <li> <a href="/category/sports"> Sports </a></li>
+      <li> <a href="/category/festivals"> Festivals </a></li>
+      <li> <a href="/category/others"> Others </a></li>
+      <li> <a href="/contact"> Contact us </a></li>
   </ul>
 </div>
 
@@ -141,12 +143,14 @@
 
   <div class="navlinks">
     <ul>
-      <li><a> Home </a> </li>
-      <li><a> Music </a></li>
-      <li><a> Movies </a></li>
-      <li><a> Theatre/Comedy</a></li>
-      <li><a> Sports </a></li>
-      <li><a> Contact us </a></li>
+      <li> <a href="index.html"> Home </a> </li>
+      <li> <a href="/category/music"> Music </a></li>
+      <li> <a href="/category/movies"> Movies </a></li>
+      <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
+      <li> <a href="/category/sports"> Sports </a></li>
+      <li> <a href="/category/festivals"> Festivals </a></li>
+      <li> <a href="/category/others"> Others </a></li>
+      <li> <a href="/contact"> Contact us </a></li>
     </ul>
   </div>
 
@@ -254,10 +258,14 @@
 
 <div class="navlinks">
 <ul>
-  <li><a> Home </a> </li>
-  <li><a> Music </a></li>
-  <li><a> Movies </a></li>
-  <li><a> Contact us </a></li>
+  <li> <a href="index.html"> Home </a> </li>
+  <li> <a href="/category/music"> Music </a></li>
+  <li> <a href="/category/movies"> Movies </a></li>
+  <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
+  <li> <a href="/category/sports"> Sports </a></li>
+  <li> <a href="/category/festivals"> Festivals </a></li>
+  <li> <a href="/category/others"> Others </a></li>
+  <li> <a href="/contact"> Contact us </a></li>
 </ul>
 </div>
 
@@ -328,14 +336,22 @@
 
   <ul class="mqul">
       <li> <a href="index.html"> Home </a> </li>
-      <li> <a href="aboutus.html"> About us </a> </li>
-      <li> <a href="services.html"> Services </a> </li>
-      <li> <a href="contact.html"> Contact us </a> </li>
+      <li> <a href="/category/music"> Music </a></li>
+      <li> <a href="/category/movies"> Movies </a></li>
+      <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
+      <li> <a href="/category/sports"> Sports </a></li>
+      <li> <a href="/category/festivals"> Festivals </a></li>
+      <li> <a href="/category/others"> Others </a></li>
+      <li> <a href="/contact"> Contact us </a></li>
   </ul>
 
 </div>
 </div>
 </div>
+
+<br/>
+<br/>
+
 
 @else
 {{-- Guest  --}}
@@ -405,10 +421,14 @@
 <div class="mqlist">
 
   <ul class="mqul">
-      <li> <a href="index.html"> Home </a> </li>
-      <li> <a href="aboutus.html"> About us </a> </li>
-      <li> <a href="services.html"> Services </a> </li>
-      <li> <a href="contact.html"> Contact us </a> </li>
+    <li> <a href="index.html"> Home </a> </li>
+    <li> <a href="/category/music"> Music </a></li>
+    <li> <a href="/category/movies"> Movies </a></li>
+    <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
+    <li> <a href="/category/sports"> Sports </a></li>
+    <li> <a href="/category/festivals"> Festivals </a></li>
+    <li> <a href="/category/others"> Others </a></li>
+    <li> <a href="/contact"> Contact us </a></li>
   </ul>
 
 </div>

@@ -42,6 +42,89 @@ class DatabaseSeeder extends Seeder
             'herolink'=>"Slidetwo"
         ]);
 
+        mctlists::create(  [
+            'id'=>'3',
+            'Name'=>'ASA LIVE IN CONCERT',
+            'Location'=>'Genesis Event Center, Lagos, Nigeria.',
+            'Description'=>"Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+            Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
+            'Date'=>'December 15 @6:30pm',
+            'herolink'=>"Slideone",
+            'earlybirds'=>'Table for 10, 5000'
+        ]);
+
+        mctlists::create(  [
+            'id'=>'4',
+            'Name'=>'WIZKID LIVE IN CONCERT',
+            'Description'=>"Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+            Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
+            'Location'=>'Genesis Event Center, Lagos, Nigeria.',
+            'Date'=>'December 15 @6:30pm',
+            'herolink'=>"Slidetwo"
+        ]);
+
+        mctlists::create(  [
+            'id'=>'5',
+            'Name'=>'ASA LIVE IN CONCERT',
+            'Location'=>'Genesis Event Center, Lagos, Nigeria.',
+            'Description'=>"Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+            Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
+            'Date'=>'December 15 @6:30pm',
+            'herolink'=>"Slideone",
+            'earlybirds'=>'Table for 10, 5000'
+        ]);
+
+        mctlists::create(  [
+            'id'=>'6',
+            'Name'=>'WIZKID LIVE IN CONCERT',
+            'Description'=>"Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+            Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
+            'Location'=>'Genesis Event Center, Lagos, Nigeria.',
+            'Date'=>'December 15 @6:30pm',
+            'herolink'=>"Slidetwo"
+        ]);
+
+        mctlists::create(  [
+            'id'=>'7',
+            'Name'=>'ASA LIVE IN CONCERT',
+            'Location'=>'Genesis Event Center, Lagos, Nigeria.',
+            'Description'=>"Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+            Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
+            'Date'=>'December 15 @6:30pm',
+            'herolink'=>"Slideone",
+            'earlybirds'=>'Table for 10, 5000'
+        ]);
+
+        mctlists::create(  [
+            'id'=>'8',
+            'Name'=>'WIZKID LIVE IN CONCERT',
+            'Description'=>"Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+            Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
+            'Location'=>'Genesis Event Center, Lagos, Nigeria.',
+            'Date'=>'December 15 @6:30pm',
+            'herolink'=>"Slidetwo"
+        ]);
+        mctlists::create(  [
+            'id'=>'9',
+            'Name'=>'ASA LIVE IN CONCERT',
+            'Location'=>'Genesis Event Center, Lagos, Nigeria.',
+            'Description'=>"Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+            Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
+            'Date'=>'December 15 @6:30pm',
+            'herolink'=>"Slideone",
+            'earlybirds'=>'Table for 10, 5000'
+        ]);
+
+        mctlists::create(  [
+            'id'=>'10',
+            'Name'=>'WIZKID LIVE IN CONCERT',
+            'Description'=>"Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+            Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
+            'Location'=>'Genesis Event Center, Lagos, Nigeria.',
+            'Date'=>'December 15 @6:30pm',
+            'herolink'=>"Slidetwo"
+        ]);
+
 
     }
 }

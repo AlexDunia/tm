@@ -12,55 +12,15 @@
 <body>
 
   @include('_nav')
+       <div class="circularbgg">
 
-  <div id="newslide" class="slideshow-container">
-    @foreach($welcome->take(3)->reverse() as $index => $onewelcome)
-        <a href="/events/{{$onewelcome['id']}}" class="slide-content">  {{$onewelcome['herolink']}}</a>
-        <div class="newslideshow fade">
-            <div class="slide-image" style="background-image: url('{{ asset('storage/' . $onewelcome->heroimage) }}')"></div>
-        </div>
-    @endforeach
-</div>
-
-
-    <br/>
-
-    <div class="searchbox">
-
-      <div class="selectandsearch">
-        <form class="example"  type="get" action="{{url('/search')}}">
-          <input type="text" placeholder="Search.." name="name" class="custom-input">
-          <i class="fas fa-search search-icon"></i>
-        </form>
-        </div>
-
-      {{-- <div class="selectandsearch">
-<form class="example">
-  <input type="text" placeholder="Search.." name="search" class="custom-input">
-  <i class="fas fa-search search-icon"></i>
-</form>
-</div> --}}
-
-    </div>
-
-    <br/>
-            <div class="circularbg">
-
-            <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
+       <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
        <div class="view">
-      <div class="latest"> <h1> Trending Events </h1> </div>
+      <div class="latest"> <h1> Trending in <span class="pink"> {{ $category }} </span>  </h1> </div>
 
-      {{-- <div>
-        <ul>
-          <li><a href="/category/theatreandcomedy">Category1</a></li>
-          <li><a href="{{ route('Filter', 'music') }}">Category2</a></li>
-          <!-- Add more categories as needed -->
-      </ul>
-
-      </div> --}}
 
         <div class="t_grids">
-            @foreach($welcome as $onewelcome)
+            @foreach($posts as $onewelcome)
             {{-- <a href="/events/{{$onewelcome['id']}}"> {{$onewelcome['name']}} </a>
             <form action="{{url('/addtocart', $onewelcome->id)}}" method="POST">
                 @csrf
@@ -147,12 +107,12 @@
      <br/>
      <br/>
      <br/>
-     <div class="pag">
+     {{-- <div class="pag">
      @include('_paginate')
      {{$welcome->links()}}
      </div>
 
-       </div>
+       </div> --}}
 
 
 
@@ -176,24 +136,6 @@
 
 </body>
 <script>
-var slideIndex = 0;
-showSlides();
-
-function showSlides() {
-    var slides = document.getElementsByClassName("newslideshow");
-    var contents = document.getElementsByClassName("slide-content");
-    slideIndex++;
-    if (slideIndex > slides.length) {
-        slideIndex = 1;
-    }
-    for (var i = 0; i < slides.length; i++) {
-        slides[i].style.opacity = 0;
-        contents[i].style.display = "none"; // Use quotes and set display to "none"
-    }
-    slides[slideIndex - 1].style.opacity = 1;
-    contents[slideIndex - 1].style.display = "block"; // Use quotes and set display to "block"
-    setTimeout(showSlides, 5000); // Change image every 2 seconds (adjust as needed)
-}
 
 </script>
 
@@ -255,4 +197,5 @@ function showSlides() {
 {{-- <div id="app-a">
     <Component-a></Component-a>
 </div> --}}
+
 

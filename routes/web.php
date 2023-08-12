@@ -37,7 +37,7 @@ use App\Http\Controllers\MainadminController;
 // });
 
 
-Route::get('/', [ListingController::class, 'index'] )->name('login');;
+Route::get('/', [ListingController::class, 'index'])->name('login');;
 Route::get('/payment', [PaymentController::class, 'index'] );
 Route::get('/search', [ListingController::class, 'search'] );
 Route::get('/searchnotfound', [ListingController::class, 'searchnotfound'] );
@@ -97,7 +97,20 @@ Route::get('/cartitem', function(){
     return view('checkout');
 });
 
+// We need to create a new route to host the filter.
+// Route::get('/category/{category}', 'ListingController@showByCategory')->name('Filter');
+Route::get('/category/{category}', [ListingController::class, 'showByCategory'] );
+Route::get('/noresults/{category}', [ListingController::class, 'showByCategory'] );
+// Route::get('/c', function(){
+//     return view('checkout');
+// });
+
+// Route::get('/music', [ListingController::class, 'filterByCategory']);
+// Route::get('/movies', 'ListingController@index');
+
 // Make the create admin button work
+
+
 
 
 
@@ -135,19 +148,21 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
             if ($product) {
                 $cart = new Cart;
                 $eventname = $product->location;
+                // $image = $product->image;
                 $realtn = explode(',', $tableName);
-            $namepart = trim($realtn[0]);
-            $priceparts = explode('.', trim($realtn[1]));
-            $pricepart = $priceparts[0];
+                $namepart = trim($realtn[0]);
+                $priceparts = explode('.', trim($realtn[1]));
+                $pricepart = $priceparts[0];
 
                 if (auth()->check()) {
-                    $cart->cname = $namepart;
+                    // $cart->cnamepart = $namepart;
+                    $cart->cname =  $product->name;
                     $cart->eventname = $eventname;
                     $cart->cprice = $pricepart;
                     $ctotalprice = $pricepart * $quantity;
                     $cart->ctotalprice = $ctotalprice;
                     $cart->clocation = $product->location;
-                    $cart->cdescription = $product->description;
+                    $cart->cdescription =  $product->image;
                     $cart->user_id = auth()->id();
                     $cart->cquantity = $quantity;
                     $cart->save();

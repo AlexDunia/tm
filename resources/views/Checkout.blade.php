@@ -54,15 +54,20 @@
     $atotalPrice += $mycart->ctotalprice;
     ?>
 
+     <div class="checkoutimage">
+     <img  width="250px" src="{{asset('storage/' . $mycart->cdescription)}}">
+     </div>
+
+     <div class="checkoutname">
+      <h1> {{$mycart->cname}} </h1>
+     </div>
+
     <div class="ft">
 
     <div class="form">
         <div class="formhead">
             <h3> Buyer Information. </h3>
         </div>
-    {{-- <form method="post" class="coformbg" action="/" enctype="multipart/form-data"> --}}
-        {{-- <form method="post" class="coformbg" action="/" enctype="multipart/form-data"> --}}
-         {{-- <h1> {{$atotalPrice}} </h1> --}}
             <form id="paymentForm" class="coformbg">
                 <div class="form-group">
                   <label for="email">Email Address</label>

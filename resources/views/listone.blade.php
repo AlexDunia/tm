@@ -76,6 +76,50 @@ live metaverse concert. </td>
 
 <div class="checkout"><button> Total: N300,000 </button></div>
 <div class="checkoutt"><button> CHECKOUT </button></div> --}}
+<br/>
+<br/>
+<br/>
+
+
+<form action="{{ url('/addtocart') }}" method="POST">
+    @csrf
+    <table class="custom-table">
+        <tr>
+            <th> Pricing </th>
+            <th> Quantity </th>
+        </tr>
+        @php
+            $tableNames = ['startingprice', 'earlybirds', 'tableone', 'tabletwo', 'tablethree', 'tablefour', 'tablefive', 'tablesix', 'tableseven', 'tableeight'];
+        @endphp
+        @foreach ($tableNames as $tableName)
+            @if (!empty($listonee[$tableName]))
+                <tr>
+                    <td class="pricedata">
+                        {{ explode('.', trim($listonee[$tableName]))[0] }}
+                        <input type="hidden" name="product_ids[]" value="{{ $listonee->id }}">
+                        <input type="hidden" name="table_names[]" value="{{ explode('.', $listonee[$tableName])[0] }} ">
+                    </td>
+                    <td class="pricequantity">
+                    @if (strpos($listonee[$tableName], '.') !== false)
+                    {{-- Text contains a period --}}
+                    {{-- {{ "Sold out " . explode('.', $yourVariable)[1] }} --}}
+                  <h3 class="soldout">  {{ explode('.', $listonee[$tableName])[1] }} </h3>
+                    @else
+                   {{-- Text does not contain a period --}}
+                   <input type="number" value="0" min="0" style="width:50px" name="quantities[]">
+                  @endif
+                    </td>
+                    {{-- <td class="pricequantity">
+                        <input type="number" value="0" min="0" style="width:50px" name="quantities[]">
+                    </td> --}}
+                </tr>
+            @endif
+        @endforeach
+    </table>
+    <input class="checkoutt" type="submit" value="Add Selected Items to Cart">
+</form>
+
+
 
 <div class="cdbg">
 
@@ -124,45 +168,12 @@ live metaverse concert. </td>
 
 </div>
 
+<br/>
+<br/>
+<br/>
+<br/>
 
-
-<form action="{{ url('/addtocart') }}" method="POST">
-    @csrf
-    <table class="custom-table">
-        <tr>
-            <th> Pricing </th>
-            <th> Quantity </th>
-        </tr>
-        @php
-            $tableNames = ['startingprice', 'earlybirds', 'tableone', 'tabletwo', 'tablethree', 'tablefour', 'tablefive', 'tablesix', 'tableseven', 'tableeight'];
-        @endphp
-        @foreach ($tableNames as $tableName)
-            @if (!empty($listonee[$tableName]))
-                <tr>
-                    <td class="pricedata">
-                        {{ explode('.', trim($listonee[$tableName]))[0] }}
-                        <input type="hidden" name="product_ids[]" value="{{ $listonee->id }}">
-                        <input type="hidden" name="table_names[]" value="{{ explode('.', $listonee[$tableName])[0] }} ">
-                    </td>
-                    <td class="pricequantity">
-                    @if (strpos($listonee[$tableName], '.') !== false)
-                    {{-- Text contains a period --}}
-                    {{-- {{ "Sold out " . explode('.', $yourVariable)[1] }} --}}
-                  <h3 class="soldout">  {{ explode('.', $listonee[$tableName])[1] }} </h3>
-                    @else
-                   {{-- Text does not contain a period --}}
-                   <input type="number" value="0" min="0" style="width:50px" name="quantities[]">
-                  @endif
-                    </td>
-                    {{-- <td class="pricequantity">
-                        <input type="number" value="0" min="0" style="width:50px" name="quantities[]">
-                    </td> --}}
-                </tr>
-            @endif
-        @endforeach
-    </table>
-    <input class="checkoutt" type="submit" value="Add Selected Items to Cart">
-</form>
+{{-- New div --}}
 
 <div class="eventinfo">
 <h1> Event information </h1>
