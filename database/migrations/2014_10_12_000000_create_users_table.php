@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('password');
             $table->tinyInteger('is_admin')->default(0);
             // $table->string('date');
+            $table->string('profilepic')->nullable();
             $table->timestamps();
             // $table->id();
             // $table->string('name');

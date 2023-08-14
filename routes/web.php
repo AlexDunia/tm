@@ -11,6 +11,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DuniaController;
 use App\Http\Controllers\ListingController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\MainadminController;
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +39,8 @@ use App\Http\Controllers\MainadminController;
 
 
 Route::get('/', [ListingController::class, 'index'] );
+Route::get('/payment', [PaymentController::class, 'index'] );
+Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'] );
 
 // This stores the user. and note that admin is user here.
 Route::get('/dunia', [DuniaController::class, 'index']);

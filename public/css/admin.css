@@ -4,6 +4,40 @@
     margin: auto;
     /* overflow: hidden; */
 }
+.user-profile-dropdown-module--dropdown-button-avatar--2jhme {
+   margin: 0.8rem;
+}
+
+.ud-avatar {
+   background: #2d2f31;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   border-radius: 50%;
+   object-fit: cover;
+   color: var(--color-white);
+}
+
+.ud-heading-sm {
+   font-family: var(--font-stack-heading);
+   font-weight: 700;
+   line-height: 1.2;
+   letter-spacing: -.02rem;
+   font-size: 1.4rem;
+}
+
+.circle-clip {
+   width: 50px;
+   height: 50px;
+   border-radius: 50%; /* This creates the circular shape */
+   overflow: hidden; /* Hides any overflowing content */
+}
+
+.circle-clip img {
+   width: 100%; /* Make sure the image fills the circle */
+   height: 100%;
+   object-fit: cover; /* Maintain aspect ratio and cover the container */
+}
 
 .newslideshow {
     position: absolute;

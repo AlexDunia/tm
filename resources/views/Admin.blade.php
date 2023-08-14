@@ -1,4 +1,4 @@
-<form method="post" class="fstyle" action="/createnewadmin">
+<form method="post" class="fstyle" action="/createnewadmin" enctype="multipart/form-data">
 
     {{ csrf_field() }}
 
@@ -22,6 +22,18 @@
 
         />
         @error('email')
+        <p> {{$message}} </p>
+        @enderror
+    </div>
+
+    <div class="forminner">
+
+        <input
+            type="file"
+            name="profilepic"
+            {{-- value="password" --}}
+        />
+        @error('profilepic')
         <p> {{$message}} </p>
         @enderror
     </div>

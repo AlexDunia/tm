@@ -12,8 +12,40 @@
 <body>
     {{-- Navigation panel --}}
 
-
+  @auth
     <div class="ctna">
+      <h1>{{ auth()->user()->name }}</h1>
+      {{-- <img  src="{{asset('storage/' . $Auth::user()->)}}"> --}}
+      {{-- @if(auth()->user()->profilepic)
+      <div class="circle-clip">
+          <img src="{{ asset('storage/' . auth()->user()->profilepic) }}" alt="Profile Picture">
+      </div>
+  @else
+  <div aria-hidden="true" class="user-profile-dropdown-module--dropdown-button-avatar--2jhme ud-avatar ud-heading-sm" data-purpose="display-initials" style="width: 3.2rem; height: 3.2rem;">
+    <span class="initials">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+    <span class="initials">{{ strtoupper(substr(auth()->user()->email, 0, 1)) }}</span>
+  </div>
+  @endif --}}
+
+
+  <div class="circle-clip">
+      <img src="{{ asset('storage/' . auth()->user()->profilepic) }}" alt="Profile Picture">
+  </div>
+
+<div aria-hidden="true" class="user-profile-dropdown-module--dropdown-button-avatar--2jhme ud-avatar ud-heading-sm" data-purpose="display-initials" style="width: 3.2rem; height: 3.2rem;">
+<span class="initials">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+<span class="initials">{{ strtoupper(substr(auth()->user()->email, 0, 1)) }}</span>
+</div>
+
+
+      {{-- <h1> {{auth()->user()->profilepic}} </h1>
+      <img src="{{ asset('storage/' . auth()->user()->profilepic) }}" alt="Profile Picture"> --}}
+
+{{-- <img src="{{ asset('storage/' . Auth::user()->profilepic) }}" alt="Profile Picture">
+<h1>{{ auth()->user()->name }}</h1>
+<img src="{{ URL::to('/') }}/storage/{{ Auth::user()->profilepic }}" alt="Profile Picture"> --}}
+
+@else
         <div class="lisu">
             <h3> <a> Log in </a> </h3>
         </br>
@@ -28,8 +60,8 @@
               <li><a> Homee </a> </li>
               <li><a> Music </a></li>
               <li><a> Movies </a></li>
-              <li><a> Theatre/Comedy</a></li>
-              <li><a> Sports </a></li>
+              {{-- <li><a> Theatre/Comedy</a></li>
+              <li><a> Sports </a></li> --}}
               <li><a> Contact us </a></li>
             </ul>
           </div>
@@ -169,7 +201,7 @@
        </div>
     </div>
 
-
+@endauth
 
 
 
