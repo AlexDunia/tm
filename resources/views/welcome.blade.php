@@ -77,8 +77,10 @@
          {{-- <div class="toe"> <i class="fa-solid fa-calendar-days"></i> 15 December, 6:30pm </div> --}}
 
          <div class="toe"> <i class="fa-solid fa-ticket"></i> Starting @5000 </div>
+         <button class="b_t"> <a href="/events/{{$onewelcome['name']}}"> View Event </a> </button>
 
-        <button class="b_t"> <a href="/events/{{$onewelcome['id']}}"> View Event </a>  </button>
+
+        {{-- <button class="b_t"> <a href="/events/{{$onewelcome['id']}}"> View Event </a>  </button> --}}
         </ul>
       </div>
 

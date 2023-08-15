@@ -14,7 +14,7 @@
   @include('_nav')
 
   <div class="snf">
-  <h1> Nothing is found for "{{$si}}" </h1>
+  <h1> Nothing is found for <span class="pink" > "{{$si}}" </span> </h1>
   </div>
 
 </body>

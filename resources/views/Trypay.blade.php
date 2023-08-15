@@ -68,11 +68,10 @@ function payWithPaystack(e) {
     callback: function(response){
     //   let message = 'Payment complete! Reference: ' + response.reference;
       let reference = response.reference
-      fetch("{{URL::to('verifypayment')}}/" + reference)
+      fetch("{{URL::to('tryverifypayment')}}/" + reference)
     .then(response => response.json())
     .then(data => {
         console.log(data);
-        window.location.href = "{{URL::to('success')}}";
     })
     .catch(error => {
         console.error("Error:", error);

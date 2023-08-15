@@ -37,6 +37,11 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':10,5',
+            // 'transaction.check' => \App\Http\Middleware\TransactionCheckMiddleware::class,
+
+            // \App\Http\Middleware\PaymentStatusMiddleware::class,
+            // 'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+
         ],
 
         'api' => [

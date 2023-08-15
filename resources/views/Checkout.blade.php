@@ -287,6 +287,12 @@
 </body>
 
 <script>
+  const input = document.getElementById("en").value;
+  const words = input.split(' ');
+  const fl = words.map(word => word[0]).filter(Boolean).join('');
+  const fll = document.getElementById("cn").value;
+  const flsecond = fll.replace(/\s/g, '');
+  const cr = fl + flsecond;
     const paymentForm = document.getElementById('paymentForm');
 paymentForm.addEventListener("submit", payWithPaystack, false);
 
@@ -310,28 +316,30 @@ function payWithPaystack(e) {
         "value": document.getElementById("cq").value,
       },
       {
-        "display_name": "Quantity",
+        "display_name": "Eventname",
         "variable_name": "eventname",
-        "value": document.getElementById("en").value,
+        "value": fl,
       }
     ]
   },
-    ref: 'TD'+Math.floor((Math.random() * 1000000000) + 1), // generates a pseudo-unique reference. Please replace with a reference you generated. Or remove the line entirely so our API will generate one for you
+    ref: 'TD' + cr +Math.floor((Math.random() * 1000000000) + 1), // generates a pseudo-unique reference. Please replace with a reference you generated. Or remove the line entirely so our API will generate one for you
     // label: "Optional string that replaces customer email"
     onClose: function(){
       alert('Window closed.');
     },
     callback: function(response){
-    //   let message = 'Payment complete! Reference: ' + response.reference;
-      let reference = response.reference
-      fetch("{{URL::to('verifypayment')}}/" + reference)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-    })
-    .catch(error => {
-        console.error("Error:", error);
-    });
+  //   let message = 'Payment complete! Reference: ' + response.reference;
+    let reference = response.reference
+    fetch("{{URL::to('verifypayment')}}/" + reference)
+  .then(response => response.json())
+  .then(data => {
+      console.log(data);
+      window.location.href = "{{URL::to('success')}}";
+  })
+  .catch(error => {
+      console.error("Error:", error);
+  });
+
 
 //       $.ajax({
 //     type: "GET",

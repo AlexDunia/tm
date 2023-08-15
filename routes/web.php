@@ -42,6 +42,7 @@ Route::get('/payment', [PaymentController::class, 'index'] );
 Route::get('/search', [ListingController::class, 'search'] );
 Route::get('/searchnotfound', [ListingController::class, 'searchnotfound'] );
 Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'] );
+Route::get('/tryverifypayment/{reference}', [PaymentController::class, 'tryverify'] );
 
 // View Admin Panel
 Route::get('/dunia', [AdminController::class, 'index']);
@@ -80,18 +81,20 @@ Route::post('/logout', [AdminController::class, 'disauthenticate']);
 // Cart view.
 Route::get('/cart', [ListingController::class, 'cartpage'] );
 
+Route::get('/trypayment', [ListingController::class, 'trypayment'] );
+Route::post('/tryverify/{reference}', [ListingController::class, 'tryverify'] );
+
 // Cart view.
-Route::get('/checkout', [ListingController::class, 'payform'] )->name('checkout');;
+Route::get('/checkout', [ListingController::class, 'payform'] )->name('checkout');
 
-
-Route::get('/success', [PaymentController::class, 'success'] );
+Route::get('/success', [PaymentController::class, 'success'] )->name('success');
 
 Route::get('/notfound', [ListingController::class, 'notfound'] );
 
 
 Route::get('/login', function(){
     return view('Login');
-});
+})->name('logg');
 
 Route::get('/cartitem', function(){
     return view('checkout');
@@ -147,7 +150,7 @@ Route::get('/delete/{id}', [ListingController::class, 'delete'] );
 
             if ($product) {
                 $cart = new Cart;
-                $eventname = $product->location;
+                $eventname = $product->name;
                 // $image = $product->image;
                 $realtn = explode(',', $tableName);
                 $namepart = trim($realtn[0]);

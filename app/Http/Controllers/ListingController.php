@@ -187,6 +187,13 @@ class ListingController extends Controller
         return view('Checkout', compact('tname', 'tprice', 'totalprice', 'tquantity', 'eventname'));
     }
 
+    public function trypayment()
+    {
+
+        return view('trypay');
+    }
+
+
 
 
     // public function payform(){
@@ -219,9 +226,15 @@ class ListingController extends Controller
 
 
 
-    public function show($id) {
+    // public function show($id) {
+    //     return view('listone', [
+    //         'listonee' => mctlists::find($id)
+    //     ]);
+    // }
+
+    public function show($name) {
         return view('listone', [
-            'listonee' => mctlists::find($id)
+            'listonee' => mctlists::where('name', $name)->first()
         ]);
     }
 

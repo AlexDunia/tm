@@ -60,7 +60,7 @@
 
 <div class="navlinks">
   <ul>
-    <li> <a href="index.html"> Home </a> </li>
+    <li> <a href="/"> All </a> </li>
       <li> <a href="/category/music"> Music </a></li>
       <li> <a href="/category/movies"> Movies </a></li>
       <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
@@ -143,7 +143,7 @@
 
   <div class="navlinks">
     <ul>
-      <li> <a href="index.html"> Home </a> </li>
+      <li> <a href="/"> All </a> </li>
       <li> <a href="/category/music"> Music </a></li>
       <li> <a href="/category/movies"> Movies </a></li>
       <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
@@ -258,7 +258,7 @@
 
 <div class="navlinks">
 <ul>
-  <li> <a href="index.html"> Home </a> </li>
+  <li> <a href="/"> All </a> </li>
   <li> <a href="/category/music"> Music </a></li>
   <li> <a href="/category/movies"> Movies </a></li>
   <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
@@ -335,7 +335,7 @@
 <div class="mqlist">
 
   <ul class="mqul">
-      <li> <a href="index.html"> Home </a> </li>
+      <li> <a href="/"> All </a> </li>
       <li> <a href="/category/music"> Music </a></li>
       <li> <a href="/category/movies"> Movies </a></li>
       <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
@@ -421,7 +421,7 @@
 <div class="mqlist">
 
   <ul class="mqul">
-    <li> <a href="index.html"> Home </a> </li>
+    <li> <a href="/"> All </a> </li>
     <li> <a href="/category/music"> Music </a></li>
     <li> <a href="/category/movies"> Movies </a></li>
     <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
