@@ -14,7 +14,7 @@
   @include('_nav')
        <div class="circularbgg">
 
-       <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
+       {{-- <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');"> --}}
        <div class="view">
       <div class="latest"> <h1> Trending in <span class="pink"> {{ $category }} </span>  </h1> </div>
 

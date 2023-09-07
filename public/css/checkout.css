@@ -124,7 +124,7 @@
    display:flex;
    justify-content: center;
    margin:auto;
-   margin-top:60px;
+   padding-top: 60px;
    margin-bottom:30px;
  }
 
@@ -180,6 +180,17 @@
     /* padding-left:20px; */
  }
 
+ .btncontact {
+   min-width: 100%;
+   padding: 15px;
+   background-color: #C04888;
+   color: white;
+   font-size: 20px;
+   font-weight: 600;
+   border: none;
+   margin-top: 20px;
+}
+
  .tabledetailsbghead{
     padding:20px;
     font-size:11px;
@@ -229,15 +240,20 @@
    font-size:15px;
  }
 
+ .coformbg {
+   margin-bottom:40px;
+}
+
  .ft{
-   padding-top: 50px;
+   padding-top: 20px;
+   display:block;
    /* flex-direction: column !important; */
-   flex-direction: column-reverse;
+   /* flex-direction: column-reverse; */
 
 }
 
 .form{
-   margin-top:30px;
+   margin-top:10px;
    order: -1 !important;
 }
 

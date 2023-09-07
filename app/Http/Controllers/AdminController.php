@@ -1,10 +1,14 @@
 <?php
 
 namespace App\Http\Controllers;
+use auth;
 use App\Models\User;
 use App\Models\mctlists;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Mail;
+use Stevebauman\Location\Facades\Location;
+use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
@@ -58,7 +62,7 @@ class AdminController extends Controller
         $Formfield = $request->validate([
             'firstname' => 'required',
             'lastname' => 'required',
-            'email'=>['required', 'email'],
+            'email'=>['required', 'email', Rule::unique('users', 'email')],
             'password' => 'required',
         ]);
 
@@ -73,34 +77,79 @@ class AdminController extends Controller
             $Formfield['profilepic'] = $profilePicPath;
         }
 
+        $Formfield['ipaddress'] = $request->ip();
+
         $Formfield['password'] = bcrypt($Formfield['password']);
 
-        $adminuser = User::create($Formfield);
+        $adminuserr = User::create($Formfield);
 
-        Auth()->login($adminuser);
+        $adminUser = $adminuserr->firstname;
+
+        if($adminuserr){
+            Mail::send('userwelcome', ['firstname' => $adminUser], function ($message) use ($request, $adminUser) {
+                $message->to($request->email);
+                $message->subject("Welcome to Tixdemand, " . $adminUser);
+            });
+
+        }
+
+        Auth()->login($adminuserr);
 
         return redirect('/');
     }
 
 
 
-    public function authenticate(Request $request){
-        // dd($request);
-        $Formfield = $request->validate([
-            'email'=>['required', 'email'],
-            'password'=>'required',
-            // 'date'=>'required',
-        ]);
+    public function authenticate(Request $request)
+{
+    $formFields = $request->validate([
+        'email' => ['required', 'email'],
+        'password' => 'required',
+    ]);
 
-        if (auth()->attempt($Formfield)) {
-          $request->session()->regenerate();
-          return redirect('/');
-            // $profilePicPath = $request->file('profilepic')->store('uploadedimage', 'public');
-            // $Formfield['profilepic'] = $profilePicPath;
-        }
 
-        return back();
+    $ip = $request->ip();
+    // Get the user's IP address from the request
+
+    // Get location data based on the user's IP address
+    $ld = Location::get($ip);
+    if (!$ld) {
+        // Handle the case where location data couldn't be obtained
+        // For example, you can set default values or show an error message.
+        $ld = (object) [
+            'ip' => 'N/A',
+            'countryName' => 'N/A',
+            'countryCode' => 'N/A',
+            'regionCode' => 'N/A',
+            'cityName' => 'N/A',
+            // Add more default properties as needed
+        ];
     }
+
+    if (auth()->attempt($formFields)) {
+        $request->session()->regenerate();
+        $user = auth()->user();
+
+        // Check if the device is new
+        $deviceIp = $ip;
+        $existingDevice = User::where('id', auth()->user()->id)
+            ->where('ipaddress', $deviceIp)
+            ->first();
+
+        // Send the login notification email here
+        if (!$existingDevice) {
+            // Send the login notification email only for new devices
+            Mail::send('logindeviceinfo', ['firstname' => $user->firstname, 'locationData' => $ld], function ($message) use ($request) {
+                $message->to($request->email);
+                $message->subject('Login attempt on your account');
+            });
+        }
+        return redirect('/');
+    }
+
+    return back();
+}
+
 
     public function disauthenticate(Request $request){
         // logout here

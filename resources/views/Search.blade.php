@@ -17,6 +17,7 @@
   <h1> Results for <span class="pink" >  "{{$si}}" </span> </h1>
   <br/>
   <div class="t_grids">
+    @cache('cache_key', 60)
     @foreach($products as $onewelcome)
     {{-- <a href="/events/{{$onewelcome['id']}}"> {{$onewelcome['name']}} </a>
     <form action="{{url('/addtocart', $onewelcome->id)}}" method="POST">
@@ -35,14 +36,18 @@
 
  <div class="toe"> <i class="fa-solid fa-ticket"></i> Starting @5000 </div>
 
-<button class="b_t"> <a href="/events/{{$onewelcome['id']}}"> View Event </a>  </button>
+ <button class="b_t"> <a href="/events/{{$onewelcome['name']}}"> View Event </a>  </button>
 </ul>
 </div>
 
 @endforeach
+@endcache
 </div>
 
   </div>
+  <br/>
+<br/>
+  @include('_footer')
 
 
 </body>

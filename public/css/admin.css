@@ -40,6 +40,10 @@
    object-fit: cover; /* Maintain aspect ratio and cover the container */
 }
 
+input{
+   color:white;
+}
+
 .newslideshow {
     position: absolute;
     width: 100%;
@@ -77,7 +81,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 85vh;
+    height: 70vh;
     background-size: cover;
     background-position: center;
 }
@@ -174,6 +178,7 @@ form.example input[type=text] {
     font-family: "Montserrat",
        sans-serif;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
     /* font-family: 'Ubuntu',
        sans-serif; */
  }
@@ -551,13 +556,14 @@ form.example input[type=text] {
 
  .circularbg{
     width:100%;
-    top:650;
+    top:750;
     position:absolute;
  }
 
  .circularbgg{
    width:100%;
-   /* top:650; */
+   /* top:750; */
+   margin-top: 50px;
    position:absolute;
 }
 
@@ -644,9 +650,9 @@ form.example input[type=text] {
    color: #a0aec0;
    padding:40px;
    padding-top:60px;
+   bottom:0;
+   width:100%;
    /* position:absolute; */
-   /* width:100%; */
-   /* bottom:0; */
 }
 /*
 .footerbg hr{
@@ -685,7 +691,33 @@ form.example input[type=text] {
 @media (max-width: 768px) {
    .t_grids {
        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+       gap: 80px;
+       padding: 20px;
    }
+   .snf{
+      padding-top:100px;
+      font-size:12px;
+      font-weight:400;
+      color:rgb(206, 204, 204);
+      margin:auto;
+      width:80%;
+    }
+
+    .snf h1{
+      margin-left:0px;
+    }
+
+   .one_e {
+      padding: 25px;
+  }
+
+  .slideshow-container a {
+   color: rgb(227, 226, 226);
+   text-decoration: none;
+   font-size: 35px;
+   /* color: #18171f; */
+   font-weight: 700;
+}
 
    .navlinks{
       display:none;
@@ -767,10 +799,10 @@ form.example input[type=text] {
    .mqlist ul {
       position: fixed;
       margin-top: 20px;
-      top: 80;
+      top: 70;
       left: 0;
       z-index: 4;
-      width: 98%;
+      width: 100%;
       padding: 20px 10px 30px 10px;
       font-size: 14px;
       text-align: left;
@@ -911,4 +943,46 @@ form.example input[type=text] {
    margin-top:10px;
    margin-bottom:15px;
   }
+
 }
+
+@media (max-width: 600px) {
+   .slide-image {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60vh;
+    background-size: cover;
+    background-position: center;
+ }
+
+ .circularbg{
+   width:100%;
+   /* top:650; */
+   position:absolute;
+}
+   }
+
+
+   @media (max-width: 400px) {
+      .slide-image {
+       top: 0;
+       left: 0;
+       width: 100%;
+       height: 67vh;
+       background-size: cover;
+       background-position: center;
+    }
+
+    .slideshow-container a {
+      font-size: 40px;
+      /* color: #18171f; */
+      font-weight: 700;
+  }
+
+    .circularbg{
+      width:100%;
+      /* top:650; */
+      position:absolute;
+   }
+      }

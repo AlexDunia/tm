@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('lastname');
             $table->string('email');
             $table->string('password');
+            $table->string('ipaddress')->nullable();
             $table->tinyInteger('isadmin')->default(0);
             // $table->string('date');
             $table->string('profilepic')->nullable();

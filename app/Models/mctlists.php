@@ -13,6 +13,7 @@ class mctlists extends Model
         'name',
         'description',
         'location',
+        'category',
         'date',
         'startingprice',
         'earlybirds',

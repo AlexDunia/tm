@@ -2,10 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\mctlists;
-use Illuminate\Http\Request;
 use App\Models\Cart;
+use App\Models\mctlists;
+use App\Mail\EmailTemplate;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Stevebauman\Location\Facades\Location;
+use Illuminate\Validation\ValidationException;
 
 // $cartItemCount = Cart::count();
 
@@ -32,18 +41,81 @@ class ListingController extends Controller
     //         'cartItemCount' => $cartItemCount,
     //     ]);
     // }
+    // public function trypayment() {
+    //     return view('trypay');
+    // }
 
-    public function index()
+    public function contact() {
+         return view('Contact');
+    }
+
+    public function searchnotfound(){
+        return view("Snf");
+    }
+
+    public function notfound(){
+        return view("404");
+    }
+
+    // public function viewone(mctlists $listonee){
+    //     return view('Editpost', [
+    //         'lexlist'=> $listonee
+    //     ]);
+    // }
+
+
+
+    public function payform()
     {
         if (Auth::check()) {
+            // The items in the cart, once it has a different name, the previous items, they must have the samm name
+            // one image, one name, differenct eventtype and diffrent quantity and diferent prices.
+            $latestCartItem = auth()->user()->relatewithcart()->latest()->first();
+            // $latestCartItem = auth()->user()->relatewithcart()->get();
+            // dd($latestCartItem);
+
+            return view('Checkoutnew', [
+                'mycart' => $latestCartItem,
+            ]);
+        }
+        $tname = session()->get('tname');
+        $timage = session()->get('timage');
+        $tprice = session()->get('tprice');
+        $totalprice = session()->get('totalprice');
+        $tquantity = session()->get('tquantity');
+        $eventname = session()->get('eventname');
+        return view('Checkout', compact('tname', 'tprice', 'totalprice', 'tquantity', 'eventname', 'timage'));
+    }
+
+
+    public function index(Request $request)
+    {
+        // Get the user's IP address from the request
+        $ip = $request->ip();
+         // Get the user's IP address from the request
+
+
+    // Get location data based on the user's IP address
+    $ld = Location::get($ip);
+    if (!$ld) {
+        // Handle the case where location data couldn't be obtained
+        // For example, you can set default values or show an error message.
+        $ld = (object)[
+            'ip' => 'N/A',
+            'countryName' => 'N/A',
+            // Add more default properties as needed
+        ];
+    }
+        if (Auth::check()) {
+
             $status = Auth::user()->isadmin;
             // $welcomeData = mctlists::latest()->get();
             if ($status == 1) {
                 return view('Adminpanel',[
                     'heading' => 'My Laravel Application',
-                    'welcome' => mctlists::latest()->get(),
+                    // 'welcome' => mctlists::latest()->get(),
                     // 'welcome' => mctlists::latest()->filter(request(['search']))->get()
-
+                    'welcome' => mctlists::latest()->simplePaginate(5),
                 ]);
             }
             else if ($status == 0) {
@@ -65,15 +137,17 @@ class ListingController extends Controller
         $cartItemCount = Cart::count();
         $welcome = mctlists::all();
 
+        // Define $ld based on $ip (assuming Location::get($ip) returns a valid value)
+        // $ld = Location::get($ip);
+
         return view('welcome', [
             'heading' => 'My Laravel Application',
-            // 'welcome' => mctlists::latest()->get(),
             'welcome' => mctlists::latest()->simplePaginate(5),
-            // 'welcome' => mctlists::latest()->filter(request(['search']))->get(),
-
             'cartItemCount' => $cartItemCount,
+            'ld' => $ld,
         ]);
     }
+
 
     public function search(Request $request) {
         // Retrieve the user input and sanitize it using trim()
@@ -84,7 +158,7 @@ class ListingController extends Controller
             // Use Laravel's query builder to construct a secure query
             $products = mctlists::where('name', 'like', '%' . $si . '%')
                 ->orWhere('description', 'like', '%' . $si . '%')
-                ->get();
+                ->latest()->simplePaginate(5);
 
             // Check if the query result is empty
 
@@ -94,7 +168,7 @@ class ListingController extends Controller
                 return view('Snf', compact('si'));
             }
 
-            return view('search', compact('products', 'si'));
+            return view('Search', compact('products', 'si'));
         } else {
             // Handle the case where the search input is empty
             // We need to customise a page where they will be told nothing is found here.
@@ -118,7 +192,7 @@ class ListingController extends Controller
     // }
 
       public function showByCategory($category){
-        $sr = mctlists::where('description', $category)->get();
+        $sr = mctlists::where('description', $category)->latest()->simplePaginate(5);
         if($sr->isEmpty()){
             return view('Nofilter');
         }
@@ -132,8 +206,80 @@ class ListingController extends Controller
         }
     }
 
+      public function forgotpassword(){
+        return view('Forgotpassword');
+      }
 
+      public function forgotpasswordpost(Request $request){
+        // Validate the email address
 
+        $request->validate([
+            'email' => "required|email|exists:users",
+        ]);
+
+        // Generate a random token securely
+        $token = Str::random(64);
+
+        // Validate the generated token
+        if (!is_string($token) || !preg_match('/^[A-Za-z0-9]+$/', $token) || strlen($token) !== 64) {
+            // Invalid token generated, handle the error (e.g., log it)
+            throw ValidationException::withMessages([
+                'token' => 'Invalid token generated.',
+            ]);
+        }
+
+        // Now add data into the table data created by Laravel
+        DB::table('password_resets')->insert([
+            'email' => $request->email,
+            'token' => $token,
+            'created_at' => now(),
+        ]);
+
+        // Next, send an email to the email address
+
+        // Mail::to($request->email)->send(new EmailTemplate($token));
+
+        Mail::send('Emailtemplate', ['token' => $token], function ($message) use ($request){
+            $message->to($request->email);
+            $message->subject('Reset password');
+        });
+
+        // return view('Login');
+
+        // return view('Login')->with('message', 'Nothing was added to the cart. Please add items with a quantity greater than zero.');
+        return redirect()->route('logg')->with('message', 'Password Reset Link Sent To Your Email! Click to Change Now.');
+    }
+
+    public function resetpassword($token){
+        // So we actually have to pass the token of the previous form because we will use that
+        // in the new database
+    return view('Resetpassword', compact('token'));
+    }
+
+    public function resetpasswordpost(Request $request){
+// start with checking if the requests in the form are entered
+    $request->validate([
+        "email" => "required|email|exists:users",
+        "password" => "required|string|min:6|confirmed",
+        "password_confirmation" => "required"
+    ]);
+
+    // Next is to search the database, store it inside a vriable and and see if it mathces the input
+     $updatepassword = DB::table('password_resets')
+     ->where([
+        "email" => $request->email,
+        "token" => $request->token,
+     ]);
+
+    //  Now we want to use th variable that searches
+     if(!$updatepassword){
+        return view('Signup');
+     };
+
+    //  if it is the case, however, update the password
+     User::where('email', $request->email)->update(['password' => Hash::make($request->password)]);
+     return view('login');
+    }
 
     // public function search(Request $request) {
     //     // Retrieve the user input and sanitize it using trim()
@@ -152,47 +298,6 @@ class ListingController extends Controller
     //         return view('Snf', compact('si'));
     //     }
     // }
-
-    public function searchnotfound(){
-        return view("Snf");
-    }
-
-    public function notfound(){
-        return view("404");
-    }
-
-    // public function viewone(mctlists $listonee){
-    //     return view('Editpost', [
-    //         'lexlist'=> $listonee
-    //     ]);
-    // }
-
-
-
-    public function payform()
-    {
-        if (Auth::check()) {
-            $latestCartItem = auth()->user()->relatewithcart()->latest()->first();
-            // dd($latestCartItem);
-
-            return view('Checkout', [
-                'mycart' => $latestCartItem,
-            ]);
-        }
-        $tname = session()->get('tname');
-        $tprice = session()->get('tprice');
-        $totalprice = session()->get('totalprice');
-        $tquantity = session()->get('tquantity');
-        $eventname = session()->get('eventname');
-        return view('Checkout', compact('tname', 'tprice', 'totalprice', 'tquantity', 'eventname'));
-    }
-
-    public function trypayment()
-    {
-
-        return view('trypay');
-    }
-
 
 
 
@@ -232,27 +337,27 @@ class ListingController extends Controller
     //     ]);
     // }
 
-    public function show($name) {
-        return view('listone', [
-            'listonee' => mctlists::where('name', $name)->first()
-        ]);
-    }
-
-    // public function show($id) {
-    //     $listonee = mctlists::find($id);
-
-    //     if (!empty($listonee->description)) {
-    //         // If the 'description' field is not empty, return a different view.
-    //         return view('expiredlistone', [
-    //             'listonee' => $listonee
-    //         ]);
-    //     } else {
-    //         // If the 'description' field is empty, return the original view.
-    //         return view('listone', [
-    //             'listonee' => $listonee
-    //         ]);
-    //     }
+    // public function show($name) {
+    //     return view('listone', [
+    //         'listonee' => mctlists::where('name', $name)->first()
+    //     ]);
     // }
+
+    public function show($name) {
+        $listonee = mctlists::where('name', $name)->first();
+
+        if (!empty($listonee->status)) {
+            // If the 'description' field is not empty, return a different view.
+            return view('expiredlistone', [
+                'listonee' => $listonee
+            ]);
+        } else {
+            // If the 'description' field is empty, return the original view.
+            return view('listone', [
+                'listonee' => $listonee
+            ]);
+        }
+    }
 
 
     // The next controller shows the cart page.

@@ -33,6 +33,7 @@
           <i class="fas fa-search search-icon"></i>
         </form>
         </div>
+      </div>
 
       {{-- <div class="selectandsearch">
 <form class="example">
@@ -41,14 +42,17 @@
 </form>
 </div> --}}
 
-    </div>
+
 
     <br/>
+    <br/>
+
             <div class="circularbg">
 
-            <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
+            {{-- <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');"> --}}
        <div class="view">
       <div class="latest"> <h1> Trending Events </h1> </div>
+       </br>
 
       {{-- <div>
         <ul>
@@ -72,7 +76,7 @@
       <li class="mypimage">  <img  src="{{asset('storage/' . $onewelcome->image)}}"> </li>
         <li class="noe">   {{$onewelcome['name']}}  </li>
           <div class="toe"> <i class="fa-solid fa-location-dot"> </i> {{$onewelcome['location']}} </div>
-          <div class="toe"> <i class="fa-solid fa-calendar-days"></i>  {{$onewelcome['date']}} </div>
+          <div class="toe"> <i class="fa-solid fa-calendar-days"></i>   {{ date('n/j/Y', strtotime($onewelcome['date'])) }}</div>
 
          {{-- <div class="toe"> <i class="fa-solid fa-calendar-days"></i> 15 December, 6:30pm </div> --}}
 
@@ -149,31 +153,33 @@
      <br/>
      <br/>
      <br/>
+
      <div class="pag">
      @include('_paginate')
      {{$welcome->links()}}
-     </div>
-
-       </div>
+          </div>
 
 
+          <br/>
+          <br/>
+          <br/>
 
        @include('_footer')
-    </div>
+
 
     {{-- @include('_footer') --}}
 
-  </div>
+  {{-- </div> --}}
 </div>
 
   {{-- Footer --}}
 
+  {{-- <br/>
   <br/>
   <br/>
   <br/>
   <br/>
-  <br/>
-  <br/>
+  <br/> --}}
 
 
 </body>

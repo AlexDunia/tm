@@ -58,6 +58,7 @@
         padding-bottom:50px;
         padding-top:40px;
         padding-left:30px;
+        padding-right:30px;
     }
 
     .tybg p {
@@ -83,9 +84,9 @@
 
     <div class="tyaround">
     <div class="tybg">
-        <h1> Oops! event not found </h1>
+        <h1> Oops! nothing is found </h1>
         <br/>
-        <p class="pty"> There are currently no events for now, Kindly check back later or <a href="/"> Go Back to Home </a> </p>
+        <p class="pty"> There are currently none for now, Kindly check back later or <a href="/"> Go Back to Home </a> </p>
 
 
     </div>

@@ -91,5 +91,6 @@
     </div>
 
 </div>
+@include('_footer')
 </body>
 </html>

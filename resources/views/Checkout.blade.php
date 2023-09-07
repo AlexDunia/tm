@@ -3,6 +3,7 @@
     <link
         rel="stylesheet"
         href="\css\checkout.css"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/solid.css">
         <script src="https://kit.fontawesome.com/9ff47ec0f8.js" crossorigin="anonymous"> </script>
 </head>
@@ -37,7 +38,7 @@
 
 <body>
 
-  <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
+
 
     @auth
 
@@ -46,9 +47,9 @@
     $atotalPrice = 0; // Initialize the total price variable
     ?>
 
-    <div class="tabledetails">
+    {{-- <div class="tabledetails">
         <p> {{ $mycart->cprice }} </p>
-    </div>
+    </div> --}}
     <?php
     // where a stands for authenticated user.
     $atotalPrice += $mycart->ctotalprice;
@@ -173,6 +174,13 @@
         @else
 
 
+        <div class="checkoutimage">
+          <img  width="250px" src="{{asset('storage/' . $timage)}}">
+          </div>
+
+          <div class="checkoutname">
+           <h1> {{$eventname}} </h1>
+          </div>
 
         <div class="ft">
 
@@ -214,15 +222,11 @@
                       <input type="text" id="last-name" />
                     </div>
                     <div class="form-submit">
-                      <button type="submit" onclick="payWithPaystack(event)"> Pay </button>
+                      <button type="submit" onclick="payWithPaystack(event)" class="btncontact"> Pay </button>
                     </div>
                   </form>
 
             </div>
-
-
-
-
 
 
     <div class="tabledetailsbg">
@@ -235,7 +239,7 @@
 
   <div class="tabledetails">
       {{-- <p> Table for 10 </p> --}}
-      <p> {{$tname}} </p>
+      <p> {{$tname}}  X  {{$tquantity}} </p>
   </div>
 
   <div class="tabledetails">
@@ -280,17 +284,23 @@
 
      @endauth
 
+     <br/>
+     <br/>
+     <br/>
+     <br/>
+     <br/>
+
     {{-- end of circular bg --}}
-</div>
+
 <script src="https://js.paystack.co/v1/inline.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 </body>
 
 <script>
-  const input = document.getElementById("en").value;
+  const input = document.getElementById("cn").value;
   const words = input.split(' ');
   const fl = words.map(word => word[0]).filter(Boolean).join('');
-  const fll = document.getElementById("cn").value;
+  const fll = document.getElementById("en").value;
   const flsecond = fll.replace(/\s/g, '');
   const cr = fl + flsecond;
     const paymentForm = document.getElementById('paymentForm');
@@ -333,11 +343,11 @@ function payWithPaystack(e) {
     fetch("{{URL::to('verifypayment')}}/" + reference)
   .then(response => response.json())
   .then(data => {
-      console.log(data);
-      window.location.href = "{{URL::to('success')}}";
+      // console.log(data);
+      window.location.href = "{{URL::to('Success')}}";
   })
   .catch(error => {
-      console.error("Error:", error);
+      // console.error("Error:", error);
   });
 
 

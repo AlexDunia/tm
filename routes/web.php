@@ -11,6 +11,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\PaymentController;
+// use Illuminate\Support\Facades\RateLimiter;
 use App\Http\Controllers\MainadminController;
 /*
 |--------------------------------------------------------------------------
@@ -37,8 +38,9 @@ use App\Http\Controllers\MainadminController;
 // });
 
 
-Route::get('/', [ListingController::class, 'index'])->name('login');;
+Route::get('/', [ListingController::class, 'index'])->name('login');
 Route::get('/payment', [PaymentController::class, 'index'] );
+Route::get('/contact', [ListingController::class, 'contact'] );
 Route::get('/search', [ListingController::class, 'search'] );
 Route::get('/searchnotfound', [ListingController::class, 'searchnotfound'] );
 Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'] );
@@ -70,8 +72,8 @@ Route::post('/creationsuccess', [AdminController::class, 'store']);
 Route::post('/authenticated', [AdminController::class, 'authenticate']);
 
 // Users can now Log out
-Route::post('/logout', [AdminController::class, 'disauthenticate']);
-
+// Route::post('/logout', [AdminController::class, 'disauthenticate']);
+Route::match(['get', 'post'], '/logout', [AdminController::class, 'disauthenticate']);
 
 // create ghon ghon
 // Route::get('/alexadmin', function () {
@@ -80,17 +82,25 @@ Route::post('/logout', [AdminController::class, 'disauthenticate']);
 
 // Cart view.
 Route::get('/cart', [ListingController::class, 'cartpage'] );
-
 Route::get('/trypayment', [ListingController::class, 'trypayment'] );
 Route::post('/tryverify/{reference}', [ListingController::class, 'tryverify'] );
 
 // Cart view.
 Route::get('/checkout', [ListingController::class, 'payform'] )->name('checkout');
+Route::get('/checkoutnew', [ListingController::class, 'payform'] );
 
 Route::get('/success', [PaymentController::class, 'success'] )->name('success');
 
 Route::get('/notfound', [ListingController::class, 'notfound'] );
+Route::get('/forgotpassword', [ListingController::class, 'forgotpassword'] )->name('fp');
+Route::post('/forgotpasswordpost', [ListingController::class, 'forgotpasswordpost'] )->name('fpp');
+Route::get('/resetpassword{token}', [ListingController::class, 'resetpassword'] )->name('rp');
+Route::post('/resetpasswordpost', [ListingController::class, 'resetpasswordpost'] )->name('rpp');
 
+Route::get('/deviceinfo', function(){
+    return view('logindevice');
+});
+// The forgot password post willl send a mail, and this mail will have a link
 
 Route::get('/login', function(){
     return view('Login');
@@ -121,76 +131,63 @@ Route::get('/noresults/{category}', [ListingController::class, 'showByCategory']
 Route::get('/delete/{id}', [ListingController::class, 'delete'] );
 
 
- // View create
+Route::post('/addtocart', function (Request $request) {
+    // Validate the incoming request data
+    $request->validate([
+        'product_ids' => 'required|array',
+        'table_names' => 'required|array',
+        'quantities' => 'required|array',
+    ]);
 
- Route::post('/addtocart', function (Request $request) {
+    $addedToCart = false; // Flag to check if anything is added to the cart
 
-    $validationRules = [
-        'quantities.*' => 'numeric|min:0',
-        'product_ids.*' => 'exists:mctlists,id', // Ensure that the product ID exists in the database.
-        // Add more validation rules as needed.
-    ];
+    foreach ($request->product_ids as $key => $productId) {
+        $quantity = $request->quantities[$key];
 
-    // Validate the request data
-    $request->validate($validationRules);
-
-    $productIds = $request->input('product_ids');
-    $tableNames = $request->input('table_names');
-    $quantities = $request->input('quantities');
-
-    // Loop through the selected items and add them to the cart if quantity > 0
-    foreach ($productIds as $index => $productId) {
-        $quantity = $quantities[$index];
-        if($quantity < 1){
-         return redirect()->back()->with('message', "Error");
-        }
-        else if ($quantity > 0) {
+        if ($quantity > 0) { // Only add items with quantity greater than zero
+            $cartItem = new Cart();
             $product = mctlists::find($productId);
-            $tableName = $tableNames[$index];
+            $nameandprice = $request->table_names[$key];
+            $nameandpricesplit = explode(',', $nameandprice);
+            $namepart = trim($nameandpricesplit[0]);
+            $pricepart = trim($nameandpricesplit[1]);
 
-            if ($product) {
-                $cart = new Cart;
-                $eventname = $product->name;
-                // $image = $product->image;
-                $realtn = explode(',', $tableName);
-                $namepart = trim($realtn[0]);
-                $priceparts = explode('.', trim($realtn[1]));
-                $pricepart = $priceparts[0];
+            $cartItem->cname = $product->name;
+            $cartItem->eventname = $namepart;
+            $cartItem->cprice = $pricepart;
+            $ctotalprice = $pricepart * $quantity;
+            $cartItem->cquantity = $quantity;
+            $cartItem->ctotalprice = $ctotalprice;
+            $cartItem->clocation = $product->location;
+            $cartItem->cdescription = $product->image;
 
-                if (auth()->check()) {
-                    // $cart->cnamepart = $namepart;
-                    $cart->cname =  $product->name;
-                    $cart->eventname = $eventname;
-                    $cart->cprice = $pricepart;
-                    $ctotalprice = $pricepart * $quantity;
-                    $cart->ctotalprice = $ctotalprice;
-                    $cart->clocation = $product->location;
-                    $cart->cdescription =  $product->image;
-                    $cart->user_id = auth()->id();
-                    $cart->cquantity = $quantity;
-                    $cart->save();
-                    return redirect()->route('checkout')->with('message', 'Product added to cart successfully');
-
-                } else {
-                    // User is not authenticated, store in the session
-                    $request->session()->put('tname', $namepart);
-                    $request->session()->put('tprice', $pricepart);
-                    $request->session()->put('tquantity', $quantity);
-                    $request->session()->put('eventname', $eventname);
-                    $request->session()->put('totalprice', $pricepart * $quantity);
-                    return redirect()->route('checkout')->with('message', 'Product added to cart successfully');
-                }
+            if (auth()->check()) {
+                $cartItem->user_id = auth()->id();
+                $cartItem->save();
             } else {
-                // Handle the case when the product with the given ID is not found
-                return redirect()->back()->with('error', 'Product not found.');
+                // Store data in the session for unauthenticated users
+                $request->session()->put('tname', $namepart);
+                $request->session()->put('tprice', $pricepart);
+                $request->session()->put('tquantity', $quantity);
+                $request->session()->put('eventname', $product->name);
+                $request->session()->put('totalprice', $ctotalprice);
             }
+            $addedToCart = true; // Set the flag to true if something is added to the cart
         }
     }
-
-
-    // Return to the previous page or a specific success page
-    return redirect()->back()->with('success', 'Items added to cart successfully');
+    if ($addedToCart) {
+        if (auth()->check()) {
+            return redirect()->route('checkout')->with('message', 'Products added to cart successfully');
+        } else {
+            // Redirect to a different page or display a message for unauthenticated users
+            return redirect()->route('checkout');
+        }
+    } else {
+        return redirect()->back()->with('message', 'At least one quantity must be added before proceeding');
+    }
 });
+
+
 
 
 // View create

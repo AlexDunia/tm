@@ -77,8 +77,8 @@ class PaymentController extends Controller
             $transaction->phone = $phone;
             $transaction->amount = $amount;
             $transaction->quantity = $quantityvalue;
-            $transaction->tablename = $event;
-            $transaction->eventname = $eventname;
+            $transaction->tablename = $eventname;
+            $transaction->eventname = $event;
             $transaction->firstname = $firstname;
             $transaction->lastname = $lastname;
             $transaction->user_id = auth()->id();
@@ -112,7 +112,7 @@ class PaymentController extends Controller
             Session::forget('reference_data');
 
             // Redirect to 'logg' route
-            return view('success');
+            return view('Success');
         } else {
             // 'reference_data' doesn't exist in the session, redirect to 'checkout' route
             return redirect()->route('login');

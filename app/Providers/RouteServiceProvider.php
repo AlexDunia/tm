@@ -22,10 +22,18 @@ class RouteServiceProvider extends ServiceProvider
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
      */
+
+    // RateLimiter::for('uploads', function (Request $request) {
+    //     return $request->user()->vipCustomer()
+    //                 ? Limit::none()
+    //                 : Limit::perMinute(100)->by($request->ip());
+    // });
+
+
     public function boot(): void
     {
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            return Limit::perMinute(1000)->by($request->user()?->id ?: $request->ip());
         });
 
         $this->routes(function () {

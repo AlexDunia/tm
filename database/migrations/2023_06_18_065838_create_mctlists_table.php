@@ -11,6 +11,7 @@ return new class extends Migration
      * Run the migrations.
 
      */
+
     public function up(): void
     {
         Schema::create('mctlists', function (Blueprint $table) {
@@ -19,8 +20,12 @@ return new class extends Migration
             $table->string('name');
             $table->string('location');
             $table->string('description');
+            $table->string('category')->nullable();
             $table->string('date');
             $table->string('startingprice')->nullable();
+            $table->string('time')->nullable();
+            $table->string('enddate')->nullable();
+            $table->string('status')->nullable();
             $table->string('earlybirds')->nullable();
             $table->string('tableone')->nullable();
             $table->string('tabletwo')->nullable();

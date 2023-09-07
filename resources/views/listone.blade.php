@@ -4,6 +4,7 @@
         rel="stylesheet"
         href="\css\listone.css"/>
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/solid.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <script src="//unpkg.com/alpinejs" defer></script>
         <script src="https://kit.fontawesome.com/9ff47ec0f8.js" crossorigin="anonymous"> </script>
 </head>
@@ -80,7 +81,6 @@ live metaverse concert. </td>
 <br/>
 <br/>
 
-
 <form action="{{ url('/addtocart') }}" method="POST">
     @csrf
     <table class="custom-table">
@@ -100,18 +100,20 @@ live metaverse concert. </td>
                         <input type="hidden" name="table_names[]" value="{{ explode('.', $listonee[$tableName])[0] }} ">
                     </td>
                     <td class="pricequantity">
-                    @if (strpos($listonee[$tableName], '.') !== false)
-                    {{-- Text contains a period --}}
-                    {{-- {{ "Sold out " . explode('.', $yourVariable)[1] }} --}}
-                  <h3 class="soldout">  {{ explode('.', $listonee[$tableName])[1] }} </h3>
-                    @else
-                   {{-- Text does not contain a period --}}
-                   <input type="number" value="0" min="0" style="width:50px" name="quantities[]">
-                  @endif
+                        @if (strpos($listonee[$tableName], '.') !== false)
+                            {{-- Text contains a period --}}
+                            {{-- {{ "Sold out " . explode('.', $yourVariable)[1] }} --}}
+                            <h3 class="soldout">  {{ explode('.', $listonee[$tableName])[1] }} </h3>
+                        @else
+                            {{-- Text does not contain a period --}}
+                            <select name="quantities[]" class="quantity-select" onchange="updateQuantities(this)">
+                                @for ($i = 0; $i <= 50; $i++)
+                                    <option value="{{ $i }}">{{ $i }}</option>
+                                @endfor
+                            </select>
+
+                        @endif
                     </td>
-                    {{-- <td class="pricequantity">
-                        <input type="number" value="0" min="0" style="width:50px" name="quantities[]">
-                    </td> --}}
                 </tr>
             @endif
         @endforeach
@@ -218,12 +220,46 @@ live metaverse concert. </td>
 
 </div>
 
+<br/>
+<br/>
+
 </div>
+<br/>
+<br/>
+<br/>
+<br/>
+ {{-- @include('_footer') --}}
 </div>
+
+
 
 </body>
 
 <script>
+
+function updateQuantities(selectedQuantityElement) {
+        // Get the selected quantity value
+        var selectedQuantity = selectedQuantityElement.value;
+
+        // Get all quantity select elements
+        var quantitySelects = document.querySelectorAll('.quantity-select');
+
+        // Loop through all quantity select elements
+        quantitySelects.forEach(function (quantitySelect) {
+            // Set the value to zero for all other elements
+            if (quantitySelect !== selectedQuantityElement) {
+                quantitySelect.value = 0;
+            }
+        });
+    }
+
+// window.onload = function () {
+//     location.reload();
+//   };
+
+
+
+
     // Get the target date and time from the Blade template
     const targetDate = new Date("{{$listonee['date']}}");
 
