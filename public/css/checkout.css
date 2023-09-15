@@ -12,6 +12,15 @@
       sans-serif; */
 }
 
+.ftt{
+   padding-top:100px;
+   display:flex;
+   justify-content: space-between;
+   width:85%;
+   margin:auto;
+}
+
+
  .custom-table {
     border-collapse: collapse;
     width: 85%;
@@ -234,23 +243,41 @@
  }
 
 
+/* @media (max-width:900px) {
+
+
+  .ftt{
+   display: block !important;
+  }} */
+
  /* Add media queries for responsiveness */
 @media (max-width:700px) {
  .checkoutname{
-   font-size:15px;
+   font-size:14px;
  }
+
+ .ftt{
+   display: block !important;
+  }
 
  .coformbg {
    margin-bottom:40px;
 }
 
- .ft{
+.ft{
+   display:block;
+}
+
+.ftt{
+   display:block;
+}
+ /* .ft{
    padding-top: 20px;
    display:block;
-   /* flex-direction: column !important; */
-   /* flex-direction: column-reverse; */
+   flex-direction: column !important;
+   flex-direction: column-reverse;
 
-}
+} */
 
 .form{
    margin-top:10px;

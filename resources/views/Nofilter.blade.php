@@ -5,7 +5,7 @@
 <meta name= "viewport" content="width=device-width, initial-scale=1">
 
 <title> Nothing is found, check back later </title>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/admin.css">
 <link rel="preconnect" href="https://fonts.gstatic.com">
 <link href="assets/img/favicon.ico" rel="icon">
 
@@ -21,6 +21,7 @@
         width:80%;
         margin:auto;
         margin-top:100px;
+        position:relative;
     }
 
     .tybg{

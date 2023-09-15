@@ -34,23 +34,7 @@
 <h1>{{ auth()->user()->name }}</h1>
 <img src="{{ URL::to('/') }}/storage/{{ Auth::user()->profilepic }}" alt="Profile Picture"> --}}
 
-<div class="lisu">
-    @auth
-    <form method="POST" action="/logout">
-@csrf
-<button>
-    <a>
-  Log out
-    </a>
-</button>
-</form>
-</br>
-<h3> <a> Sign up </a>  </h3>
-@else
-<h3> <a> Log in </a> </h3>
-<h3> <a> Sign up </a>  </h3>
-@endauth
-</div>
+
 
 <div class="ctna">
 <div class="navflex">
@@ -61,7 +45,7 @@
 <div class="navlinks">
   <ul>
     <li> <a href="/"> All </a> </li>
-      <li> <a href="/category/music"> Music </a></li>
+      <li> <a href="/category/music"> Musicc </a></li>
       <li> <a href="/category/movies"> Movies </a></li>
       <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
       <li> <a href="/category/sports"> Sports </a></li>
@@ -134,7 +118,7 @@
 
 @else
 {{-- Guest  --}}
-
+<div class="ctnacon">
 <div class="ctna">
 <div class="navflex">
   <div class="flogow">
@@ -144,7 +128,7 @@
   <div class="navlinks">
     <ul>
       <li> <a href="/"> All </a> </li>
-      <li> <a href="/category/music"> Music </a></li>
+      <li> <a href="/category/music"> Musicc </a></li>
       <li> <a href="/category/movies"> Movies </a></li>
       <li> <a href="/category/theatreandcomedy"> Theatre/Comedy </a></li>
       <li> <a href="/category/sports"> Sports </a></li>
@@ -185,6 +169,7 @@
 </div>
 </div>
 </div>
+</div>
 @endauth
 
 {{-- End of Nav bar --}}
@@ -217,7 +202,7 @@
 <img src="{{ URL::to('/') }}/storage/{{ Auth::user()->profilepic }}" alt="Profile Picture"> --}}
 
 {{-- Important --}}
-{{-- <div class="lisu">
+<div class="lisu">
     @auth
     <form method="POST" action="/logout">
 @csrf
@@ -233,7 +218,7 @@
 <h3> <a> Log in </a> </h3>
 <h3> <a> Sign up </a>  </h3>
 @endauth
-</div> --}}
+</div>
 
 <div class="ctnamedia">
 
@@ -285,13 +270,13 @@
 </div>
 </div>
 @else
-<div id="usericonid" >
+<div id="usericonidres" >
 <div aria-hidden="true"  class="user-profile-dropdown-module--dropdown-button-avatar--2jhme ud-avatar ud-heading-sm" data-purpose="display-initials"  style="width: 2.5rem; height: 2.5rem;">
 <span class="initials"> {{ strtoupper(substr(auth()->user()->firstname, 0, 1)) }} </span>
 <span class="initials"> {{ strtoupper(substr(auth()->user()->lastname, 0, 1)) }} </span>
 </div>
 </div>
-<div id="cancelpop" >
+<div id="cancelpopres" >
     <div aria-hidden="true"  class="user-profile-dropdown-module--dropdown-button-avatar--2jhme ud-avatar ud-heading-sm" data-purpose="display-initials"  style="width: 2.5rem; height: 2.5rem;">
     <span class="initials"> {{ strtoupper(substr(auth()->user()->firstname, 0, 1)) }} </span>
     <span class="initials"> {{ strtoupper(substr(auth()->user()->lastname, 0, 1)) }} </span>
@@ -478,17 +463,21 @@ uid.addEventListener("click", function() {
 // Media query nav
 
 uidres.addEventListener("click", function() {
-    lisures.style.display = "block";
+    lisu.style.display = "block";
+    // uid.style.display = "block";
+    // cpop.style.display = "none";
     uidres.style.display = "none";
     cpopres.style.display = "block";
     console.log("responsive working")
 });
 
 cpopres.addEventListener("click", function() {
-    lisures.style.display = "none";
+    lisu.style.display = "none";
+    // uid.style.display = "none";
+    // cpop.style.display = "block";
     uidres.style.display = "block";
     cpopres.style.display = "none";
-    console.log("works")
+    console.log("works respons")
 });
 
 // Function to toggle the visibility of the div based on the scroll position
@@ -499,7 +488,7 @@ function toggleDivVisibility() {
         cpopres.style.display = "none";
     } else {
       cpop.style.display = "none";
-        lisures.style.display = 'block';
+        lisures.style.display = 'none';
     }
 }
 

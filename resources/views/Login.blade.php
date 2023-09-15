@@ -205,7 +205,6 @@
         <div class="tyaround">
         <h1> Login to your account. </h1>
         <form method="post" class="fstyle" action="/authenticated">
-
         @csrf
         <label for="email"> Email: </label>
         <input id="email" class="nlstyle" type="email" name="email" placeholder="Your Email">

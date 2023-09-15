@@ -200,21 +200,12 @@ form.example input[type=text] {
 
  .userandcart .user i{
    font-size:30px;
-
-   /* display: flex;
-    justify-content: center;
-    align-items: center; */
-    /* width: 50px;
-    height: 50px;  */
-    /* border-radius: 50%;
-    padding:2px; */
-    /* border: 2px solid white; */
  }
 
- .lisu{
-   width:15%;
+ .lisures{
+   width:100%;
    position:absolute;
-   top:80;
+   top:100px;
    padding-top:20px;
    padding-bottom:25px;
    right:0;
@@ -225,6 +216,51 @@ form.example input[type=text] {
   display: none;
   align-items:center;
   text-align:center;
+ }
+
+ .lisures button{
+   background:none;
+   border:none;
+ }
+
+ .lisures button a{
+   color:white;
+   font-size: 16px;
+    margin-top: 30px;
+    font-weight: 400;
+    text-decoration: none;
+ }
+
+ #cancelpopres{
+   display:none;
+ }
+
+ /* .user i:hover .lisu {
+   display: block;
+ } */
+
+ .lisures h3 a{
+   font-size:15px;
+   color:white;
+   margin-top:30px;
+   font-weight:400;
+   text-decoration:none;
+ }
+
+ .lisu{
+   width:100%;
+   position:absolute;
+   top:100px;
+   padding-top:20px;
+   padding-bottom:25px;
+   right:0;
+   z-index: 3;
+   background: linear-gradient(180deg, #1e1d28, #14131c 100.98%);
+   color:white;
+   margin:auto;
+   display: none;
+   align-items:center;
+   text-align:center;
  }
 
  .lisu button{
@@ -264,7 +300,7 @@ form.example input[type=text] {
     background: linear-gradient(180deg, #1e1d28, #14131c 100.98%);
  } */
 
- .ctna {
+ /* .ctna {
     width: 100%;
     margin: auto;
     align-items: center;
@@ -272,7 +308,20 @@ form.example input[type=text] {
     position:fixed;
     z-index:2;
     background: linear-gradient(180deg, #1e1d28, #14131c 100.98%);
- }
+ } */
+
+ .ctnacon {
+   width: 100%;
+   margin: auto;
+   position: relative; /* Relative position for the container */
+}
+
+.ctna {
+   width: 100%;
+   position: fixed; /* Fixed position within the viewport */
+   z-index: 2;
+   background: linear-gradient(180deg, #1e1d28, #14131c 100.98%);
+}
 
  .number {
    position: absolute;
@@ -314,6 +363,7 @@ form.example input[type=text] {
     justify-content: space-between;
     align-items: center;
     margin: auto;
+    position:relative;
  }
 
  /* .navflex.active{
@@ -650,8 +700,9 @@ form.example input[type=text] {
    color: #a0aec0;
    padding:40px;
    padding-top:60px;
+   margin-top:80px;
    bottom:0;
-   width:100%;
+   /* width:100%; */
    /* position:absolute; */
 }
 /*
@@ -799,7 +850,7 @@ form.example input[type=text] {
    .mqlist ul {
       position: fixed;
       margin-top: 20px;
-      top: 70;
+      top: 70px;
       left: 0;
       z-index: 4;
       width: 100%;

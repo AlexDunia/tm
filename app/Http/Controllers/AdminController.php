@@ -98,8 +98,6 @@ class AdminController extends Controller
         return redirect('/');
     }
 
-
-
     public function authenticate(Request $request)
 {
     $formFields = $request->validate([

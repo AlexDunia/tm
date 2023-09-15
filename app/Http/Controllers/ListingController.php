@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -63,6 +64,51 @@ class ListingController extends Controller
     //     ]);
     // }
 
+    // public function contactsend(Request $request)
+    // {
+    //     $contactFields = $request->validate([
+    //         'name'=>'required',
+    //         'email' => ['required', 'email'],
+    //         'phone' => 'required',
+    //         'comment'=>'required',
+    //     ]);
+
+    //     Mail::send('Emailtemplate', ['token' => $token], function ($message) use ($request){
+    //         $message->to($request->email);
+    //         $message->subject('Reset password');
+    //     });
+    // }
+
+    public function contactsend(Request $request)
+    {
+        // Validate your contact form fields
+        $contactFields = $request->validate([
+            'name' => 'required',
+            'email' => ['required', 'email'],
+            'phone' => 'required',
+            'comment' => 'required',
+        ]);
+
+        // Specify the recipient email address
+        $recipientEmail = 'thealexdunia@gmail.com';
+
+        // Prepare the email content with form field values
+        $emailContent = "Name: {$contactFields['name']}\n";
+        $emailContent .= "Email: {$contactFields['email']}\n";
+        $emailContent .= "Phone: {$contactFields['phone']}\n";
+        $emailContent .= "Comment: {$contactFields['comment']}\n";
+
+        Mail::raw($emailContent, function ($message) use ($recipientEmail) {
+            // Set the recipient email address
+            $message->to($recipientEmail);
+
+            // Set the email subject
+            $message->subject(' Tix demand Contact Form Submission');
+        });
+
+        // You can add further logic here, such as redirecting the user or displaying a success message.
+        return redirect()->route('login')->with('message', 'Password Reset Link Sent To Your Email! Click to Change Now.');
+    }
 
 
     public function payform()
@@ -74,7 +120,7 @@ class ListingController extends Controller
             // $latestCartItem = auth()->user()->relatewithcart()->get();
             // dd($latestCartItem);
 
-            return view('Checkoutnew', [
+            return view('Checkout', [
                 'mycart' => $latestCartItem,
             ]);
         }
@@ -352,7 +398,7 @@ class ListingController extends Controller
                 'listonee' => $listonee
             ]);
         } else {
-            // If the 'description' field is empty, return the original view.
+                  // If the 'description' field is empty, return the original view.
             return view('listone', [
                 'listonee' => $listonee
             ]);

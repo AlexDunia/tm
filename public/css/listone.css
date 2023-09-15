@@ -321,7 +321,7 @@
 
  .eventinfo{
    background:#3C3B4D;
-   width:80%;
+   /* width:80%; */
    padding:50px;
    margin:auto;
  }
@@ -350,6 +350,23 @@
    font-size:17px;
    padding-bottom:10px;
    font-weight:400;
+ }
+
+ .qrwidth{
+ width:15%;
+ }
+
+ #saveButton{
+   background: #a0aec0;;
+    /* color: #a0aec0; */
+    /* color:white; */
+    font-weight:500;
+    padding-top:5px;
+    padding-right:4px;
+    padding-left:4px;
+    font-size:13px;
+    padding-bottom:5px;
+    margin-top:4px;
  }
 
 /* Add media queries for responsiveness */

@@ -139,7 +139,7 @@
     {{-- <div class="tybg"> --}}
         <div class="tyaround">
         <h1>Contact Us</h1>
-    <form method="post" action="/submit">
+    <form method="post" action="/formsent">
         @csrf
         <br/>
         <br/>

@@ -100,7 +100,7 @@
                   <input type="text" id="last-name" />
                 </div>
                 <div class="form-submit">
-                  <button type="submit" onclick="payWithPaystack(event)"> Pay </button>
+                  <button type="submit" onclick="payWithPaystack(event)" class="btncontact"> Pay </button>
                 </div>
               </form>
 
@@ -344,7 +344,7 @@ function payWithPaystack(e) {
   .then(response => response.json())
   .then(data => {
       // console.log(data);
-      window.location.href = "{{URL::to('Success')}}";
+      window.location.href = "{{URL::to('success')}}";
   })
   .catch(error => {
       // console.error("Error:", error);

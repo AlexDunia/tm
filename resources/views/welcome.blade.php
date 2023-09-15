@@ -15,7 +15,7 @@
 
   <div id="newslide" class="slideshow-container">
     @foreach($welcome->take(3)->reverse() as $index => $onewelcome)
-        <a href="/events/{{$onewelcome['id']}}" class="slide-content">  {{$onewelcome['herolink']}}</a>
+        <a href="/events/{{$onewelcome['name']}}" class="slide-content">  {{$onewelcome['herolink']}}</a>
         <div class="newslideshow fade">
             <div class="slide-image" style="background-image: url('{{ asset('storage/' . $onewelcome->heroimage) }}')"></div>
         </div>

@@ -60,7 +60,8 @@ Route::get('/signup', function(){
     // Add other routes as needed
 });
 
-
+// With this, auth and non auth users can send emails
+Route::post('/formsent', [ListingController::class, 'contactsend']);
 
 // This is the form that gives admin ability to make posts.
 Route::get('/createpost', [AdminController::class, 'adminform']);
@@ -87,7 +88,7 @@ Route::post('/tryverify/{reference}', [ListingController::class, 'tryverify'] );
 
 // Cart view.
 Route::get('/checkout', [ListingController::class, 'payform'] )->name('checkout');
-Route::get('/checkoutnew', [ListingController::class, 'payform'] );
+// Route::get('/checkoutnew', [ListingController::class, 'payform'] );
 
 Route::get('/success', [PaymentController::class, 'success'] )->name('success');
 

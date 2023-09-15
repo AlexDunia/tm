@@ -37,7 +37,6 @@
 
 <body>
 
-  <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
 
     @auth
 
@@ -62,7 +61,64 @@
       <h1> {{$mycart->cname}} </h1>
      </div>
 
-    <div class="ft">
+    <div class="ftt">
+
+
+
+      <div class="tabledetailsbg">
+
+        <div class="tabledetailsbghead">
+        <h2> Ticket Information </h2>
+        </div>
+
+        {{-- <ul>
+            <li>Product Name: {{ $mycart->cname }}</li>
+            <li>Product Price: {{ $mycart->cprice }}</li>
+            <!-- Add more properties as needed -->
+        </ul> --}}
+
+        <?php
+        // Where A stands for authenticated User
+        $atotalPrice = 0; // Initialize the total price variable
+        ?>
+
+
+    <div class="tabledetailsflex">
+
+
+    <div class="tabledetails">
+        {{-- <p> Table for 10 </p> --}}
+        <p> {{ $mycart->cname }} X  {{ $mycart->cquantity }} </p>
+    </div>
+
+    <div class="tabledetails">
+        <p> {{ $mycart->cprice }} </p>
+    </div>
+    <?php
+    // where a stands for authenticated user.
+    $atotalPrice += $mycart->ctotalprice;
+    ?>
+
+   {{-- <a href="{{url('/delete', $onewelcome->id)}}"> Remove </a> --}}
+   </div>
+
+
+   <div class="tabledetailsflex">
+
+    <div class="tabledetails">
+        <p> Total </p>
+    </div>
+
+    <div class="tabledetails">
+         <p> {{$atotalPrice}} </p>
+    </div>
+
+   </div>
+
+   <br/>
+   <br/>
+   <br/>
+   <br/>
 
     <div class="form">
         <div class="formhead">
@@ -98,9 +154,10 @@
                   <label for="last-name">Last Name</label>
                   <input type="text" id="last-name" />
                 </div>
-                <div class="form-submit">
+                <div class="form-submit" id="sub">
                   <button type="submit" onclick="payWithPaystack(event)"> Pay </button>
                 </div>
+
               </form>
 
         </div>
@@ -114,61 +171,9 @@
         <br/>
         @endforeach --}}
 
-        <div class="tabledetailsbg">
-
-            <div class="tabledetailsbghead">
-            <h2> Ticket Information </h2>
-            </div>
-
-            {{-- <ul>
-                <li>Product Name: {{ $mycart->cname }}</li>
-                <li>Product Price: {{ $mycart->cprice }}</li>
-                <!-- Add more properties as needed -->
-            </ul> --}}
-
-            <?php
-            // Where A stands for authenticated User
-            $atotalPrice = 0; // Initialize the total price variable
-            ?>
-
-
-        <div class="tabledetailsflex">
-
-
-        <div class="tabledetails">
-            {{-- <p> Table for 10 </p> --}}
-            <p> {{ $mycart->cname }} X  {{ $mycart->cquantity }} </p>
-        </div>
-
-        <div class="tabledetails">
-            <p> {{ $mycart->cprice }} </p>
-        </div>
-        <?php
-        // where a stands for authenticated user.
-        $atotalPrice += $mycart->ctotalprice;
-        ?>
-
-       {{-- <a href="{{url('/delete', $onewelcome->id)}}"> Remove </a> --}}
-       </div>
-
-
-       <div class="tabledetailsflex">
-
-        <div class="tabledetails">
-            <p> Total </p>
-        </div>
-
-        <div class="tabledetails">
-             <p> {{$atotalPrice}} </p>
-        </div>
-
-       </div>
-
-
-
     </div>
 
-     </div>
+
 
         @else
 

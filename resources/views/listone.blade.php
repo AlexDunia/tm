@@ -7,12 +7,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <script src="//unpkg.com/alpinejs" defer></script>
         <script src="https://kit.fontawesome.com/9ff47ec0f8.js" crossorigin="anonymous"> </script>
+        <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+        integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+      ></script>
+        {{-- <script type="text/javascript" src="{{ asset('qrcode.js') }}"></script> --}}
+
 </head>
 <body>
 
     @include('_nav')
 
-<div class="circularr" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
+{{-- <div class="circularr" style="background-image: url('{{ asset('images/crowd.jpg') }}');"> --}}
 
     @if(session()->Has("message")){
         <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 3000)" x-show="show">
@@ -26,11 +34,19 @@
     <div class="bcflex">
 
     <div class="bctext">
-    <p class="cat"> Category: Music / Show / Concert </p>
+    <p class="cat"> Category:  {{$listonee['category']}}  </p>
     <h1> {{$listonee['name']}} </h1>
     <p class="infoticket"> {{$listonee['description']}} </p>
     <div id="countdown"></div>
     <p class="infodate"> <i class="fa-solid fa-calendar-day"> </i> {{$listonee['location']}} </p>
+
+    <br/>
+
+    <div class="qrwidth">
+        <div id="qrcode"></div>
+        </div>
+    <button id="saveButton">Save QR Code</button>
+
     </div>
 
     <div class="bcimg">
@@ -80,6 +96,10 @@ live metaverse concert. </td>
 <br/>
 <br/>
 <br/>
+<input id="text" type="hidden" value="{{ URL::current() }}" />
+
+{{-- <input id="text" type="text" value="https://hogangnono.com" style="background-color: white; width: 80%; color: black;" /><br /> --}}
+
 
 <form action="{{ url('/addtocart') }}" method="POST">
     @csrf
@@ -185,22 +205,23 @@ live metaverse concert. </td>
 
 <div class="eventinfotext">
     <h3 class="pinktext"> Start Date </h3>
-    <h3 class="ntext"> 19/20/21 </h3>
+    <h3 class="ntext"> {{ date('n/j/Y', strtotime($listonee['date'])) }}</h3>
+
 </div>
 
 <div class="eventinfotext">
     <h3 class="pinktext"> Time </h3>
-    <h3 class="ntext"> 19/20/21 </h3>
+    <h3 class="ntext"> {{$listonee['time']}}</h3>
 </div>
 
 <div class="eventinfotext">
     <h3 class="pinktext"> End Date  </h3>
-    <h3 class="ntext"> 19/20/21 </h3>
+    <h3 class="ntext"> {{$listonee['enddate']}}</h3>
 </div>
 
 <div class="eventinfotext">
     <h3 class="pinktext"> Category  </h3>
-    <h3 class="ntext"> 19/20/21 </h3>
+    <h3 class="ntext"> {{$listonee['category']}}</h3>
 </div>
 
 {{-- <div class="eventinfotext">
@@ -229,7 +250,8 @@ live metaverse concert. </td>
 <br/>
 <br/>
  {{-- @include('_footer') --}}
-</div>
+
+{{-- </div> --}}
 
 
 
@@ -257,9 +279,75 @@ function updateQuantities(selectedQuantityElement) {
 //     location.reload();
 //   };
 
+var qrcode = new QRCode("qrcode");
 
+function makeCode() {
+  var elText = document.getElementById("text");
 
+  if (!elText.value) {
+    alert("Input a text");
+    elText.focus();
+    return;
+  }
 
+    // Generate the QR code with the specified dimensions
+    qrcode.makeCode(elText.value);
+}
+
+makeCode();
+
+var textInput = document.getElementById("text");
+
+textInput.addEventListener("blur", function () {
+  makeCode();
+});
+
+textInput.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") { // Use "key" property for modern browsers
+    makeCode();
+    e.preventDefault(); // Prevent the default Enter key behavior (e.g., form submission)
+  }
+});
+
+function saveQRCode() {
+        // Get the "qrcode" div element
+        const qrcodeDiv = document.getElementById('qrcode');
+
+        // Define the desired width and height for the image
+        const desiredWidth = 400; // Change this to your preferred width
+        const desiredHeight = 400; // Change this to your preferred height
+
+        // Create a canvas element with the desired dimensions
+        const canvas = document.createElement('canvas');
+        canvas.width = desiredWidth;
+        canvas.height = desiredHeight;
+
+        // Get the canvas context
+        const context = canvas.getContext('2d');
+
+        // Draw the QR code on the canvas
+        const img = new Image();
+        img.src = qrcodeDiv.querySelector('img').src;
+        img.onload = () => {
+            // Calculate the scaling factors for width and height
+            const scaleWidth = desiredWidth / img.width;
+            const scaleHeight = desiredHeight / img.height;
+
+            // Use the scaling factors to draw the image with the desired size
+            context.drawImage(img, 0, 0, desiredWidth, desiredHeight);
+
+            // Create a temporary link to trigger the download
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = 'qrcode.png';
+
+            // Trigger a click event on the link
+            a.click();
+        };
+    }
+
+    // Add a click event listener to the "Save QR Code" button
+    document.getElementById('saveButton').addEventListener('click', saveQRCode);
     // Get the target date and time from the Blade template
     const targetDate = new Date("{{$listonee['date']}}");
 

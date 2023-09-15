@@ -113,6 +113,7 @@ class PaymentController extends Controller
 
             // Redirect to 'logg' route
             return view('Success');
+            // return redirect()->route('success');//
         } else {
             // 'reference_data' doesn't exist in the session, redirect to 'checkout' route
             return redirect()->route('login');
