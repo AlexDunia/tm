@@ -38,7 +38,8 @@ use App\Http\Controllers\MainadminController;
 // });
 
 
-Route::get('/', [ListingController::class, 'index'])->name('login');
+Route::get('/', [ListingController::class, 'index'])->name('home');
+
 Route::get('/payment', [PaymentController::class, 'index'] );
 Route::get('/contact', [ListingController::class, 'contact'] );
 Route::get('/search', [ListingController::class, 'search'] );

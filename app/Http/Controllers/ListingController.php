@@ -136,61 +136,58 @@ class ListingController extends Controller
 
     public function index(Request $request)
     {
-        // Get the user's IP address from the request
-        $ip = $request->ip();
-         // Get the user's IP address from the request
+        // Mock data for the welcome view (no DB)
+        $mockWelcome = collect([
+            (object)[
+                'name' => 'Event One',
+                'herolink' => 'Hero Link 1',
+                'heroimage' => 'default1.jpg',
+                'image' => 'default1.jpg',
+                'location' => 'Location 1',
+                'date' => now(),
+            ],
+            (object)[
+                'name' => 'Event Two',
+                'herolink' => 'Hero Link 2',
+                'heroimage' => 'default2.jpg',
+                'image' => 'default2.jpg',
+                'location' => 'Location 2',
+                'date' => now()->addDay(),
+            ],
+            (object)[
+                'name' => 'Event Three',
+                'herolink' => 'Hero Link 3',
+                'heroimage' => 'default3.jpg',
+                'image' => 'default3.jpg',
+                'location' => 'Location 3',
+                'date' => now()->addDays(2),
+            ],
+            (object)[
+                'name' => 'Event Four',
+                'herolink' => 'Hero Link 4',
+                'heroimage' => 'default4.jpg',
+                'image' => 'default4.jpg',
+                'location' => 'Location 4',
+                'date' => now()->addDays(3),
+            ],
+            (object)[
+                'name' => 'Event Five',
+                'herolink' => 'Hero Link 5',
+                'heroimage' => 'default5.jpg',
+                'image' => 'default5.jpg',
+                'location' => 'Location 5',
+                'date' => now()->addDays(4),
+            ],
+        ]);
 
-
-    // Get location data based on the user's IP address
-    $ld = Location::get($ip);
-    if (!$ld) {
-        // Handle the case where location data couldn't be obtained
-        // For example, you can set default values or show an error message.
-        $ld = (object)[
-            'ip' => 'N/A',
-            'countryName' => 'N/A',
-            // Add more default properties as needed
-        ];
-    }
-        if (Auth::check()) {
-
-            $status = Auth::user()->isadmin;
-            // $welcomeData = mctlists::latest()->get();
-            if ($status == 1) {
-                return view('Adminpanel',[
-                    'heading' => 'My Laravel Application',
-                    // 'welcome' => mctlists::latest()->get(),
-                    // 'welcome' => mctlists::latest()->filter(request(['search']))->get()
-                    'welcome' => mctlists::latest()->simplePaginate(5),
-                ]);
-            }
-            else if ($status == 0) {
-                // $carts = Cart::get();
-                // return view('Cartuser', [
-                //     'mycart' => $carts,
-                // ]);
-
-                return view('welcome',[
-                    'heading' => 'My Laravel Application',
-                    'welcome' => mctlists::latest()->simplePaginate(5),
-                    // 'welcome' => mctlists::latest()->get(),
-                    // 'welcome' => mctlists::latest()->filter(request(['search']))->get()
-
-                ]);
-            }
-        }
-
-        $cartItemCount = Cart::count();
-        $welcome = mctlists::all();
-
-        // Define $ld based on $ip (assuming Location::get($ip) returns a valid value)
-        // $ld = Location::get($ip);
+        // Set up metadata so the collection behaves like a paginator
+        $mockWelcome->links = function() {
+            return '';
+        };
 
         return view('welcome', [
             'heading' => 'My Laravel Application',
-            'welcome' => mctlists::latest()->simplePaginate(5),
-            'cartItemCount' => $cartItemCount,
-            'ld' => $ld,
+            'welcome' => $mockWelcome,
         ]);
     }
 
