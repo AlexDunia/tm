@@ -107,87 +107,68 @@ class ListingController extends Controller
         });
 
         // You can add further logic here, such as redirecting the user or displaying a success message.
-        return redirect()->route('login')->with('message', 'Password Reset Link Sent To Your Email! Click to Change Now.');
+        return redirect()->route('logg')->with('message', 'Password Reset Link Sent To Your Email! Click to Change Now.');
     }
 
 
     public function payform()
     {
         if (Auth::check()) {
-            // The items in the cart, once it has a different name, the previous items, they must have the samm name
-            // one image, one name, differenct eventtype and diffrent quantity and diferent prices.
-            $latestCartItem = auth()->user()->relatewithcart()->latest()->first();
-            // $latestCartItem = auth()->user()->relatewithcart()->get();
-            // dd($latestCartItem);
+            // Get all cart items for the authenticated user instead of just the latest one
+            $cartItems = auth()->user()->relatewithcart()->get();
+
+            // Calculate total price
+            $totalPrice = $cartItems->sum('ctotalprice');
+
+            // Get all ticket IDs from session for each cart item
+            $allTicketIds = [];
+            foreach ($cartItems as $item) {
+                $ticketIds = session('ticket_ids_' . $item->id, []);
+                if (empty($ticketIds)) {
+                    // Generate IDs if not in session
+                    $baseId = 'TIX-' . strtoupper(substr(md5($item->eventname . $item->cname), 0, 6));
+                    for ($i = 1; $i <= $item->cquantity; $i++) {
+                        $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+                    }
+                    session(['ticket_ids_' . $item->id => $ticketIds]);
+                }
+                $allTicketIds[$item->id] = $ticketIds;
+            }
 
             return view('Checkout', [
-                'mycart' => $latestCartItem,
+                'cartItems' => $cartItems,
+                'totalPrice' => $totalPrice,
+                'ticketIds' => $allTicketIds
             ]);
         }
+
         $tname = session()->get('tname');
         $timage = session()->get('timage');
         $tprice = session()->get('tprice');
         $totalprice = session()->get('totalprice');
         $tquantity = session()->get('tquantity');
         $eventname = session()->get('eventname');
-        return view('Checkout', compact('tname', 'tprice', 'totalprice', 'tquantity', 'eventname', 'timage'));
+
+        // Generate ticket IDs for non-authenticated users
+        $ticketIds = [];
+        $baseId = 'TIX-' . strtoupper(substr(md5($eventname . $tname), 0, 6));
+        for ($i = 1; $i <= $tquantity; $i++) {
+            $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+        }
+        session(['temp_ticket_ids' => $ticketIds]);
+
+        return view('Checkout', compact('tname', 'tprice', 'totalprice', 'tquantity', 'eventname', 'timage', 'ticketIds'));
     }
 
 
     public function index(Request $request)
     {
-        // Mock data for the welcome view (no DB)
-        $mockWelcome = collect([
-            (object)[
-                'name' => 'Event One',
-                'herolink' => 'Hero Link 1',
-                'heroimage' => 'default1.jpg',
-                'image' => 'default1.jpg',
-                'location' => 'Location 1',
-                'date' => now(),
-            ],
-            (object)[
-                'name' => 'Event Two',
-                'herolink' => 'Hero Link 2',
-                'heroimage' => 'default2.jpg',
-                'image' => 'default2.jpg',
-                'location' => 'Location 2',
-                'date' => now()->addDay(),
-            ],
-            (object)[
-                'name' => 'Event Three',
-                'herolink' => 'Hero Link 3',
-                'heroimage' => 'default3.jpg',
-                'image' => 'default3.jpg',
-                'location' => 'Location 3',
-                'date' => now()->addDays(2),
-            ],
-            (object)[
-                'name' => 'Event Four',
-                'herolink' => 'Hero Link 4',
-                'heroimage' => 'default4.jpg',
-                'image' => 'default4.jpg',
-                'location' => 'Location 4',
-                'date' => now()->addDays(3),
-            ],
-            (object)[
-                'name' => 'Event Five',
-                'herolink' => 'Hero Link 5',
-                'heroimage' => 'default5.jpg',
-                'image' => 'default5.jpg',
-                'location' => 'Location 5',
-                'date' => now()->addDays(4),
-            ],
-        ]);
-
-        // Set up metadata so the collection behaves like a paginator
-        $mockWelcome->links = function() {
-            return '';
-        };
+        // Fetch real data from the database
+        $events = mctlists::latest()->paginate(10);
 
         return view('welcome', [
             'heading' => 'My Laravel Application',
-            'welcome' => $mockWelcome,
+            'welcome' => $events,
         ]);
     }
 
@@ -395,7 +376,19 @@ class ListingController extends Controller
                 'listonee' => $listonee
             ]);
         } else {
-                  // If the 'description' field is empty, return the original view.
+            // Check if the date contains @ symbol and format it properly
+            if (isset($listonee->date) && strpos($listonee->date, '@') !== false) {
+                try {
+                    // Try to parse the date using Carbon
+                    $formattedDate = \Carbon\Carbon::parse(str_replace('@', ' ', $listonee->date))->format('Y-m-d H:i:s');
+                    $listonee->date = $formattedDate;
+                } catch (\Exception $e) {
+                    // If parsing fails, log the error but continue
+                    \Illuminate\Support\Facades\Log::error('Date parsing error: ' . $e->getMessage());
+                }
+            }
+
+            // If the 'description' field is empty, return the original view.
             return view('listone', [
                 'listonee' => $listonee
             ]);
@@ -405,11 +398,30 @@ class ListingController extends Controller
 
     // The next controller shows the cart page.
     // After you have done authentication,. its going to show according to users email.
-        public function cartpage(){
-        $carts = Cart::get();
-        // $welcomeData = mctlists::all();
+    public function cartpage(){
+        if (Auth::check()) {
+            // Get cart items for authenticated users
+            $carts = Cart::where('user_id', auth()->id())->get();
+        } else {
+            // For non-authenticated users, check if we have session data
+            if (session()->has('tname')) {
+                // Create a temporary cart item to display
+                $tempCart = new \stdClass();
+                $tempCart->id = 'session-item';
+                $tempCart->cname = session()->get('eventname');
+                $tempCart->eventname = session()->get('tname');
+                $tempCart->cprice = session()->get('tprice');
+                $tempCart->cquantity = session()->get('tquantity');
+                $tempCart->ctotalprice = session()->get('totalprice');
+                $tempCart->cdescription = session()->get('timage');
+
+                $carts = collect([$tempCart]);
+            } else {
+                $carts = collect([]);
+            }
+        }
+
         return view('Cartuser', [
-            // 'heading' => 'My laravel application',
             'mycart' => $carts,
         ]);
     }
@@ -418,9 +430,47 @@ class ListingController extends Controller
     // Delete
     public function delete($id){
     //    Question now is, what do you want to achieve?
-    $cdelete = Cart::find($id);
-    $cdelete->delete();
-    return redirect()->back();
+        $cdelete = Cart::find($id);
+        $cdelete->delete();
+        return redirect()->back();
     }
 
+    // Update cart quantity
+    public function updateCart(Request $request){
+        $request->validate([
+            'item_id' => 'required|exists:carts,id',
+            'quantity' => 'required|integer|min:1|max:10',
+        ]);
+
+        $cartItem = Cart::find($request->item_id);
+
+        if ($cartItem) {
+            // Update quantity
+            $cartItem->cquantity = $request->quantity;
+
+            // Recalculate total price
+            $cartItem->ctotalprice = $cartItem->cprice * $request->quantity;
+
+            // Generate unique ticket IDs and store them in session
+            $ticketIds = [];
+            $baseId = 'TIX-' . strtoupper(substr(md5($cartItem->eventname . $cartItem->cname), 0, 6));
+            for ($i = 1; $i <= $request->quantity; $i++) {
+                $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+            }
+            session(['ticket_ids_' . $cartItem->id => $ticketIds]);
+
+            $cartItem->save();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cart updated successfully',
+                    'item' => $cartItem,
+                    'ticket_ids' => $ticketIds
+                ]);
+            }
+        }
+
+        return redirect()->back();
+    }
 }

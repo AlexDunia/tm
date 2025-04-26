@@ -204,7 +204,7 @@
 
         <div class="tyaround">
         <h1> Forgot password ? </h1>
-        <p> Enter the email you used to register and we will send a link to reset your password </h1>
+        <p> Enter the email you used to register and we will send a link to reset your password </p>
         <form method="post" class="fstyle" action="{{route('fpp')}}" enctype="multipart/form-data">
 
           {{ csrf_field() }}
@@ -246,7 +246,7 @@
 
         <div class="circular" style="background-image: url('{{ asset('images/crowd.jpg') }}');">
     <div class="popupwithdraww" id="popupwhitewithdraww">
-       <a href="{{ route('login') }}">  <div class="xmark"><i class="fa-solid fa-xmark"></i></div>
+       <a href="{{ route('logg') }}">  <div class="xmark"><i class="fa-solid fa-xmark"></i></div>
        </a>
 
 

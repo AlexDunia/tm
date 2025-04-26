@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart | TickDemand</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Header included via server-side include or similar -->
+    <header class="site-header">
+      <div class="header-container">
+        <div class="header-content">
+          <div class="header-logo">
+            <a href="/" class="logo-link">
+              <img src="/images/logo.png" alt="TickDemand" class="logo-image">
+            </a>
+          </div>
+          <nav class="main-nav">
+            <ul class="nav-list">
+              <li class="nav-item"><a href="/" class="nav-link">All</a></li>
+              <li class="nav-item"><a href="/music" class="nav-link">Music</a></li>
+              <li class="nav-item"><a href="/movies" class="nav-link">Movies</a></li>
+              <li class="nav-item"><a href="/theatre" class="nav-link">Theatre/Comedy</a></li>
+              <li class="nav-item"><a href="/sports" class="nav-link">Sports</a></li>
+              <li class="nav-item"><a href="/festivals" class="nav-link">Festivals</a></li>
+              <li class="nav-item"><a href="/others" class="nav-link">Others</a></li>
+              <li class="nav-item"><a href="/contact" class="nav-link">Contact us</a></li>
+            </ul>
+          </nav>
+          <div class="auth-buttons">
+            <a href="/login" class="login-btn">Login</a>
+            <a href="/signup" class="signup-btn">Sign Up</a>
+          </div>
+          <button class="mobile-menu-toggle">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="site-main">
+      <section class="cart-page">
+        <div class="cart-container">
+          <div class="cart-header">
+            <h1 class="cart-title">Your Cart</h1>
+            <p class="cart-subtitle">Review your selected tickets before checkout</p>
+          </div>
+          
+          <!-- Empty Cart Message (hidden by JS when items exist) -->
+          <div class="empty-cart">
+            <div class="empty-cart-icon">
+              <i class="fas fa-shopping-cart"></i>
+            </div>
+            <h2 class="empty-cart-title">Your cart is empty</h2>
+            <p class="empty-cart-text">Looks like you haven't added any tickets to your cart yet. Browse our events and find something exciting to attend!</p>
+            <a href="/" class="browse-events-btn">
+              <i class="fas fa-ticket-alt"></i> Browse Events
+            </a>
+          </div>
+          
+          <!-- Cart Content (shown by JS when items exist) -->
+          <div class="cart-content">
+            <!-- Left Column: Cart Items -->
+            <div class="cart-items">
+              <!-- Cart items will be populated dynamically via JavaScript -->
+            </div>
+            
+            <!-- Right Column: Order Summary -->
+            <div class="cart-sidebar">
+              <div class="cart-summary">
+                <h3 class="summary-title">Order Summary</h3>
+                
+                <div class="summary-row">
+                  <div class="summary-label">Subtotal</div>
+                  <div class="summary-value">₦0</div>
+                </div>
+                
+                <div class="summary-row">
+                  <div class="summary-label">Service Fee</div>
+                  <div class="summary-value">₦0</div>
+                </div>
+                
+                <!-- Discount row will be added here dynamically when promo applied -->
+                
+                <div class="summary-total-row">
+                  <div class="summary-total-label">Total</div>
+                  <div class="summary-total-value">₦0</div>
+                </div>
+                
+                <button class="checkout-btn">
+                  <i class="fas fa-credit-card"></i> Proceed to Checkout
+                </button>
+              </div>
+              
+              <div class="promo-code">
+                <h3 class="promo-title">Promo Code</h3>
+                <form class="promo-form">
+                  <input type="text" class="promo-input" placeholder="Enter promo code">
+                  <button type="submit" class="promo-btn">Apply</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-content">
+        <hr>
+        <p>&copy; 2024 TickDemand. All rights reserved.</p>
+      </div>
+    </footer>
+    
+    <!-- Loading Animation -->
+    <div class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Processing your request...</div>
+    </div>
+  </div>
+
+  <!-- Include JS Files -->
+  <script src="/js/ticket-selection.js"></script>
+</body>
+</html> 

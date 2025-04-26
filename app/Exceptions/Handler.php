@@ -34,7 +34,7 @@ class Handler extends ExceptionHandler
         // Handle NotFoundHttpException
         if ($exception instanceof NotFoundHttpException) {
             // You can customize the home route name or URL as needed
-            return redirect()->route('login');
+            return redirect()->route('logg');
         }
 
         return parent::render($request, $exception);

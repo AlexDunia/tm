@@ -15,20 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('firstname');
             $table->string('lastname');
-            $table->string('email');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('ipaddress')->nullable();
-            $table->tinyInteger('isadmin')->default(0);
-            // $table->string('date');
             $table->string('profilepic')->nullable();
+            $table->string('ipaddress')->nullable();
+            $table->boolean('is_admin')->default(false);
+            $table->rememberToken();
             $table->timestamps();
-            // $table->id();
-            // $table->string('name');
-            // $table->string('email')->unique();
-            // $table->timestamp('email_verified_at')->nullable();
-            // $table->string('password');
-            // $table->rememberToken();
-            // $table->timestamps();
         });
     }
 

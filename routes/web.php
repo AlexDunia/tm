@@ -83,7 +83,7 @@ Route::match(['get', 'post'], '/logout', [AdminController::class, 'disauthentica
 // });
 
 // Cart view.
-Route::get('/cart', [ListingController::class, 'cartpage'] );
+Route::get('/cart', [ListingController::class, 'cartpage'] )->name('cart');
 Route::get('/trypayment', [ListingController::class, 'trypayment'] );
 Route::post('/tryverify/{reference}', [ListingController::class, 'tryverify'] );
 
@@ -132,62 +132,164 @@ Route::get('/noresults/{category}', [ListingController::class, 'showByCategory']
 // delete fucntionality.
 Route::get('/delete/{id}', [ListingController::class, 'delete'] );
 
+// Update cart item quantity
+Route::post('/update-cart', [ListingController::class, 'updateCart']);
 
 Route::post('/addtocart', function (Request $request) {
-    // Validate the incoming request data
-    $request->validate([
-        'product_ids' => 'required|array',
-        'table_names' => 'required|array',
-        'quantities' => 'required|array',
-    ]);
+    // Check which type of ticket submission we have
+    $hasLegacyTickets = $request->has('product_ids') && $request->has('table_names') && $request->has('quantities');
+    $hasNewTickets = $request->has('ticket_ids') && $request->has('ticket_quantities');
+
+    if (!$hasLegacyTickets && !$hasNewTickets) {
+        if ($request->ajax() || $request->has('no_redirect')) {
+            return response()->json(['success' => false, 'message' => 'No valid ticket data provided']);
+        }
+        return redirect()->back()->with('message', 'No valid ticket data provided');
+    }
 
     $addedToCart = false; // Flag to check if anything is added to the cart
+    $addedItems = 0; // Count of items added to cart
 
-    foreach ($request->product_ids as $key => $productId) {
-        $quantity = $request->quantities[$key];
+    // Process legacy table tickets if present
+    if ($hasLegacyTickets) {
+        // Validate the incoming request data
+        $request->validate([
+            'product_ids' => 'required|array',
+            'table_names' => 'required|array',
+            'quantities' => 'required|array',
+        ]);
 
-        if ($quantity > 0) { // Only add items with quantity greater than zero
-            $cartItem = new Cart();
-            $product = mctlists::find($productId);
-            $nameandprice = $request->table_names[$key];
-            $nameandpricesplit = explode(',', $nameandprice);
-            $namepart = trim($nameandpricesplit[0]);
-            $pricepart = trim($nameandpricesplit[1]);
+        foreach ($request->product_ids as $key => $productId) {
+            $quantity = $request->quantities[$key];
 
-            $cartItem->cname = $product->name;
-            $cartItem->eventname = $namepart;
-            $cartItem->cprice = $pricepart;
-            $ctotalprice = $pricepart * $quantity;
-            $cartItem->cquantity = $quantity;
-            $cartItem->ctotalprice = $ctotalprice;
-            $cartItem->clocation = $product->location;
-            $cartItem->cdescription = $product->image;
+            if ($quantity > 0) { // Only add items with quantity greater than zero
+                $addedItems += $quantity;
+                try {
+                    $cartItem = new Cart();
+                    $product = mctlists::find($productId);
+                    $nameandprice = $request->table_names[$key];
+                    $nameandpricesplit = explode(',', $nameandprice);
+                    $namepart = trim($nameandpricesplit[0]);
+                    $pricepart = trim($nameandpricesplit[1]);
 
-            if (auth()->check()) {
-                $cartItem->user_id = auth()->id();
-                $cartItem->save();
-            } else {
-                // Store data in the session for unauthenticated users
-                $request->session()->put('tname', $namepart);
-                $request->session()->put('tprice', $pricepart);
-                $request->session()->put('tquantity', $quantity);
-                $request->session()->put('eventname', $product->name);
-                $request->session()->put('totalprice', $ctotalprice);
+                    $cartItem->cname = $product->name;
+                    $cartItem->eventname = $namepart;
+                    $cartItem->cprice = $pricepart;
+                    $ctotalprice = $pricepart * $quantity;
+                    $cartItem->cquantity = $quantity;
+                    $cartItem->ctotalprice = $ctotalprice;
+                    $cartItem->clocation = $product->location;
+                    $cartItem->cdescription = $product->image;
+
+                    if (auth()->check()) {
+                        $cartItem->user_id = auth()->id();
+                        $cartItem->save();
+                    } else {
+                        // Store data in the session for unauthenticated users
+                        $request->session()->put('tname', $namepart);
+                        $request->session()->put('tprice', $pricepart);
+                        $request->session()->put('tquantity', $quantity);
+                        $request->session()->put('eventname', $product->name);
+                        $request->session()->put('totalprice', $ctotalprice);
+                        $request->session()->put('timage', $product->image);
+                    }
+                    $addedToCart = true; // Set the flag to true if something is added to the cart
+                } catch (\Exception $e) {
+                    // Log the error
+                    \Illuminate\Support\Facades\Log::error('Cart error: ' . $e->getMessage());
+                    continue; // Skip this item and continue with the next one
+                }
             }
-            $addedToCart = true; // Set the flag to true if something is added to the cart
         }
     }
+
+    // Process new ticket types if present
+    if ($hasNewTickets) {
+        // Validate the incoming request data
+        $request->validate([
+            'ticket_ids' => 'required|array',
+            'ticket_quantities' => 'required|array',
+        ]);
+
+        foreach ($request->ticket_ids as $key => $ticketId) {
+            $quantity = $request->ticket_quantities[$key];
+
+            if ($quantity > 0) { // Only add items with quantity greater than zero
+                $addedItems += $quantity;
+                try {
+                    // Get the ticket from the database
+                    $ticket = \App\Models\TicketType::find($ticketId);
+                    if (!$ticket) {
+                        continue; // Skip if ticket not found
+                    }
+
+                    $event = $ticket->event;
+
+                    $cartItem = new Cart();
+                    $cartItem->cname = $event->name;
+                    $cartItem->eventname = $ticket->name;
+                    $cartItem->cprice = $ticket->price;
+                    $ctotalprice = $ticket->price * $quantity;
+                    $cartItem->cquantity = $quantity;
+                    $cartItem->ctotalprice = $ctotalprice;
+                    $cartItem->clocation = $event->location;
+                    $cartItem->cdescription = $event->image;
+                    $cartItem->ticket_id = $ticketId; // Save ticket ID for reference
+
+                    if (auth()->check()) {
+                        $cartItem->user_id = auth()->id();
+                        $cartItem->save();
+                    } else {
+                        // Store data in the session for unauthenticated users
+                        $request->session()->put('tname', $ticket->name);
+                        $request->session()->put('tprice', $ticket->price);
+                        $request->session()->put('tquantity', $quantity);
+                        $request->session()->put('eventname', $event->name);
+                        $request->session()->put('totalprice', $ctotalprice);
+                        $request->session()->put('timage', $event->image);
+                    }
+                    $addedToCart = true;
+                } catch (\Exception $e) {
+                    // Log the error
+                    \Illuminate\Support\Facades\Log::error('Cart error: ' . $e->getMessage());
+                    continue; // Skip this item and continue with the next one
+                }
+            }
+        }
+    }
+
     if ($addedToCart) {
-        if (auth()->check()) {
+        // Handle AJAX requests
+        if ($request->ajax() || $request->has('no_redirect')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Products added to cart successfully',
+                'count' => $addedItems
+            ]);
+        }
+
+        // Handle regular requests
+        if ($request->has('redirect_to') && $request->redirect_to === 'cart') {
+            return redirect()->route('cart')->with('message', 'Items added to cart successfully');
+        } else if ($request->has('checkout_direct') && $request->checkout_direct === "1") {
+            // Direct checkout option
+            return redirect()->route('checkout')->with('message', 'Proceeding to checkout');
+        } else if (auth()->check()) {
             return redirect()->route('checkout')->with('message', 'Products added to cart successfully');
         } else {
             // Redirect to a different page or display a message for unauthenticated users
             return redirect()->route('checkout');
         }
     } else {
+        if ($request->ajax() || $request->has('no_redirect')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'At least one quantity must be added before proceeding'
+            ]);
+        }
         return redirect()->back()->with('message', 'At least one quantity must be added before proceeding');
     }
-});
+})->name('addtocart');
 
 
 

@@ -30,6 +30,27 @@ class mctlists extends Model
         'herolink'
     ];
 
+    /**
+     * Get the ticket types associated with this event
+     */
+    public function ticketTypes()
+    {
+        return $this->hasMany(TicketType::class, 'mctlists_id');
+    }
+
+    /**
+     * Get active ticket types that are not sold out
+     */
+    public function availableTicketTypes()
+    {
+        return $this->ticketTypes()
+                    ->where('is_active', true)
+                    ->where(function($query) {
+                        $query->whereNull('capacity')
+                              ->orWhereRaw('sold < capacity');
+                    });
+    }
+
     // public function scopeFilter($query, array $filters){
     //     if($filters['search'] ?? false){
     //         $query->where('name', 'like',  '%' . $filters['search'] . '%');

@@ -1,0 +1,310 @@
+<!-- Premium Ticket Selection Section -->
+<section class="pricing-section">
+  <div class="pricing-form">
+    <h2>Available Tickets</h2>
+    <p>Choose from our selection of tickets for this event</p>
+    
+    <div class="ticket-type-cards">
+      <!-- Regular Ticket -->
+      <div class="ticket-card" data-ticket-id="regular">
+        <div class="ticket-card-header">
+          <div class="ticket-name">Regular Ticket</div>
+          <div class="ticket-status on_sale">
+            <i class="fas fa-check-circle"></i> On Sale
+          </div>
+        </div>
+        <div class="ticket-card-body">
+          <div class="ticket-price">
+            <span class="currency">₦</span>5,000
+          </div>
+          <div class="ticket-description">
+            Standard event access. Includes entry to all general areas.
+          </div>
+          
+          <div class="ticket-capacity">
+            <div class="capacity-label">
+              <i class="fas fa-users"></i> Availability
+            </div>
+            <div class="capacity-bar-container">
+              <div class="capacity-bar" style="width: 70%;"></div>
+            </div>
+            <div class="capacity-text">70% available</div>
+          </div>
+          
+          <div class="ticket-dates">
+            <div class="ticket-date">
+              <i class="far fa-calendar-alt"></i>
+              <span class="date-label">Sales end:</span> Jul 29, 2025
+            </div>
+          </div>
+        </div>
+        <div class="ticket-card-footer">
+          <div class="quantity-control">
+            <button class="quantity-btn minus-btn">-</button>
+            <input type="number" class="quantity-input" value="0" min="0" max="10">
+            <button class="quantity-btn plus-btn">+</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- VIP Ticket -->
+      <div class="ticket-card" data-ticket-id="vip">
+        <div class="ticket-card-header">
+          <div class="ticket-name">VIP Access</div>
+          <div class="ticket-status on_sale">
+            <i class="fas fa-check-circle"></i> On Sale
+          </div>
+        </div>
+        <div class="ticket-card-body">
+          <div class="ticket-price">
+            <span class="currency">₦</span>15,000
+          </div>
+          <div class="ticket-description">
+            Premium experience with priority entry, dedicated seating area, and complimentary drinks.
+          </div>
+          
+          <div class="ticket-capacity">
+            <div class="capacity-label">
+              <i class="fas fa-users"></i> Availability
+            </div>
+            <div class="capacity-bar-container">
+              <div class="capacity-bar" style="width: 45%;"></div>
+            </div>
+            <div class="capacity-text">45% available</div>
+          </div>
+          
+          <div class="ticket-dates">
+            <div class="ticket-date">
+              <i class="far fa-calendar-alt"></i>
+              <span class="date-label">Sales end:</span> Jul 29, 2025
+            </div>
+          </div>
+        </div>
+        <div class="ticket-card-footer">
+          <div class="quantity-control">
+            <button class="quantity-btn minus-btn">-</button>
+            <input type="number" class="quantity-input" value="0" min="0" max="10">
+            <button class="quantity-btn plus-btn">+</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- VVIP Ticket -->
+      <div class="ticket-card" data-ticket-id="vvip">
+        <div class="ticket-card-header">
+          <div class="ticket-name">VVIP Experience</div>
+          <div class="ticket-status on_sale">
+            <i class="fas fa-check-circle"></i> On Sale
+          </div>
+        </div>
+        <div class="ticket-card-body">
+          <div class="ticket-price">
+            <span class="currency">₦</span>30,000
+          </div>
+          <div class="ticket-description">
+            Ultimate luxury experience with exclusive access, front row seating, meet & greet with artists, and premium refreshments package.
+          </div>
+          
+          <div class="ticket-capacity">
+            <div class="capacity-label">
+              <i class="fas fa-users"></i> Availability
+            </div>
+            <div class="capacity-bar-container">
+              <div class="capacity-bar" style="width: 25%;"></div>
+            </div>
+            <div class="capacity-text">25% available</div>
+          </div>
+          
+          <div class="ticket-dates">
+            <div class="ticket-date">
+              <i class="far fa-calendar-alt"></i>
+              <span class="date-label">Sales end:</span> Jul 20, 2025
+            </div>
+          </div>
+        </div>
+        <div class="ticket-card-footer">
+          <div class="quantity-control">
+            <button class="quantity-btn minus-btn">-</button>
+            <input type="number" class="quantity-input" value="0" min="0" max="5">
+            <button class="quantity-btn plus-btn">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="cart-summary">
+      <div class="summary-details">
+        <div class="summary-item">
+          <div class="summary-label">Selected Tickets:</div>
+          <div class="summary-value ticket-count">0</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">Total:</div>
+          <div class="summary-value">₦ <span class="total-amount">0</span></div>
+        </div>
+      </div>
+      <button class="add-to-cart-button" disabled>
+        <i class="fas fa-shopping-cart"></i> Add to Cart
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Loading Animation -->
+<div class="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Processing your request...</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  initTicketQuantityControls();
+  updateCartSummary();
+});
+
+function initTicketQuantityControls() {
+  // Plus buttons
+  const plusBtns = document.querySelectorAll('.plus-btn');
+  plusBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const input = this.parentNode.querySelector('.quantity-input');
+      const currentValue = parseInt(input.value) || 0;
+      const maxValue = parseInt(input.getAttribute('max')) || 10;
+      
+      if (currentValue < maxValue) {
+        input.value = currentValue + 1;
+        updateCartSummary();
+      }
+    });
+  });
+  
+  // Minus buttons
+  const minusBtns = document.querySelectorAll('.minus-btn');
+  minusBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const input = this.parentNode.querySelector('.quantity-input');
+      const currentValue = parseInt(input.value) || 0;
+      
+      if (currentValue > 0) {
+        input.value = currentValue - 1;
+        updateCartSummary();
+      }
+    });
+  });
+  
+  // Manual input
+  const quantityInputs = document.querySelectorAll('.quantity-input');
+  quantityInputs.forEach(input => {
+    input.addEventListener('change', function() {
+      let value = parseInt(this.value) || 0;
+      const maxValue = parseInt(this.getAttribute('max')) || 10;
+      
+      if (value < 0) value = 0;
+      if (value > maxValue) value = maxValue;
+      
+      this.value = value;
+      updateCartSummary();
+    });
+  });
+  
+  // Add to cart button
+  const addToCartBtn = document.querySelector('.add-to-cart-button');
+  if (addToCartBtn) {
+    addToCartBtn.addEventListener('click', function() {
+      if (getTotalTicketCount() > 0) {
+        addTicketsToCart();
+      }
+    });
+  }
+}
+
+function updateCartSummary() {
+  const ticketCount = getTotalTicketCount();
+  const totalAmount = calculateTotalAmount();
+  
+  // Update ticket count
+  document.querySelector('.ticket-count').textContent = ticketCount;
+  
+  // Update total amount
+  document.querySelector('.total-amount').textContent = totalAmount.toLocaleString();
+  
+  // Enable/disable add to cart button
+  const addToCartBtn = document.querySelector('.add-to-cart-button');
+  if (addToCartBtn) {
+    addToCartBtn.disabled = ticketCount === 0;
+  }
+}
+
+function getTotalTicketCount() {
+  let total = 0;
+  const inputs = document.querySelectorAll('.quantity-input');
+  inputs.forEach(input => {
+    total += parseInt(input.value) || 0;
+  });
+  return total;
+}
+
+function calculateTotalAmount() {
+  let total = 0;
+  const ticketCards = document.querySelectorAll('.ticket-card');
+  
+  ticketCards.forEach(card => {
+    const priceText = card.querySelector('.ticket-price').textContent;
+    const price = parseFloat(priceText.replace(/[^\d.-]/g, ''));
+    const quantity = parseInt(card.querySelector('.quantity-input').value) || 0;
+    
+    total += price * quantity;
+  });
+  
+  return total;
+}
+
+function addTicketsToCart() {
+  // Show loading animation
+  document.querySelector('.loading-overlay').classList.add('active');
+  
+  // Collect ticket data
+  const tickets = [];
+  const ticketCards = document.querySelectorAll('.ticket-card');
+  
+  ticketCards.forEach(card => {
+    const quantity = parseInt(card.querySelector('.quantity-input').value) || 0;
+    
+    if (quantity > 0) {
+      const ticketId = card.dataset.ticketId;
+      const name = card.querySelector('.ticket-name').textContent;
+      const priceText = card.querySelector('.ticket-price').textContent;
+      const price = parseFloat(priceText.replace(/[^\d.-]/g, ''));
+      
+      tickets.push({
+        id: ticketId,
+        name: name,
+        price: price,
+        quantity: quantity
+      });
+    }
+  });
+  
+  // Get current cart from localStorage or create new one
+  let cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
+  
+  // Add event details and tickets
+  cart.push({
+    eventId: 'current-event',
+    eventTitle: document.querySelector('h1')?.textContent || 'Event',
+    image: document.querySelector('.event-image-container img')?.src || '',
+    date: document.querySelector('.event-date-icon')?.textContent || '',
+    location: document.querySelector('.event-location')?.textContent || '',
+    tickets: tickets,
+    timestamp: new Date().getTime()
+  });
+  
+  // Save to localStorage
+  localStorage.setItem('ticketCart', JSON.stringify(cart));
+  
+  // Redirect to cart page after delay
+  setTimeout(() => {
+    window.location.href = '/cart';
+  }, 1500);
+}
+</script> 

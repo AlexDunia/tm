@@ -69,6 +69,21 @@ class PaymentController extends Controller
             $quantityvalue = $newref->data->metadata->custom_fields[1]->value;
             $eventname = $newref->data->metadata->custom_fields[2]->value;
 
+            // Get ticket IDs if available
+            $ticketIds = [];
+            if (count($newref->data->metadata->custom_fields) > 3) {
+                $ticketIdsJson = $newref->data->metadata->custom_fields[3]->value;
+                $ticketIds = json_decode($ticketIdsJson, true) ?? [];
+            }
+
+            // If no ticket IDs were provided, generate them
+            if (empty($ticketIds)) {
+                $baseId = 'TIX-' . strtoupper(substr(md5($event . $eventname), 0, 6));
+                for ($i = 1; $i <= $quantityvalue; $i++) {
+                    $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+                }
+            }
+
             // Store data in the database using prepared statements
             $transaction = new Transaction();
             $transaction->status = $status;
@@ -82,7 +97,7 @@ class PaymentController extends Controller
             $transaction->firstname = $firstname;
             $transaction->lastname = $lastname;
             $transaction->user_id = auth()->id();
-            $transaction->status = $status;
+            $transaction->ticket_ids = json_encode($ticketIds);
             $transaction->save();
             session(['reference_data' => $newref]);
             // return ['data' => $newref, 'redirect' => redirect()->route('logg')];
@@ -108,15 +123,44 @@ class PaymentController extends Controller
 
     public function success(){
         if (Session::has('reference_data')) {
+            $referenceData = Session::get('reference_data');
+
+            // Get ticket IDs from the transaction
+            $ticketIds = [];
+            if (isset($referenceData->data->metadata->custom_fields[3]->value)) {
+                $ticketIdsJson = $referenceData->data->metadata->custom_fields[3]->value;
+                $ticketIds = json_decode($ticketIdsJson, true) ?? [];
+            } else {
+                // Try to get from most recent transaction
+                $transaction = Transaction::where('email', $referenceData->data->customer->email)
+                                ->latest()
+                                ->first();
+
+                if ($transaction && $transaction->ticket_ids) {
+                    $ticketIds = json_decode($transaction->ticket_ids, true) ?? [];
+                } else {
+                    // Generate new IDs if needed
+                    $event = $referenceData->data->metadata->custom_fields[0]->value ?? '';
+                    $quantity = $referenceData->data->metadata->custom_fields[1]->value ?? 1;
+                    $baseId = 'TIX-' . strtoupper(substr(md5($event), 0, 6));
+                    for ($i = 1; $i <= $quantity; $i++) {
+                        $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+                    }
+                }
+            }
+
             // Clear the 'reference_data' session variable
             Session::forget('reference_data');
 
             // Redirect to 'logg' route
-            return view('Success');
-            // return redirect()->route('success');//
+            return view('Success', [
+                'ticketIds' => $ticketIds,
+                'eventName' => $referenceData->data->metadata->custom_fields[0]->value ?? '',
+                'quantity' => $referenceData->data->metadata->custom_fields[1]->value ?? 1
+            ]);
         } else {
             // 'reference_data' doesn't exist in the session, redirect to 'checkout' route
-            return redirect()->route('login');
+            return redirect()->route('logg');
             // You can also return a view with an error message if needed
         }
     }
