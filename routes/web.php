@@ -159,8 +159,15 @@ Route::post('/addtocart', function (Request $request) {
             'quantities' => 'required|array',
         ]);
 
+        // Log the incoming data for debugging
+        \Illuminate\Support\Facades\Log::info('Legacy Tickets Data:', [
+            'product_ids' => $request->product_ids,
+            'table_names' => $request->table_names,
+            'quantities' => $request->quantities
+        ]);
+
         foreach ($request->product_ids as $key => $productId) {
-            $quantity = $request->quantities[$key];
+            $quantity = intval($request->quantities[$key]);
 
             if ($quantity > 0) { // Only add items with quantity greater than zero
                 $addedItems += $quantity;
@@ -186,6 +193,25 @@ Route::post('/addtocart', function (Request $request) {
                         $cartItem->save();
                     } else {
                         // Store data in the session for unauthenticated users
+                        // Instead of overwriting, let's store multiple items in session
+                        $cartItems = session()->get('cart_items', []);
+
+                        // Create a cart item array
+                        $cartItems[] = [
+                            'id' => count($cartItems) + 1, // Generate a temporary ID
+                            'cname' => $product->name,
+                            'eventname' => $namepart,
+                            'cprice' => $pricepart,
+                            'cquantity' => $quantity,
+                            'ctotalprice' => $ctotalprice,
+                            'clocation' => $product->location,
+                            'cdescription' => $product->image
+                        ];
+
+                        // Save to session
+                        session()->put('cart_items', $cartItems);
+
+                        // Also keep the last item in the old format for compatibility
                         $request->session()->put('tname', $namepart);
                         $request->session()->put('tprice', $pricepart);
                         $request->session()->put('tquantity', $quantity);
@@ -211,8 +237,14 @@ Route::post('/addtocart', function (Request $request) {
             'ticket_quantities' => 'required|array',
         ]);
 
+        // Log the incoming data for debugging
+        \Illuminate\Support\Facades\Log::info('New Tickets Data:', [
+            'ticket_ids' => $request->ticket_ids,
+            'ticket_quantities' => $request->ticket_quantities
+        ]);
+
         foreach ($request->ticket_ids as $key => $ticketId) {
-            $quantity = $request->ticket_quantities[$key];
+            $quantity = intval($request->ticket_quantities[$key]);
 
             if ($quantity > 0) { // Only add items with quantity greater than zero
                 $addedItems += $quantity;
@@ -241,6 +273,26 @@ Route::post('/addtocart', function (Request $request) {
                         $cartItem->save();
                     } else {
                         // Store data in the session for unauthenticated users
+                        // Instead of overwriting, let's store multiple items in session
+                        $cartItems = session()->get('cart_items', []);
+
+                        // Create a cart item array
+                        $cartItems[] = [
+                            'id' => count($cartItems) + 1, // Generate a temporary ID
+                            'cname' => $event->name,
+                            'eventname' => $ticket->name,
+                            'cprice' => $ticket->price,
+                            'cquantity' => $quantity,
+                            'ctotalprice' => $ctotalprice,
+                            'clocation' => $event->location,
+                            'cdescription' => $event->image,
+                            'ticket_id' => $ticketId // Store the ticket ID
+                        ];
+
+                        // Save to session
+                        session()->put('cart_items', $cartItems);
+
+                        // Also keep the last item in the old format for compatibility
                         $request->session()->put('tname', $ticket->name);
                         $request->session()->put('tprice', $ticket->price);
                         $request->session()->put('tquantity', $quantity);
@@ -336,3 +388,17 @@ Route::get('/events/{name}', [ListingController::class, 'show'] );
 // Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+// Clear cart for non-authenticated users
+Route::get('/clear-cart', function() {
+    if (!Auth::check()) {
+        session()->forget('cart_items');
+        session()->forget('tname');
+        session()->forget('tprice');
+        session()->forget('tquantity');
+        session()->forget('eventname');
+        session()->forget('totalprice');
+        session()->forget('timage');
+    }
+    return redirect()->route('cart')->with('message', 'Cart cleared successfully');
+});

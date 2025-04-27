@@ -140,15 +140,82 @@ body {
   align-items: center;
 }
 
+/* Cart Icon */
+.cart-icon-wrapper {
+  position: relative;
+  margin-right: 20px;
+  text-decoration: none;
+}
+
+.cart-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.cart-icon:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.cart-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.cart-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background-color: #C04888;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.cart-count.active {
+  transform: scale(1.1);
+}
+
+.mobile-cart-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background-color: #C04888;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
 .user-profile {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   overflow: hidden;
   cursor: pointer;
-  margin-right: 10px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  transition: border-color 0.2s ease;
+  background-color: #C04888;
+  position: relative;
+  transition: all 0.3s ease;
 }
 
 .user-profile:hover {
@@ -2018,28 +2085,28 @@ form.example input[type=text] {
         padding: 30px;
         min-height: auto;
     }
-    
+
     .event-hero-wrapper {
         padding-right: 0;
         margin-bottom: 30px;
     }
-    
+
     .event-title {
         font-size: 32px;
     }
-    
+
     .event-image-container {
         max-width: 100%;
     }
-    
+
     .countdown-timer {
         gap: 10px;
     }
-    
+
     .countdown-value {
         font-size: 22px;
     }
-    
+
     .related-event-card {
         flex: 0 0 260px;
     }
@@ -2050,66 +2117,66 @@ form.example input[type=text] {
         flex-direction: column;
         gap: 15px;
     }
-    
+
     .info-box {
         width: 100%;
     }
-    
+
     .event-description {
         font-size: 16px;
     }
-    
+
     .event-title {
         font-size: 28px;
     }
-    
+
     .cart-summary {
         flex-direction: column;
         gap: 15px;
     }
-    
+
     .add-to-cart-button {
       width: 100%;
         justify-content: center;
     }
-    
+
     .tab-header {
         overflow-x: auto;
         scrollbar-width: none;
     }
-    
+
     .tab-header::-webkit-scrollbar {
       display: none;
     }
-    
+
     .tab-btn {
         padding: 15px 20px;
         white-space: nowrap;
     }
-    
+
     .tab-content {
         padding: 20px;
     }
-    
+
     .venue-address {
         flex-direction: column;
         gap: 5px;
     }
-    
+
     .venue-address i {
         margin-bottom: 10px;
     }
-    
+
     .facilities-list {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     }
-    
+
     .organizer-details {
         flex-direction: column;
       align-items: center;
         text-align: center;
     }
-    
+
     .organizer-contact {
         align-items: center;
     }
@@ -2120,39 +2187,39 @@ form.example input[type=text] {
         flex-direction: column;
         gap: 10px;
     }
-    
+
     .event-title {
         font-size: 24px;
     }
-    
+
     .event-description {
         font-size: 15px;
     }
-    
+
     .countdown-timer {
         flex-wrap: wrap;
         justify-content: center;
     }
-    
+
     .countdown-item {
         flex: 0 0 calc(50% - 10px);
         margin-bottom: 10px;
     }
-    
+
     .section-title {
         font-size: 26px;
     }
-    
+
     .pricing-subtitle {
         font-size: 16px;
     }
-    
+
     .ticket-card-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 5px;
     }
-    
+
     .ticket-dates {
         flex-direction: column;
         gap: 10px;
@@ -2190,7 +2257,7 @@ form.example input[type=text] {
     .events-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .events-grid-container {
         width: 90%;
     }

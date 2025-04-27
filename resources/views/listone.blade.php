@@ -1545,6 +1545,7 @@ function updateTicketFromButton(button) {
         })
         .then(response => response.json())
         .then(data => {
+            console.log('Cart response:', data);
             // Show success state
             button.innerHTML = '<i class="fa-solid fa-check"></i> Added!';
 
@@ -1611,6 +1612,72 @@ function updateFixedBuyFooter() {
         footer.classList.remove('visible');
     }
 }
+
+window.proceedToCheckout = function() {
+    // Get the form
+    const form = document.getElementById('addToCartForm');
+
+    // Check if we have any tickets selected
+    const totalTickets = Object.values(window.selectedTickets).reduce((sum, ticket) => sum + ticket.quantity, 0);
+
+    if (totalTickets <= 0) {
+        return; // Don't proceed if no tickets selected
+    }
+
+    // Set the checkout_direct flag
+    document.getElementById('checkout_direct').value = "1";
+
+    // Clear any existing dynamic inputs
+    document.querySelectorAll('.dynamic-input').forEach(el => el.remove());
+
+    // Add all selected tickets to the form
+    Object.values(window.selectedTickets).forEach(ticket => {
+        if (ticket.quantity > 0) {
+            // If it's a ticket type
+            if (ticket.id) {
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'ticket_ids[]';
+                idInput.value = ticket.id;
+                idInput.className = 'dynamic-input';
+                form.appendChild(idInput);
+
+                const qtyInput = document.createElement('input');
+                qtyInput.type = 'hidden';
+                qtyInput.name = 'ticket_quantities[]';
+                qtyInput.value = ticket.quantity;
+                qtyInput.className = 'dynamic-input';
+                form.appendChild(qtyInput);
+            }
+            // If it's a table ticket
+            else if (ticket.table) {
+                const productInput = document.createElement('input');
+                productInput.type = 'hidden';
+                productInput.name = 'product_ids[]';
+                productInput.value = ticket.card.querySelector('input[name="product_ids[]"]').value;
+                productInput.className = 'dynamic-input';
+                form.appendChild(productInput);
+
+                const tableInput = document.createElement('input');
+                tableInput.type = 'hidden';
+                tableInput.name = 'table_names[]';
+                tableInput.value = `${ticket.name}, ${ticket.price}`;
+                tableInput.className = 'dynamic-input';
+                form.appendChild(tableInput);
+
+                const qtyInput = document.createElement('input');
+                qtyInput.type = 'hidden';
+                qtyInput.name = 'quantities[]';
+                qtyInput.value = ticket.quantity;
+                qtyInput.className = 'dynamic-input';
+                form.appendChild(qtyInput);
+            }
+        }
+    });
+
+    // Submit the form
+    form.submit();
+};
 </script>
 @endsection
 
@@ -2337,6 +2404,11 @@ function updateFixedBuyFooter() {
                 return; // Don't proceed with cart update
             }
 
+            // Get all selected tickets and prepare for cart
+            const allTickets = Object.values(window.selectedTickets);
+            const hasTicketTypes = allTickets.some(t => t.id);
+            const hasTableTickets = allTickets.some(t => t.table);
+
             // Only proceed with cart update if quantity > 0
             if (quantity > 0) {
                 // Get the form element
@@ -2349,51 +2421,21 @@ function updateFixedBuyFooter() {
                 // Clear any old dynamic inputs
                 document.querySelectorAll('.dynamic-input').forEach(el => el.remove());
 
-                // Add the ticket data to the form
+                // Create a FormData object from the form (to include CSRF token)
+                const formData = new FormData(form);
+
+                // Add the no_redirect flag
+                formData.append('no_redirect', 'true');
+
+                // Add the current ticket to cart
                 if (input.dataset.ticketId) {
-                    const idInput = document.createElement('input');
-                    idInput.type = 'hidden';
-                    idInput.name = 'ticket_ids[]';
-                    idInput.value = input.dataset.ticketId;
-                    idInput.className = 'dynamic-input';
-                    form.appendChild(idInput);
-
-                    const qtyInput = document.createElement('input');
-                    qtyInput.type = 'hidden';
-                    qtyInput.name = 'ticket_quantities[]';
-                    qtyInput.value = quantity;
-                    qtyInput.className = 'dynamic-input';
-                    form.appendChild(qtyInput);
+                    formData.append('ticket_ids[]', input.dataset.ticketId);
+                    formData.append('ticket_quantities[]', quantity);
                 } else if (input.dataset.ticketTable) {
-                    const productInput = document.createElement('input');
-                    productInput.type = 'hidden';
-                    productInput.name = 'product_ids[]';
-                    productInput.value = card.querySelector('input[name="product_ids[]"]').value;
-                    productInput.className = 'dynamic-input';
-                    form.appendChild(productInput);
-
-                    const tableInput = document.createElement('input');
-                    tableInput.type = 'hidden';
-                    tableInput.name = 'table_names[]';
-                    tableInput.value = `${input.dataset.ticketName}, ${input.dataset.ticketPrice}`;
-                    tableInput.className = 'dynamic-input';
-                    form.appendChild(tableInput);
-
-                    const qtyInput = document.createElement('input');
-                    qtyInput.type = 'hidden';
-                    qtyInput.name = 'quantities[]';
-                    qtyInput.value = quantity;
-                    qtyInput.className = 'dynamic-input';
-                    form.appendChild(qtyInput);
+                    formData.append('product_ids[]', card.querySelector('input[name="product_ids[]"]').value);
+                    formData.append('table_names[]', `${input.dataset.ticketName}, ${input.dataset.ticketPrice}`);
+                    formData.append('quantities[]', quantity);
                 }
-
-                // Set no_redirect flag for AJAX submission
-                const noRedirectInput = document.createElement('input');
-                noRedirectInput.type = 'hidden';
-                noRedirectInput.name = 'no_redirect';
-                noRedirectInput.value = 'true';
-                noRedirectInput.className = 'dynamic-input';
-                form.appendChild(noRedirectInput);
 
                 // Update button to show processing state
                 const originalText = button.innerHTML;
@@ -2401,9 +2443,7 @@ function updateFixedBuyFooter() {
                 button.style.background = '#FECC01';
                 button.style.color = '#000';
 
-                // Submit the form using AJAX
-                const formData = new FormData(form);
-
+                // Submit using fetch API
                 fetch(form.action, {
                     method: 'POST',
                     body: formData,
@@ -2413,6 +2453,7 @@ function updateFixedBuyFooter() {
                 })
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Cart response:', data);
                     // Show success state
                     button.innerHTML = '<i class="fa-solid fa-check"></i> Added!';
 

@@ -42,6 +42,23 @@
             <div class="user-section">
                 @auth
                 <!-- Authenticated User -->
+                <!-- Cart Icon -->
+                <a href="/cart" class="cart-icon-wrapper">
+                    <div class="cart-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        <span class="cart-count @if(Auth::check() && Auth::user()->relatewithcart()->count() > 0) active @endif">
+                            @if(Auth::check())
+                                {{ Auth::user()->relatewithcart()->sum('cquantity') }}
+                            @else
+                                0
+                            @endif
+                        </span>
+                    </div>
+                </a>
                 <div class="user-profile" id="usericonid">
                     @if(auth()->user()->profilepic)
                     <div class="profile-image">
@@ -67,6 +84,23 @@
                 </div>
                 @else
                 <!-- Guest User -->
+                <!-- Cart Icon -->
+                <a href="/cart" class="cart-icon-wrapper">
+                    <div class="cart-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        <span class="cart-count @if(session()->has('cart_items') && count(session()->get('cart_items', [])) > 0) active @endif">
+                            @if(session()->has('cart_items'))
+                                {{ collect(session()->get('cart_items', []))->sum('cquantity') }}
+                            @else
+                                0
+                            @endif
+                        </span>
+                    </div>
+                </a>
                 <div class="auth-buttons">
                     <a href="/login" class="login-btn">Login</a>
                     <a href="/signup" class="signup-btn">Sign Up</a>
@@ -109,6 +143,20 @@
             </li>
             <li class="mobile-nav-item {{ Request::is('contact*') ? 'active' : '' }}">
                 <a href="/contact" class="mobile-nav-link">Contact us</a>
+            </li>
+            <li class="mobile-nav-item {{ Request::is('cart*') ? 'active' : '' }}">
+                <a href="/cart" class="mobile-nav-link">
+                    <i class="fa-solid fa-cart-shopping"></i> Cart
+                    <span class="mobile-cart-count">
+                        @if(Auth::check())
+                            {{ Auth::user()->relatewithcart()->sum('cquantity') }}
+                        @elseif(session()->has('cart_items'))
+                            {{ collect(session()->get('cart_items', []))->sum('cquantity') }}
+                        @else
+                            0
+                        @endif
+                    </span>
+                </a>
             </li>
             @guest
             <li class="mobile-nav-item auth-item">
@@ -166,6 +214,51 @@ document.addEventListener('DOMContentLoaded', function() {
             menuToggle.classList.toggle('active');
             document.body.classList.toggle('menu-open');
         });
+    }
+
+    // Update cart count
+    updateCartCount();
+});
+
+// Update cart count function
+function updateCartCount() {
+    // Only update cart count with JS if not authenticated
+    @if(!Auth::check())
+    let cartCount = 0;
+
+    // Check if we're using localStorage cart (frontend approach)
+    if (localStorage.getItem('ticketCart')) {
+        const cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
+
+        // Count total tickets in cart
+        cart.forEach(item => {
+            if (item.tickets) {
+                item.tickets.forEach(ticket => {
+                    cartCount += ticket.quantity || 0;
+                });
+            }
+        });
+
+        // Update all cart count elements
+        const cartCountElements = document.querySelectorAll('.cart-count, .mobile-cart-count');
+        cartCountElements.forEach(element => {
+            element.textContent = cartCount;
+
+            // Add active class if there are items in cart
+            if (cartCount > 0) {
+                element.classList.add('active');
+            } else {
+                element.classList.remove('active');
+            }
+        });
+    }
+    @endif
+}
+
+// Listen for storage changes to update cart count
+window.addEventListener('storage', function(e) {
+    if (e.key === 'ticketCart') {
+        updateCartCount();
     }
 });
 </script>

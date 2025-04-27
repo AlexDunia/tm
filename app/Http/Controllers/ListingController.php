@@ -142,6 +142,37 @@ class ListingController extends Controller
             ]);
         }
 
+        // For non-authenticated users, check if we have multiple items in session
+        if (session()->has('cart_items')) {
+            $sessionCartItems = session()->get('cart_items', []);
+
+            // Convert to collection of objects
+            $cartItems = collect();
+            $totalPrice = 0;
+            $allTicketIds = [];
+
+            foreach ($sessionCartItems as $item) {
+                $cartObj = (object)$item;
+                $cartItems->push($cartObj);
+                $totalPrice += $cartObj->ctotalprice;
+
+                // Generate ticket IDs for this item
+                $ticketIds = [];
+                $baseId = 'TIX-' . strtoupper(substr(md5($cartObj->eventname . $cartObj->cname), 0, 6));
+                for ($i = 1; $i <= $cartObj->cquantity; $i++) {
+                    $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+                }
+                $allTicketIds[$cartObj->id] = $ticketIds;
+            }
+
+            return view('Checkout', [
+                'cartItems' => $cartItems,
+                'totalPrice' => $totalPrice,
+                'ticketIds' => $allTicketIds
+            ]);
+        }
+
+        // Fallback to legacy single item session
         $tname = session()->get('tname');
         $timage = session()->get('timage');
         $tprice = session()->get('tprice');
@@ -402,9 +433,31 @@ class ListingController extends Controller
         if (Auth::check()) {
             // Get cart items for authenticated users
             $carts = Cart::where('user_id', auth()->id())->get();
+
+            // Log the cart items for debugging
+            \Illuminate\Support\Facades\Log::info('Cart Items for User: ' . auth()->id(), [
+                'count' => $carts->count(),
+                'items' => $carts->toArray()
+            ]);
         } else {
             // For non-authenticated users, check if we have session data
-            if (session()->has('tname')) {
+            if (session()->has('cart_items')) {
+                // Get items from the new cart_items session array
+                $cartItems = session()->get('cart_items', []);
+
+                // Convert to collection of objects
+                $carts = collect();
+                foreach ($cartItems as $item) {
+                    $cartObj = (object)$item;
+                    $carts->push($cartObj);
+                }
+
+                \Illuminate\Support\Facades\Log::info('Session Cart Items:', [
+                    'count' => count($cartItems),
+                    'items' => $cartItems
+                ]);
+            } else if (session()->has('tname')) {
+                // Legacy fallback for compatibility
                 // Create a temporary cart item to display
                 $tempCart = new \stdClass();
                 $tempCart->id = 'session-item';

@@ -131,9 +131,9 @@
     }
 
     .cart-items {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 30px;
         margin-bottom: 30px;
     }
 
@@ -143,26 +143,45 @@
         padding: 20px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         display: flex;
-        align-items: center;
-        gap: 20px;
+        flex-direction: column;
         transition: all 0.3s ease;
         position: relative;
+        height: 100%;
+        overflow: visible;
     }
 
     .cart-item:hover {
         border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .ticket-type-badge {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #C04888;
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 2;
+        white-space: nowrap;
     }
 
     .item-image {
-        width: 100px;
-        height: 100px;
+        width: 100%;
+        height: 180px;
         border-radius: 8px;
         overflow: hidden;
         background-color: rgba(255, 255, 255, 0.1);
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-shrink: 0;
+        margin-bottom: 15px;
     }
 
     .item-image img {
@@ -200,15 +219,14 @@
         font-size: 20px;
         font-weight: 700;
         color: white;
-        position: absolute;
-        right: 20px;
-        top: 20px;
+        margin-top: 10px;
+        margin-bottom: 15px;
     }
 
     .item-status {
         position: absolute;
         right: 20px;
-        top: 55px;
+        top: 20px;
         padding: 4px 12px;
         border-radius: 4px;
         font-size: 12px;
@@ -248,6 +266,8 @@
         display: flex;
         gap: 10px;
         margin-top: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     .action-btn {
@@ -261,6 +281,9 @@
         transition: all 0.2s;
         display: flex;
         align-items: center;
+        flex: 1;
+        justify-content: center;
+        min-width: 120px;
     }
 
     .action-btn i {
@@ -527,26 +550,37 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: #C04888;
+        width: 100%;
+        padding: 15px 20px;
+        background: linear-gradient(135deg, #C04888 0%, #ad3876 100%);
         color: white;
         border: none;
-        padding: 12px 30px;
         border-radius: 8px;
         font-size: 16px;
         font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
         cursor: pointer;
-        transition: all 0.2s;
-        text-decoration: none;
-    }
-
-    .checkout-btn i {
-        margin-left: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(192, 72, 136, 0.25);
+        position: relative;
+        overflow: hidden;
     }
 
     .checkout-btn:hover {
-        background: #d65c9e;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(192, 72, 136, 0.3);
+        box-shadow: 0 6px 16px rgba(192, 72, 136, 0.35);
+        background: linear-gradient(135deg, #d65c9e 0%, #C04888 100%);
+    }
+
+    .checkout-btn:active {
+        transform: translateY(1px);
+        box-shadow: 0 2px 8px rgba(192, 72, 136, 0.25);
+    }
+
+    .checkout-btn i {
+        margin-right: 10px;
+        font-size: 18px;
     }
 
     .empty-cart {
@@ -889,6 +923,18 @@
             width: 100%;
         }
     }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .cart-items {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1025px) {
+        .cart-items {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
 </style>
 
 <div class="main-container">
@@ -903,6 +949,11 @@
                     <a href="{{ route('home') }}" class="continue-shopping">
                         <i class="fa-solid fa-arrow-left"></i> Continue Shopping
                     </a>
+                    @if(count($mycart) > 0 && !Auth::check())
+                    <a href="{{ url('/clear-cart') }}" class="continue-shopping" style="margin-left: 10px; background-color: #ff6b6b; border-color: #ff6b6b;">
+                        <i class="fa-solid fa-trash"></i> Clear Cart
+                    </a>
+                    @endif
                 </div>
             </div>
 
@@ -954,6 +1005,12 @@
                     <button class="leave-review-btn">Leave Review</button>
                 </div>
 
+                <!-- Debug Information -->
+                <div style="background: rgba(0,0,0,0.5); padding: 15px; margin-bottom: 20px; border-radius: 8px; color: #fff; font-family: monospace;">
+                    <h3>Debug Info (Items in Cart: {{ count($mycart) }})</h3>
+                    <pre>{{ json_encode($mycart, JSON_PRETTY_PRINT) }}</pre>
+                </div>
+
                 <div class="cart-items">
                     @foreach($mycart as $item)
                         @php
@@ -973,7 +1030,17 @@
                             $statuses = ['shipped', 'pending', 'delivering'];
                             $randomStatus = $statuses[array_rand($statuses)];
                         @endphp
-                        <div class="cart-item">
+                        <div class="cart-item" style="border: 2px solid rgba(192, 72, 136, 0.2); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+                            <div class="ticket-type-badge">{{ $item->cname }}</div>
+
+                            <div class="item-status status-{{ $randomStatus }}">
+                                {{ ucfirst($randomStatus) }}
+                            </div>
+
+                            <a href="{{ url('/delete', $item->id) }}" class="remove-btn" title="Remove item">
+                                <i class="fa-solid fa-times"></i>
+                            </a>
+
                             <div class="item-image">
                                 @if($item->cdescription && !is_null($item->cdescription))
                                     <img src="{{ asset('storage/' . $item->cdescription) }}" alt="{{ $item->eventname }}">
@@ -983,8 +1050,9 @@
                             </div>
 
                             <div class="item-details">
-                                <div class="item-event">{{ $item->eventname }}</div>
-                                <div class="item-name">{{ $item->cname }}</div>
+                                <h3 class="item-name">{{ $item->eventname }}</h3>
+
+                                <div class="item-price">₦{{ number_format($item->cprice) }}</div>
 
                                 <div class="quantity-display">
                                     <span class="quantity-label">Quantity:</span>
@@ -1031,24 +1099,8 @@
                                     <button class="action-btn" onclick="showTicketIds('{{ $item->id }}', {{ json_encode($ticketIds) }})">
                                         <i class="fa-solid fa-ticket-alt"></i> Track Item
                                     </button>
-
-                                    <div class="action-menu">
-                                        <button class="action-menu-btn">
-                                            <i class="fa-solid fa-ellipsis-v"></i>
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
-
-                            <div class="item-price">₦{{ number_format($item->cprice) }}</div>
-
-                            <div class="item-status status-{{ $randomStatus }}">
-                                {{ ucfirst($randomStatus) }}
-                            </div>
-
-                            <a href="{{ url('/delete', $item->id) }}" class="remove-btn" title="Remove item" style="position: absolute; top: 20px; right: -40px;">
-                                <i class="fa-solid fa-times"></i>
-                            </a>
                         </div>
                     @endforeach
                 </div>
@@ -1073,7 +1125,7 @@
 
                     <div class="cart-actions">
                         <a href="{{ route('checkout') }}" class="checkout-btn">
-                            Proceed to Checkout <i class="fa-solid fa-arrow-right"></i>
+                            <i class="fas fa-shopping-bag"></i> Proceed to Checkout
                         </a>
                     </div>
                 </div>
@@ -1084,7 +1136,7 @@
                         Total: <span class="amount">₦{{ number_format($totalAmount * 1.05) }}</span>
                     </div>
                     <a href="{{ route('checkout') }}" class="checkout-btn sticky-checkout-btn">
-                        Proceed to Checkout <i class="fa-solid fa-arrow-right"></i>
+                        <i class="fas fa-shopping-bag"></i> Proceed to Checkout
                     </a>
                 </div>
 
@@ -1186,6 +1238,12 @@
                 e.preventDefault();
                 alert('Item added to cart again!');
             });
+        });
+
+        // Make sure grid items are properly sized
+        const cartItems = document.querySelectorAll('.cart-item');
+        cartItems.forEach(item => {
+            item.style.minHeight = '400px';
         });
     });
 
