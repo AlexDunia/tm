@@ -10,6 +10,15 @@ class Cart extends Model
 {
     use HasFactory;
 
+    /**
+     * Ensure proper data type casting for cart items
+     */
+    protected $casts = [
+        'cquantity' => 'integer',
+        'cprice' => 'float',
+        'ctotalprice' => 'float',
+    ];
+
     public function relate(){
         return $this->belongsTo(User::class, 'user_id');
     }

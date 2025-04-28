@@ -1,0 +1,30 @@
+@php
+    use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Auth;
+    use App\Http\Controllers\CartController;
+
+    // Get cart count using the method from CartController
+    $cartCount = CartController::getCartCount();
+
+    // Calculate cart count for authenticated users
+    $cartCount = 0;
+    if (Auth::check()) {
+        $cartCount = Auth::user()->relatewithcart()->sum(DB::raw('CAST(cquantity AS INTEGER)'));
+    } else {
+        // For guests, get from session
+        if (session()->has('cart_items')) {
+            $cartItems = session()->get('cart_items', []);
+            foreach ($cartItems as $item) {
+                $cartCount += isset($item['quantity']) ? (int)$item['quantity'] : (isset($item['cquantity']) ? (int)$item['cquantity'] : 0);
+            }
+        }
+    }
+@endphp
+
+<header class="site-header">
+    <div class="header-container">
+        <div class="header-content">
+            <!-- Logo -->
+            <div class="header-logo">
+                <a href="/" class="logo-link">
+                    <img src="/images/tdlogo.png" alt="Tixdemand Logo" class="logo-image">

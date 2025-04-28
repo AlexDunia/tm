@@ -9,10 +9,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\PaymentController;
 // use Illuminate\Support\Facades\RateLimiter;
 use App\Http\Controllers\MainadminController;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -53,13 +58,61 @@ Route::get('/dunia', [AdminController::class, 'index']);
 Route::middleware(['web'])->group(function () {
     // Define your routes here
     // USER REGISTRATION
-Route::get('/signup', function(){
-    return view('Signup');
-});
-  // This stores the user. and note that admin is user here.
-   Route::post('/createnewadmin', [AdminController::class, 'storeuser']);
+    Route::get('/signup', function(){
+        return view('Signup');
+    })->name('signup');
+
+    // This stores the user. and note that admin is user here.
+    Route::post('/createnewadmin', [AdminController::class, 'storeuser'])->name('register');
+
     // Add other routes as needed
 });
+
+// Password Reset Routes
+Route::get('/forgot-password', function () {
+    return view('forgotpassword');
+})->middleware('guest')->name('password.request');
+
+Route::post('/forgot-password', function (Request $request) {
+    $request->validate(['email' => 'required|email']);
+
+    $status = Password::sendResetLink(
+        $request->only('email')
+    );
+
+    return $status === Password::RESET_LINK_SENT
+                ? back()->with(['status' => __($status)])
+                : back()->withErrors(['email' => __($status)]);
+})->middleware('guest')->name('password.email');
+
+Route::get('/reset-password/{token}', function ($token) {
+    return view('resetpassword', ['token' => $token]);
+})->middleware('guest')->name('password.reset');
+
+Route::post('/reset-password', function (Request $request) {
+    $request->validate([
+        'token' => 'required',
+        'email' => 'required|email',
+        'password' => 'required|min:8|confirmed',
+    ]);
+
+    $status = Password::reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function ($user, $password) {
+            $user->forceFill([
+                'password' => Hash::make($password)
+            ])->setRememberToken(Str::random(60));
+
+            $user->save();
+
+            event(new PasswordReset($user));
+        }
+    );
+
+    return $status === Password::PASSWORD_RESET
+                ? redirect()->route('logg')->with('status', __($status))
+                : back()->withErrors(['email' => [__($status)]]);
+})->middleware('guest')->name('password.update');
 
 // With this, auth and non auth users can send emails
 Route::post('/formsent', [ListingController::class, 'contactsend']);
@@ -71,33 +124,36 @@ Route::get('/createpost', [AdminController::class, 'adminform']);
 Route::post('/creationsuccess', [AdminController::class, 'store']);
 
 // Users can now Login
-Route::post('/authenticated', [AdminController::class, 'authenticate']);
+Route::post('/authenticated', [AdminController::class, 'authenticate'])->name('login');
 
 // Users can now Log out
 // Route::post('/logout', [AdminController::class, 'disauthenticate']);
-Route::match(['get', 'post'], '/logout', [AdminController::class, 'disauthenticate']);
+Route::match(['get', 'post'], '/logout', [AdminController::class, 'disauthenticate'])->name('logout');
 
 // create ghon ghon
 // Route::get('/alexadmin', function () {
 //     return view('Admin');
 // });
 
-// Cart view.
-Route::get('/cart', [ListingController::class, 'cartpage'] )->name('cart');
+// Cart routes (optimized)
+Route::get('/cart', [CartController::class, 'index'])->name('cart');
+Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
+Route::post('/addtocart', [CartController::class, 'addToCart'])->name('addtocart');
+Route::post('/update-cart/{id}', [CartController::class, 'updateCart'])->name('cart.update');
+Route::get('/remove-cart-item/{id}', [CartController::class, 'removeItem'])->name('cart.remove');
+Route::post('/remove-cart-item/{id}', [CartController::class, 'removeItem']);
+
 Route::get('/trypayment', [ListingController::class, 'trypayment'] );
 Route::post('/tryverify/{reference}', [ListingController::class, 'tryverify'] );
 
 // Cart view.
-Route::get('/checkout', [ListingController::class, 'payform'] )->name('checkout');
-// Route::get('/checkoutnew', [ListingController::class, 'payform'] );
-
 Route::get('/success', [PaymentController::class, 'success'] )->name('success');
 
 Route::get('/notfound', [ListingController::class, 'notfound'] );
-Route::get('/forgotpassword', [ListingController::class, 'forgotpassword'] )->name('fp');
-Route::post('/forgotpasswordpost', [ListingController::class, 'forgotpasswordpost'] )->name('fpp');
-Route::get('/resetpassword{token}', [ListingController::class, 'resetpassword'] )->name('rp');
-Route::post('/resetpasswordpost', [ListingController::class, 'resetpasswordpost'] )->name('rpp');
+Route::get('/forgotpassword', [ListingController::class, 'forgotpassword'])->name('fp');
+Route::post('/forgotpasswordpost', [ListingController::class, 'forgotpasswordpost'])->name('fpp');
+Route::get('/resetpassword/{token}', [ListingController::class, 'resetpassword'])->name('rp');
+Route::post('/resetpasswordpost', [ListingController::class, 'resetpasswordpost'])->name('rpp');
 
 Route::get('/deviceinfo', function(){
     return view('logindevice');
@@ -129,222 +185,9 @@ Route::get('/noresults/{category}', [ListingController::class, 'showByCategory']
 
 
 
-// delete fucntionality.
-Route::get('/delete/{id}', [ListingController::class, 'delete'] );
-
-// Update cart item quantity
-Route::post('/update-cart', [ListingController::class, 'updateCart']);
-
-Route::post('/addtocart', function (Request $request) {
-    // Check which type of ticket submission we have
-    $hasLegacyTickets = $request->has('product_ids') && $request->has('table_names') && $request->has('quantities');
-    $hasNewTickets = $request->has('ticket_ids') && $request->has('ticket_quantities');
-
-    if (!$hasLegacyTickets && !$hasNewTickets) {
-        if ($request->ajax() || $request->has('no_redirect')) {
-            return response()->json(['success' => false, 'message' => 'No valid ticket data provided']);
-        }
-        return redirect()->back()->with('message', 'No valid ticket data provided');
-    }
-
-    $addedToCart = false; // Flag to check if anything is added to the cart
-    $addedItems = 0; // Count of items added to cart
-
-    // Process legacy table tickets if present
-    if ($hasLegacyTickets) {
-        // Validate the incoming request data
-        $request->validate([
-            'product_ids' => 'required|array',
-            'table_names' => 'required|array',
-            'quantities' => 'required|array',
-        ]);
-
-        // Log the incoming data for debugging
-        \Illuminate\Support\Facades\Log::info('Legacy Tickets Data:', [
-            'product_ids' => $request->product_ids,
-            'table_names' => $request->table_names,
-            'quantities' => $request->quantities
-        ]);
-
-        foreach ($request->product_ids as $key => $productId) {
-            $quantity = intval($request->quantities[$key]);
-
-            if ($quantity > 0) { // Only add items with quantity greater than zero
-                $addedItems += $quantity;
-                try {
-                    $cartItem = new Cart();
-                    $product = mctlists::find($productId);
-                    $nameandprice = $request->table_names[$key];
-                    $nameandpricesplit = explode(',', $nameandprice);
-                    $namepart = trim($nameandpricesplit[0]);
-                    $pricepart = trim($nameandpricesplit[1]);
-
-                    $cartItem->cname = $product->name;
-                    $cartItem->eventname = $namepart;
-                    $cartItem->cprice = $pricepart;
-                    $ctotalprice = $pricepart * $quantity;
-                    $cartItem->cquantity = $quantity;
-                    $cartItem->ctotalprice = $ctotalprice;
-                    $cartItem->clocation = $product->location;
-                    $cartItem->cdescription = $product->image;
-
-                    if (auth()->check()) {
-                        $cartItem->user_id = auth()->id();
-                        $cartItem->save();
-                    } else {
-                        // Store data in the session for unauthenticated users
-                        // Instead of overwriting, let's store multiple items in session
-                        $cartItems = session()->get('cart_items', []);
-
-                        // Create a cart item array
-                        $cartItems[] = [
-                            'id' => count($cartItems) + 1, // Generate a temporary ID
-                            'cname' => $product->name,
-                            'eventname' => $namepart,
-                            'cprice' => $pricepart,
-                            'cquantity' => $quantity,
-                            'ctotalprice' => $ctotalprice,
-                            'clocation' => $product->location,
-                            'cdescription' => $product->image
-                        ];
-
-                        // Save to session
-                        session()->put('cart_items', $cartItems);
-
-                        // Also keep the last item in the old format for compatibility
-                        $request->session()->put('tname', $namepart);
-                        $request->session()->put('tprice', $pricepart);
-                        $request->session()->put('tquantity', $quantity);
-                        $request->session()->put('eventname', $product->name);
-                        $request->session()->put('totalprice', $ctotalprice);
-                        $request->session()->put('timage', $product->image);
-                    }
-                    $addedToCart = true; // Set the flag to true if something is added to the cart
-                } catch (\Exception $e) {
-                    // Log the error
-                    \Illuminate\Support\Facades\Log::error('Cart error: ' . $e->getMessage());
-                    continue; // Skip this item and continue with the next one
-                }
-            }
-        }
-    }
-
-    // Process new ticket types if present
-    if ($hasNewTickets) {
-        // Validate the incoming request data
-        $request->validate([
-            'ticket_ids' => 'required|array',
-            'ticket_quantities' => 'required|array',
-        ]);
-
-        // Log the incoming data for debugging
-        \Illuminate\Support\Facades\Log::info('New Tickets Data:', [
-            'ticket_ids' => $request->ticket_ids,
-            'ticket_quantities' => $request->ticket_quantities
-        ]);
-
-        foreach ($request->ticket_ids as $key => $ticketId) {
-            $quantity = intval($request->ticket_quantities[$key]);
-
-            if ($quantity > 0) { // Only add items with quantity greater than zero
-                $addedItems += $quantity;
-                try {
-                    // Get the ticket from the database
-                    $ticket = \App\Models\TicketType::find($ticketId);
-                    if (!$ticket) {
-                        continue; // Skip if ticket not found
-                    }
-
-                    $event = $ticket->event;
-
-                    $cartItem = new Cart();
-                    $cartItem->cname = $event->name;
-                    $cartItem->eventname = $ticket->name;
-                    $cartItem->cprice = $ticket->price;
-                    $ctotalprice = $ticket->price * $quantity;
-                    $cartItem->cquantity = $quantity;
-                    $cartItem->ctotalprice = $ctotalprice;
-                    $cartItem->clocation = $event->location;
-                    $cartItem->cdescription = $event->image;
-                    $cartItem->ticket_id = $ticketId; // Save ticket ID for reference
-
-                    if (auth()->check()) {
-                        $cartItem->user_id = auth()->id();
-                        $cartItem->save();
-                    } else {
-                        // Store data in the session for unauthenticated users
-                        // Instead of overwriting, let's store multiple items in session
-                        $cartItems = session()->get('cart_items', []);
-
-                        // Create a cart item array
-                        $cartItems[] = [
-                            'id' => count($cartItems) + 1, // Generate a temporary ID
-                            'cname' => $event->name,
-                            'eventname' => $ticket->name,
-                            'cprice' => $ticket->price,
-                            'cquantity' => $quantity,
-                            'ctotalprice' => $ctotalprice,
-                            'clocation' => $event->location,
-                            'cdescription' => $event->image,
-                            'ticket_id' => $ticketId // Store the ticket ID
-                        ];
-
-                        // Save to session
-                        session()->put('cart_items', $cartItems);
-
-                        // Also keep the last item in the old format for compatibility
-                        $request->session()->put('tname', $ticket->name);
-                        $request->session()->put('tprice', $ticket->price);
-                        $request->session()->put('tquantity', $quantity);
-                        $request->session()->put('eventname', $event->name);
-                        $request->session()->put('totalprice', $ctotalprice);
-                        $request->session()->put('timage', $event->image);
-                    }
-                    $addedToCart = true;
-                } catch (\Exception $e) {
-                    // Log the error
-                    \Illuminate\Support\Facades\Log::error('Cart error: ' . $e->getMessage());
-                    continue; // Skip this item and continue with the next one
-                }
-            }
-        }
-    }
-
-    if ($addedToCart) {
-        // Handle AJAX requests
-        if ($request->ajax() || $request->has('no_redirect')) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Products added to cart successfully',
-                'count' => $addedItems
-            ]);
-        }
-
-        // Handle regular requests
-        if ($request->has('redirect_to') && $request->redirect_to === 'cart') {
-            return redirect()->route('cart')->with('message', 'Items added to cart successfully');
-        } else if ($request->has('checkout_direct') && $request->checkout_direct === "1") {
-            // Direct checkout option
-            return redirect()->route('checkout')->with('message', 'Proceeding to checkout');
-        } else if (auth()->check()) {
-            return redirect()->route('checkout')->with('message', 'Products added to cart successfully');
-        } else {
-            // Redirect to a different page or display a message for unauthenticated users
-            return redirect()->route('checkout');
-        }
-    } else {
-        if ($request->ajax() || $request->has('no_redirect')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'At least one quantity must be added before proceeding'
-            ]);
-        }
-        return redirect()->back()->with('message', 'At least one quantity must be added before proceeding');
-    }
-})->name('addtocart');
-
-
-
+// delete functionality.
+Route::get('/delete/{id}', [ListingController::class, 'delete']);
+Route::post('/delete/{id}', [ListingController::class, 'delete'])->middleware('web');
 
 // View create
 Route::POST('/createticket', function (Request $request) {
@@ -399,6 +242,9 @@ Route::get('/clear-cart', function() {
         session()->forget('eventname');
         session()->forget('totalprice');
         session()->forget('timage');
+    } else {
+        // Also clear cart for authenticated users
+        Cart::where('user_id', auth()->id())->delete();
     }
     return redirect()->route('cart')->with('message', 'Cart cleared successfully');
 });

@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         // Generate ticket types for the events
         $this->call([
             TicketTypeSeeder::class,
+            UserSeeder::class,
         ]);
     }
 

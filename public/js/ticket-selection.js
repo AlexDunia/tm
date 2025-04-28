@@ -1,6 +1,6 @@
 /**
  * Ticket Selection and Cart Functionality
- * 
+ *
  * This script handles:
  * - Event card click to open popup
  * - Ticket quantity selection
@@ -22,26 +22,26 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initEventCards() {
     const eventCards = document.querySelectorAll('.event-card');
-    
+
     eventCards.forEach(card => {
         card.addEventListener('click', function() {
             const eventId = this.dataset.eventId;
             const eventTitle = this.querySelector('.event-card-title').textContent;
-            
+
             // Set event info in popup
             const popup = document.querySelector('.ticket-popup');
             popup.dataset.eventId = eventId;
-            
+
             // Set popup title
             const popupTitle = document.querySelector('.ticket-popup-title');
             if (popupTitle) {
                 popupTitle.textContent = `Tickets for ${eventTitle}`;
             }
-            
+
             // Show popup
             const overlay = document.querySelector('.ticket-popup-overlay');
             overlay.classList.add('active');
-            
+
             // Prevent body scrolling
             document.body.style.overflow = 'hidden';
         });
@@ -57,7 +57,7 @@ function initTicketPopup() {
     if (closeBtn) {
         closeBtn.addEventListener('click', closeTicketPopup);
     }
-    
+
     // Close popup when clicking outside
     const overlay = document.querySelector('.ticket-popup-overlay');
     if (overlay) {
@@ -67,7 +67,7 @@ function initTicketPopup() {
             }
         });
     }
-    
+
     // Add to cart button
     const addToCartBtn = document.querySelector('.add-to-cart-btn');
     if (addToCartBtn) {
@@ -81,10 +81,10 @@ function initTicketPopup() {
 function closeTicketPopup() {
     const overlay = document.querySelector('.ticket-popup-overlay');
     overlay.classList.remove('active');
-    
+
     // Re-enable body scrolling
     document.body.style.overflow = '';
-    
+
     // Reset quantities
     resetTicketQuantities();
 }
@@ -97,7 +97,7 @@ function resetTicketQuantities() {
     quantityInputs.forEach(input => {
         input.value = 0;
     });
-    
+
     // Update total
     updateTicketTotal();
 }
@@ -112,17 +112,17 @@ function initTicketSelection() {
         btn.addEventListener('click', function() {
             const input = this.parentNode.querySelector('.quantity-input');
             input.value = parseInt(input.value || 0) + 1;
-            
+
             // Highlight selected option
             const ticketOption = this.closest('.ticket-option');
             if (parseInt(input.value) > 0) {
                 ticketOption.classList.add('selected');
             }
-            
+
             updateTicketTotal();
         });
     });
-    
+
     // Minus buttons
     const minusBtns = document.querySelectorAll('.quantity-btn.minus');
     minusBtns.forEach(btn => {
@@ -131,18 +131,18 @@ function initTicketSelection() {
             const currentValue = parseInt(input.value || 0);
             if (currentValue > 0) {
                 input.value = currentValue - 1;
-                
+
                 // Remove highlight if zero
                 const ticketOption = this.closest('.ticket-option');
                 if (parseInt(input.value) === 0) {
                     ticketOption.classList.remove('selected');
                 }
-                
+
                 updateTicketTotal();
             }
         });
     });
-    
+
     // Manual input
     const quantityInputs = document.querySelectorAll('.quantity-input');
     quantityInputs.forEach(input => {
@@ -151,7 +151,7 @@ function initTicketSelection() {
             let value = parseInt(this.value || 0);
             if (isNaN(value) || value < 0) value = 0;
             this.value = value;
-            
+
             // Update highlight
             const ticketOption = this.closest('.ticket-option');
             if (value > 0) {
@@ -159,7 +159,7 @@ function initTicketSelection() {
             } else {
                 ticketOption.classList.remove('selected');
             }
-            
+
             updateTicketTotal();
         });
     });
@@ -171,15 +171,15 @@ function initTicketSelection() {
 function updateTicketTotal() {
     let total = 0;
     const ticketOptions = document.querySelectorAll('.ticket-option');
-    
+
     ticketOptions.forEach(option => {
         const priceText = option.querySelector('.ticket-option-price').textContent;
         const price = parseFloat(priceText.replace(/[^\d.-]/g, ''));
         const quantity = parseInt(option.querySelector('.quantity-input').value || 0);
-        
+
         total += price * quantity;
     });
-    
+
     // Update total display
     const totalAmount = document.querySelector('.ticket-total-amount');
     if (totalAmount) {
@@ -193,10 +193,10 @@ function updateTicketTotal() {
 function addTicketsToCart() {
     const eventId = document.querySelector('.ticket-popup').dataset.eventId;
     const eventTitle = document.querySelector('.ticket-popup-title').textContent.replace('Tickets for ', '');
-    
+
     let hasTickets = false;
     const tickets = [];
-    
+
     // Collect selected tickets
     const ticketOptions = document.querySelectorAll('.ticket-option');
     ticketOptions.forEach(option => {
@@ -204,7 +204,7 @@ function addTicketsToCart() {
         const priceText = option.querySelector('.ticket-option-price').textContent;
         const price = parseFloat(priceText.replace(/[^\d.-]/g, ''));
         const quantity = parseInt(option.querySelector('.quantity-input').value || 0);
-        
+
         if (quantity > 0) {
             hasTickets = true;
             tickets.push({
@@ -215,15 +215,15 @@ function addTicketsToCart() {
             });
         }
     });
-    
+
     if (!hasTickets) {
         alert('Please select at least one ticket.');
         return;
     }
-    
+
     // Get cart from storage or initialize
     let cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
-    
+
     // Add event info and tickets
     cart.push({
         eventId: eventId,
@@ -235,19 +235,19 @@ function addTicketsToCart() {
         tickets: tickets,
         timestamp: new Date().getTime()
     });
-    
+
     // Save to storage
     localStorage.setItem('ticketCart', JSON.stringify(cart));
-    
+
     // Show loading animation
     showLoadingAnimation();
-    
+
     // Close popup
     closeTicketPopup();
-    
+
     // Update cart count
     updateCartCount();
-    
+
     // Redirect to cart page after delay
     setTimeout(() => {
         window.location.href = '/cart';
@@ -268,10 +268,11 @@ function showLoadingAnimation() {
 function updateCartCount() {
     const cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
     const cartCount = document.querySelector('.cart-count');
-    
+
     if (cartCount) {
+        // Count the number of events in the cart
         cartCount.textContent = cart.length;
-        
+
         // Show/hide based on items
         if (cart.length > 0) {
             cartCount.classList.add('active');
@@ -297,9 +298,9 @@ function loadCartItems() {
     const cartItemsContainer = document.querySelector('.cart-items');
     const emptyCartContainer = document.querySelector('.empty-cart');
     const cartContent = document.querySelector('.cart-content');
-    
+
     if (!cartItemsContainer) return;
-    
+
     // Show/hide empty cart message
     if (cart.length === 0) {
         if (emptyCartContainer) emptyCartContainer.style.display = 'block';
@@ -309,18 +310,21 @@ function loadCartItems() {
         if (emptyCartContainer) emptyCartContainer.style.display = 'none';
         if (cartContent) cartContent.style.display = 'flex';
     }
-    
+
     // Clear container
     cartItemsContainer.innerHTML = '';
-    
+
     // Generate HTML for each cart item
     let totalAmount = 0;
-    
+
+    // Each event and ticket gets its own card without any grouping
     cart.forEach((event, eventIndex) => {
         event.tickets.forEach((ticket, ticketIndex) => {
+            // Calculate subtotal for this ticket
             const subtotal = ticket.price * ticket.quantity;
             totalAmount += subtotal;
-            
+
+            // Render individual card for each ticket
             const itemHTML = `
                 <div class="cart-item" data-event-index="${eventIndex}" data-ticket-index="${ticketIndex}">
                     <div class="cart-item-image">
@@ -355,11 +359,11 @@ function loadCartItems() {
                     </div>
                 </div>
             `;
-            
+
             cartItemsContainer.innerHTML += itemHTML;
         });
     });
-    
+
     // Update summary
     updateCartSummary(totalAmount);
 }
@@ -370,45 +374,46 @@ function loadCartItems() {
 function updateCartSummary(totalAmount) {
     const subtotalEl = document.querySelector('.summary-row:nth-child(1) .summary-value');
     const totalEl = document.querySelector('.summary-total-value');
-    
+
     if (subtotalEl) subtotalEl.textContent = `₦${totalAmount.toLocaleString()}`;
     if (totalEl) totalEl.textContent = `₦${totalAmount.toLocaleString()}`;
 }
 
 /**
- * Initialize cart control buttons
+ * Initialize cart controls
  */
 function initCartControls() {
-    // Quantity controls
+    // Init quantity controls
     initCartQuantityControls();
-    
-    // Remove buttons
+
+    // Remove button functionality
     const removeButtons = document.querySelectorAll('.cart-item-remove');
     removeButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             const cartItem = this.closest('.cart-item');
             const eventIndex = parseInt(cartItem.dataset.eventIndex);
             const ticketIndex = parseInt(cartItem.dataset.ticketIndex);
-            
+
             removeCartItem(eventIndex, ticketIndex);
         });
     });
-    
-    // Checkout button
+
+    // Promo code functionality
+    const promoBtn = document.querySelector('.promo-btn');
+    if (promoBtn) {
+        promoBtn.addEventListener('click', applyPromoCode);
+    }
+
+    // Checkout button functionality
     const checkoutBtn = document.querySelector('.checkout-btn');
     if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', function() {
-            proceedToCheckout();
-        });
+        checkoutBtn.addEventListener('click', proceedToCheckout);
     }
-    
-    // Promo code form
-    const promoForm = document.querySelector('.promo-form');
-    if (promoForm) {
-        promoForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            applyPromoCode();
-        });
+
+    // Check for session discount and apply if exists
+    const sessionDiscount = sessionStorage.getItem('cartDiscount');
+    if (sessionDiscount) {
+        applyDiscount(parseInt(sessionDiscount));
     }
 }
 
@@ -425,7 +430,7 @@ function initCartQuantityControls() {
             updateCartItemQuantity(this.closest('.cart-item'), parseInt(input.value));
         });
     });
-    
+
     // Minus buttons
     const minusBtns = document.querySelectorAll('.cart-item .cart-quantity-btn.minus');
     minusBtns.forEach(btn => {
@@ -438,7 +443,7 @@ function initCartQuantityControls() {
             }
         });
     });
-    
+
     // Manual input
     const quantityInputs = document.querySelectorAll('.cart-item .cart-quantity-input');
     quantityInputs.forEach(input => {
@@ -447,7 +452,7 @@ function initCartQuantityControls() {
             let value = parseInt(this.value || 1);
             if (isNaN(value) || value < 1) value = 1;
             this.value = value;
-            
+
             updateCartItemQuantity(this.closest('.cart-item'), value);
         });
     });
@@ -459,24 +464,33 @@ function initCartQuantityControls() {
 function updateCartItemQuantity(cartItem, newQuantity) {
     const eventIndex = parseInt(cartItem.dataset.eventIndex);
     const ticketIndex = parseInt(cartItem.dataset.ticketIndex);
-    
+
     // Get cart from storage
     let cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
-    
-    // Update quantity
-    cart[eventIndex].tickets[ticketIndex].quantity = newQuantity;
-    
-    // Save back to storage
-    localStorage.setItem('ticketCart', JSON.stringify(cart));
-    
-    // Update price displayed for this item
-    const price = cart[eventIndex].tickets[ticketIndex].price;
-    const subtotal = price * newQuantity;
-    const priceEl = cartItem.querySelector('.cart-item-price');
-    if (priceEl) {
-        priceEl.textContent = `₦${subtotal.toLocaleString()}`;
+
+    // If quantity would be 0, remove the item instead
+    if (newQuantity <= 0) {
+        removeCartItem(eventIndex, ticketIndex);
+        return;
     }
-    
+
+    // Update quantity
+    if (cart[eventIndex] && cart[eventIndex].tickets[ticketIndex]) {
+        cart[eventIndex].tickets[ticketIndex].quantity = newQuantity;
+
+        // Save back to storage
+        localStorage.setItem('ticketCart', JSON.stringify(cart));
+
+        // Update price
+        const price = cart[eventIndex].tickets[ticketIndex].price;
+        const subtotal = price * newQuantity;
+
+        const priceEl = cartItem.querySelector('.cart-item-price');
+        if (priceEl) {
+            priceEl.textContent = `₦${subtotal.toLocaleString()}`;
+        }
+    }
+
     // Recalculate total
     let totalAmount = 0;
     cart.forEach(event => {
@@ -484,7 +498,7 @@ function updateCartItemQuantity(cartItem, newQuantity) {
             totalAmount += ticket.price * ticket.quantity;
         });
     });
-    
+
     // Update summary
     updateCartSummary(totalAmount);
 }
@@ -495,24 +509,26 @@ function updateCartItemQuantity(cartItem, newQuantity) {
 function removeCartItem(eventIndex, ticketIndex) {
     // Get cart from storage
     let cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
-    
-    // Remove the ticket
-    cart[eventIndex].tickets.splice(ticketIndex, 1);
-    
-    // If no tickets left for this event, remove the event too
-    if (cart[eventIndex].tickets.length === 0) {
-        cart.splice(eventIndex, 1);
+
+    if (cart[eventIndex]) {
+        // Remove the ticket
+        cart[eventIndex].tickets.splice(ticketIndex, 1);
+
+        // If no tickets left for this event, remove the event too
+        if (cart[eventIndex].tickets.length === 0) {
+            cart.splice(eventIndex, 1);
+        }
     }
-    
+
     // Save back to storage
     localStorage.setItem('ticketCart', JSON.stringify(cart));
-    
+
     // Update cart count
     updateCartCount();
-    
+
     // Reload cart items
     loadCartItems();
-    
+
     // Reinitialize controls
     initCartControls();
 }
@@ -523,19 +539,19 @@ function removeCartItem(eventIndex, ticketIndex) {
 function applyPromoCode() {
     const promoInput = document.querySelector('.promo-input');
     const promoCode = promoInput?.value?.trim();
-    
+
     if (!promoCode) {
         alert('Please enter a promo code.');
         return;
     }
-    
+
     // Simulate API call with loading
     const promoBtn = document.querySelector('.promo-btn');
     if (promoBtn) {
         promoBtn.textContent = 'Applying...';
         promoBtn.disabled = true;
     }
-    
+
     setTimeout(() => {
         if (promoCode.toUpperCase() === 'WELCOME10') {
             // Apply 10% discount
@@ -544,7 +560,7 @@ function applyPromoCode() {
         } else {
             alert('Invalid promo code. Please try again.');
         }
-        
+
         if (promoBtn) {
             promoBtn.textContent = 'Apply';
             promoBtn.disabled = false;
@@ -558,7 +574,7 @@ function applyPromoCode() {
 function applyDiscount(percentDiscount) {
     // Get cart from storage
     const cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
-    
+
     // Calculate total before discount
     let totalAmount = 0;
     cart.forEach(event => {
@@ -566,11 +582,11 @@ function applyDiscount(percentDiscount) {
             totalAmount += ticket.price * ticket.quantity;
         });
     });
-    
+
     // Calculate discount amount
     const discountAmount = (totalAmount * percentDiscount) / 100;
     const finalTotal = totalAmount - discountAmount;
-    
+
     // Update discount row
     const discountRow = document.createElement('div');
     discountRow.className = 'summary-row discount-row';
@@ -578,25 +594,25 @@ function applyDiscount(percentDiscount) {
         <div class="summary-label">Discount (${percentDiscount}%)</div>
         <div class="summary-value">-₦${discountAmount.toLocaleString()}</div>
     `;
-    
+
     // Remove any existing discount row
     const existingDiscountRow = document.querySelector('.discount-row');
     if (existingDiscountRow) {
         existingDiscountRow.remove();
     }
-    
+
     // Add before total
     const totalRow = document.querySelector('.summary-total-row');
     if (totalRow) {
         totalRow.before(discountRow);
     }
-    
+
     // Update total
     const totalEl = document.querySelector('.summary-total-value');
     if (totalEl) {
         totalEl.textContent = `₦${finalTotal.toLocaleString()}`;
     }
-    
+
     // Save discount to session
     sessionStorage.setItem('cartDiscount', percentDiscount);
 }
@@ -607,9 +623,9 @@ function applyDiscount(percentDiscount) {
 function proceedToCheckout() {
     // Show loading animation
     showLoadingAnimation();
-    
+
     // Simulate redirect to payment page
     setTimeout(() => {
         window.location.href = '/checkout';
     }, 1500);
-} 
+}

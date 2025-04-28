@@ -8,6 +8,23 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
     margin-bottom: 40px;
+    width: 85%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Center the grid */
+.ticket-grid {
+    width: 85%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Center pricing elements */
+.price-info {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Event details styling - based on the provided design */
@@ -163,8 +180,9 @@
 
 /* Updated ticket card styles to match modern design */
 .spotify-ticket-card {
-    background: linear-gradient(145deg, rgba(40, 40, 55, 0.8), rgba(30, 30, 45, 0.95));
-    border-radius: 12px;
+    background-color: rgba(18, 18, 18, 0.4);
+    border-radius: 8px;
+    overflow: hidden;
     padding: 20px;
     transition: all 0.3s ease;
     position: relative;
@@ -195,6 +213,11 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    max-width: 90%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: none !important; /* Hide ticket tags */
 }
 
 .spotify-ticket-card .ticket-tag.available {
@@ -253,13 +276,30 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     margin-top: auto;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     position: relative;
     overflow: hidden;
     width: 100%;
+}
+
+/* Ripple effect */
+.spotify-ticket-card .buy-ticket-btn .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.4);
+    transform: scale(0);
+    animation: ripple-animation 0.6s linear;
+    pointer-events: none;
+}
+
+@keyframes ripple-animation {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
 }
 
 .spotify-ticket-card .buy-ticket-btn:before {
@@ -278,8 +318,8 @@
 }
 
 .spotify-ticket-card .buy-ticket-btn:hover {
-    background-color: #C04888;
-    transform: translateY(-2px);
+    background: linear-gradient(45deg, #C04888, #d65c9e);
+    transform: translateY(-2px) scale(1.02);
     box-shadow: 0 4px 10px rgba(192, 72, 136, 0.3);
 }
 
@@ -292,8 +332,21 @@
 }
 
 .spotify-ticket-card .buy-ticket-btn.ticket-selected {
-    background: rgba(192, 72, 136, 0.9);
+    background: #C04888;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(192, 72, 136, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(192, 72, 136, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(192, 72, 136, 0);
+    }
 }
 
 .direct-quantity-control {
@@ -1106,20 +1159,26 @@ function updateModalTotal() {
 // Function to update ticket selection when input changes
 function updateTicketSelection(input) {
     const card = input.closest('.spotify-ticket-card');
-    const quantity = parseInt(input.value) || 0;
+
+    // Force numeric input
+    let quantity = input.value;
+
+    // Remove any non-numeric characters
+    quantity = quantity.replace(/[^0-9]/g, '');
+
+    // Convert to integer
+    quantity = parseInt(quantity || 0);
+
+    // Update input value to ensure it's a clean number
+    input.value = quantity;
+
     const ticketId = input.dataset.ticketId;
     const ticketPrice = parseFloat(input.dataset.ticketPrice.toString().replace(/,/g, ''));
-    const maxQuantity = parseInt(input.max);
 
-    // Make sure quantity is within limits
+    // Make sure quantity is not negative
     if (quantity < 0) {
         input.value = 0;
-        return;
-    }
-
-    if (quantity > maxQuantity) {
-        input.value = maxQuantity;
-        return;
+        quantity = 0;
     }
 
     // Update the hidden quantity input
@@ -1128,11 +1187,11 @@ function updateTicketSelection(input) {
         hiddenQuantity.value = quantity;
     }
 
-    // Update the button text
+    // Update the button text - Changed to "Add to Cart" regardless of selection
     const buyButton = card.querySelector('.buy-ticket-btn');
     if (buyButton) {
         if (quantity > 0) {
-            buyButton.innerHTML = `<i class="fa-solid fa-check"></i> ${quantity} Selected`;
+            buyButton.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart`;
             buyButton.classList.add('ticket-selected');
         } else {
             buyButton.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart`;
@@ -1172,16 +1231,10 @@ function updateTableTicketSelection(input) {
     const ticketTable = input.dataset.ticketTable;
     const ticketName = input.dataset.ticketName;
     const ticketPrice = parseFloat(input.dataset.ticketPrice.toString().replace(/,/g, ''));
-    const maxQuantity = 10;
 
-    // Make sure quantity is within limits
+    // Make sure quantity is not negative
     if (quantity < 0) {
         input.value = 0;
-        return;
-    }
-
-    if (quantity > maxQuantity) {
-        input.value = maxQuantity;
         return;
     }
 
@@ -1191,11 +1244,11 @@ function updateTableTicketSelection(input) {
         hiddenQuantity.value = quantity;
     }
 
-    // Update the button text
+    // Update the button text - Use "Add to Cart" regardless of selection
     const buyButton = card.querySelector('.buy-ticket-btn');
     if (buyButton) {
         if (quantity > 0) {
-            buyButton.innerHTML = `<i class="fa-solid fa-check"></i> ${quantity} Selected`;
+            buyButton.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart`;
             buyButton.classList.add('ticket-selected');
         } else {
             buyButton.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart`;
@@ -1244,8 +1297,19 @@ function updateCartSummary() {
         }
     });
 
-    // Update the UI
+    // Update the selected tickets count display
     document.getElementById('selected-tickets-count').textContent = totalTickets;
+
+    // Update the UI to show selected tickets with event name
+    const countElement = document.getElementById('selected-tickets-count');
+    if (countElement) {
+        if (totalTickets > 0) {
+            countElement.textContent = `${totalTickets} for {{ $listonee['name'] }}`;
+        } else {
+            countElement.textContent = "0";
+        }
+    }
+
     document.getElementById('total-amount').textContent = totalAmount.toLocaleString();
 
     // Enable/disable checkout button based on selection
@@ -1262,7 +1326,7 @@ function updateCartSummary() {
 }
 
 // Function to show a notification when items are added to cart
-function showCartNotification(itemCount) {
+function showCartNotification(quantity, ticketName) {
     // Create notification element if it doesn't exist
     let notification = document.getElementById('cart-notification');
     if (!notification) {
@@ -1290,13 +1354,13 @@ function showCartNotification(itemCount) {
     // Set content of notification
     notification.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fa-solid fa-check-circle" style="color: #FECC01; font-size: 20px;"></i>
+            <i class="fa-solid fa-check-circle" style="color: #C04888; font-size: 24px;"></i>
             <div>
                 <div style="font-weight: 600; margin-bottom: 2px;">Added to Cart</div>
-                <div style="font-size: 14px; color: rgba(255, 255, 255, 0.7);">${itemCount} ${itemCount === 1 ? 'ticket' : 'tickets'} added</div>
+                <div style="font-size: 14px; color: rgba(255, 255, 255, 0.7);">${quantity} ${ticketName} ${quantity === 1 ? 'ticket' : 'tickets'} added</div>
             </div>
         </div>
-        <a href="{{ route('cart') }}" style="background: #FECC01; color: black; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; white-space: nowrap;">
+        <a href="{{ route('cart') }}" style="background: #C04888; color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; white-space: nowrap; transition: all 0.2s;">
             View Cart
         </a>
     `;
@@ -1442,6 +1506,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to handle the "Add to Cart" button click
 function updateTicketFromButton(button) {
+    console.log("Adding to cart...");
     const card = button.closest('.spotify-ticket-card');
     const input = card.querySelector('.direct-quantity-input');
 
@@ -1452,13 +1517,14 @@ function updateTicketFromButton(button) {
 
     // Update the selection
     if (input.dataset.ticketId) {
-        updateTicketSelection(input);
+        window.updateTicketSelection(input);
     } else if (input.dataset.ticketTable) {
-        updateTableTicketSelection(input);
+        window.updateTableTicketSelection(input);
     }
 
-    // Add to cart with notification
+    // Add to cart with animation
     const quantity = parseInt(input.value) || 0;
+    const ticketName = card.dataset.ticketName || "tickets";
 
     if (quantity <= 0) {
         // If quantity is 0 or invalid, update the button to show "Add to Cart"
@@ -1481,61 +1547,29 @@ function updateTicketFromButton(button) {
         // Clear any old dynamic inputs
         document.querySelectorAll('.dynamic-input').forEach(el => el.remove());
 
-        // Add the ticket data to the form
+        // Create a FormData object from the form (to include CSRF token)
+        const formData = new FormData(form);
+
+        // Add the no_redirect flag to prevent automatic redirect
+        formData.append('no_redirect', 'true');
+
+        // Add the current ticket to cart
         if (input.dataset.ticketId) {
-            const idInput = document.createElement('input');
-            idInput.type = 'hidden';
-            idInput.name = 'ticket_ids[]';
-            idInput.value = input.dataset.ticketId;
-            idInput.className = 'dynamic-input';
-            form.appendChild(idInput);
-
-            const qtyInput = document.createElement('input');
-            qtyInput.type = 'hidden';
-            qtyInput.name = 'ticket_quantities[]';
-            qtyInput.value = quantity;
-            qtyInput.className = 'dynamic-input';
-            form.appendChild(qtyInput);
+            formData.append('ticket_ids[]', input.dataset.ticketId);
+            formData.append('ticket_quantities[]', quantity);
         } else if (input.dataset.ticketTable) {
-            const productInput = document.createElement('input');
-            productInput.type = 'hidden';
-            productInput.name = 'product_ids[]';
-            productInput.value = card.querySelector('input[name="product_ids[]"]').value;
-            productInput.className = 'dynamic-input';
-            form.appendChild(productInput);
-
-            const tableInput = document.createElement('input');
-            tableInput.type = 'hidden';
-            tableInput.name = 'table_names[]';
-            tableInput.value = `${input.dataset.ticketName}, ${input.dataset.ticketPrice}`;
-            tableInput.className = 'dynamic-input';
-            form.appendChild(tableInput);
-
-            const qtyInput = document.createElement('input');
-            qtyInput.type = 'hidden';
-            qtyInput.name = 'quantities[]';
-            qtyInput.value = quantity;
-            qtyInput.className = 'dynamic-input';
-            form.appendChild(qtyInput);
+            formData.append('product_ids[]', card.querySelector('input[name="product_ids[]"]').value);
+            formData.append('table_names[]', `${input.dataset.ticketName}, ${input.dataset.ticketPrice}`);
+            formData.append('quantities[]', quantity);
         }
-
-        // Set no_redirect flag for AJAX submission
-        const noRedirectInput = document.createElement('input');
-        noRedirectInput.type = 'hidden';
-        noRedirectInput.name = 'no_redirect';
-        noRedirectInput.value = 'true';
-        noRedirectInput.className = 'dynamic-input';
-        form.appendChild(noRedirectInput);
 
         // Update button to show processing state
         const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
         button.style.background = '#FECC01';
         button.style.color = '#000';
 
-        // Submit the form using AJAX
-        const formData = new FormData(form);
-
+        // Submit using fetch API with animation
         fetch(form.action, {
             method: 'POST',
             body: formData,
@@ -1546,17 +1580,37 @@ function updateTicketFromButton(button) {
         .then(response => response.json())
         .then(data => {
             console.log('Cart response:', data);
-            // Show success state
-            button.innerHTML = '<i class="fa-solid fa-check"></i> Added!';
 
-            // Show notification
-            showCartNotification(quantity);
+            // Show success animation on button
+            button.innerHTML = `<i class="fa-solid fa-check"></i> ${quantity} ${ticketName} added`;
+
+            // Update cart count in header if possible
+            if (data.total_cart_items) {
+                const cartCounter = document.querySelector('.cart-count');
+                if (cartCounter) {
+                    cartCounter.textContent = data.total_cart_items;
+                    cartCounter.style.display = 'block';
+                }
+            }
+
+            // Show the notification with option to go to cart
+            showCartNotification(quantity, ticketName);
 
             // Reset button after delay
             setTimeout(() => {
                 button.innerHTML = originalText;
                 button.style.background = '';
                 button.style.color = '';
+
+                // Reset the input value to prevent accidental additions
+                input.value = 0;
+
+                // Update selection state
+                if (input.dataset.ticketId) {
+                    window.updateTicketSelection(input);
+                } else if (input.dataset.ticketTable) {
+                    window.updateTableTicketSelection(input);
+                }
             }, 2000);
         })
         .catch(error => {
@@ -1570,7 +1624,106 @@ function updateTicketFromButton(button) {
             }, 2000);
         });
     }
+};
+
+// Create a function to update the cart counter in the header
+function updateCartCounter(quantity) {
+    // Find the cart counter element in the header
+    const cartCounter = document.querySelector('.cart-count');
+    if (cartCounter) {
+        // If we have the cart counter element, update it
+        // We will rely on the server's response for the total count
+        // in the updateTicketFromButton's fetch response
+        cartCounter.style.display = 'block';
+    } else {
+        // If there's no counter yet, find the cart icon and add a counter
+        const cartIcon = document.querySelector('.cart-icon');
+        if (cartIcon) {
+            const counter = document.createElement('span');
+            counter.className = 'cart-count';
+            counter.textContent = quantity; // Initial count
+            counter.style.position = 'absolute';
+            counter.style.top = '-8px';
+            counter.style.right = '-8px';
+            counter.style.backgroundColor = '#C04888';
+            counter.style.color = 'white';
+            counter.style.borderRadius = '50%';
+            counter.style.width = '20px';
+            counter.style.height = '20px';
+            counter.style.display = 'flex';
+            counter.style.alignItems = 'center';
+            counter.style.justifyContent = 'center';
+            counter.style.fontSize = '12px';
+            counter.style.fontWeight = 'bold';
+
+            // Make sure cartIcon is positioned relative
+            cartIcon.style.position = 'relative';
+
+            cartIcon.appendChild(counter);
+        }
+    }
 }
+
+// Improve the direct quantity input handlers
+// REMOVED: Consolidated with main DOM ready event at the bottom of the file
+/*
+document.addEventListener('DOMContentLoaded', function() {
+    // Add input listeners to all ticket quantity fields
+    const allQuantityInputs = document.querySelectorAll('.direct-quantity-input');
+    allQuantityInputs.forEach(input => {
+        // Force numeric input only
+        input.addEventListener('input', function(e) {
+            // Remove non-numeric characters
+            this.value = this.value.replace(/[^0-9]/g, '');
+
+            // Make sure it's not beyond max
+            const maxVal = parseInt(this.max || 10);
+            if (parseInt(this.value) > maxVal) {
+                this.value = maxVal;
+            }
+
+            // Update the selection state
+            if (input.dataset.ticketId) {
+                updateTicketSelection(input);
+            } else if (input.dataset.ticketTable) {
+                updateTableTicketSelection(input);
+            }
+        });
+
+        // On blur (when input loses focus)
+        input.addEventListener('blur', function() {
+            // If empty, set to 0
+            if (this.value === '' || isNaN(parseInt(this.value))) {
+                this.value = 0;
+            }
+
+            // Make sure it's not beyond max
+            const maxVal = parseInt(this.max || 10);
+            if (parseInt(this.value) > maxVal) {
+                this.value = maxVal;
+            }
+
+            // Update the selection state
+            if (input.dataset.ticketId) {
+                updateTicketSelection(input);
+            } else if (input.dataset.ticketTable) {
+                updateTableTicketSelection(input);
+            }
+        });
+    });
+
+    // Ensure the buy tickets button works correctly
+    document.querySelectorAll('.buy-ticket-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.dataset.ticketId || this.closest('.spotify-ticket-card').querySelector('[data-ticket-id]')) {
+                updateTicketFromButton(this);
+            } else if (this.dataset.ticketTable || this.closest('.spotify-ticket-card').querySelector('[data-ticket-table]')) {
+                updateTableTicketFromButton(this);
+            }
+        });
+    });
+});
+*/
 
 // Function for table tickets - uses the same logic as regular tickets
 function updateTableTicketFromButton(button) {
@@ -1677,6 +1830,363 @@ window.proceedToCheckout = function() {
 
     // Submit the form
     form.submit();
+};
+
+window.updateTicketFromButton = function(button) {
+    console.log("Adding to cart...");
+    const card = button.closest('.spotify-ticket-card');
+    const input = card.querySelector('.direct-quantity-input');
+
+    // If user clicks buy with 0 quantity, set to 1
+    if (parseInt(input.value) === 0 || !input.value) {
+        input.value = 1;
+    }
+
+    // Update the selection
+    if (input.dataset.ticketId) {
+        window.updateTicketSelection(input);
+    } else if (input.dataset.ticketTable) {
+        window.updateTableTicketSelection(input);
+    }
+
+    // Add to cart with animation
+    const quantity = parseInt(input.value) || 0;
+    const ticketName = card.dataset.ticketName || "tickets";
+
+    if (quantity <= 0) {
+        // If quantity is 0 or invalid, update the button to show "Add to Cart"
+        button.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart`;
+        button.classList.remove('ticket-selected');
+        button.style.background = '';
+        button.style.color = '';
+        return; // Don't proceed with cart update
+    }
+
+    // Only proceed with cart update if quantity > 0
+    if (quantity > 0) {
+        // Get the form element
+        const form = document.getElementById('addToCartForm');
+
+        // Set form action to addtocart
+        form.action = "{{ route('addtocart') }}";
+        form.method = "POST";
+
+        // Clear any old dynamic inputs
+        document.querySelectorAll('.dynamic-input').forEach(el => el.remove());
+
+        // Create a FormData object from the form (to include CSRF token)
+        const formData = new FormData(form);
+
+        // Add the no_redirect flag to prevent automatic redirect
+        formData.append('no_redirect', 'true');
+
+        // Add the current ticket to cart
+        if (input.dataset.ticketId) {
+            formData.append('ticket_ids[]', input.dataset.ticketId);
+            formData.append('ticket_quantities[]', quantity);
+        } else if (input.dataset.ticketTable) {
+            formData.append('product_ids[]', card.querySelector('input[name="product_ids[]"]').value);
+            formData.append('table_names[]', `${input.dataset.ticketName}, ${input.dataset.ticketPrice}`);
+            formData.append('quantities[]', quantity);
+        }
+
+        // Update button to show processing state
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+        button.style.background = '#FECC01';
+        button.style.color = '#000';
+
+        // Submit using fetch API with animation
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Cart response:', data);
+
+            // Show success animation on button
+            button.innerHTML = `<i class="fa-solid fa-check"></i> ${quantity} ${ticketName} added`;
+
+            // Update cart count in header if possible
+            if (data.total_cart_items) {
+                const cartCounter = document.querySelector('.cart-count');
+                if (cartCounter) {
+                    cartCounter.textContent = data.total_cart_items;
+                    cartCounter.style.display = 'block';
+                }
+            }
+
+            // Show the notification with option to go to cart
+            showCartNotification(quantity, ticketName);
+
+            // Reset button after delay
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.background = '';
+                button.style.color = '';
+
+                // Reset the input value to prevent accidental additions
+                input.value = 0;
+
+                // Update selection state
+                if (input.dataset.ticketId) {
+                    window.updateTicketSelection(input);
+                } else if (input.dataset.ticketTable) {
+                    window.updateTableTicketSelection(input);
+                }
+            }, 2000);
+        })
+        .catch(error => {
+            console.error('Error adding to cart:', error);
+            button.innerHTML = '<i class="fa-solid fa-times"></i> Error';
+
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.background = '';
+                button.style.color = '';
+            }, 2000);
+        });
+    }
+};
+
+// Add a function to create the ripple effect for buttons
+function createRipple(event) {
+    const button = event.currentTarget;
+
+    // Remove any existing ripple elements
+    const ripples = button.getElementsByClassName("ripple");
+    if (ripples.length > 0) {
+        ripples[0].remove();
+    }
+
+    // Create ripple element
+    const circle = document.createElement("span");
+    const diameter = Math.max(button.clientWidth, button.clientHeight);
+    const radius = diameter / 2;
+
+    // Position the ripple where clicked
+    const rect = button.getBoundingClientRect();
+    circle.style.width = circle.style.height = `${diameter}px`;
+    circle.style.left = `${event.clientX - rect.left - radius}px`;
+    circle.style.top = `${event.clientY - rect.top - radius}px`;
+    circle.classList.add("ripple");
+
+    // Add to button and auto-remove after animation
+    button.appendChild(circle);
+    setTimeout(() => {
+        if (circle && circle.parentElement) {
+            circle.parentElement.removeChild(circle);
+        }
+    }, 600);
+}
+
+// Add event listeners for ripple effect to all buy buttons
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.buy-ticket-btn').forEach(button => {
+        button.addEventListener('click', createRipple);
+    });
+
+    // Also add listeners to quantity inputs
+    // ... existing code ...
+});
+
+// Add event listeners for ripple effect and other functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Add ripple effect to all buy buttons
+    document.querySelectorAll('.buy-ticket-btn').forEach(button => {
+        button.addEventListener('click', createRipple);
+
+        // Keep existing click handlers for ticket functionality
+        button.addEventListener('click', function() {
+            if (button.dataset.ticketId) {
+                window.updateTicketFromButton(this);
+            } else if (button.dataset.ticketTable) {
+                window.updateTableTicketFromButton(this);
+            }
+        });
+    });
+
+    // Add input listeners to all ticket quantity fields
+    document.querySelectorAll('.direct-quantity-input').forEach(input => {
+        // On input (as user types)
+        input.addEventListener('input', function() {
+            // Get parent card and buy button
+            const card = this.closest('.spotify-ticket-card');
+            const buyButton = card.querySelector('.buy-ticket-btn');
+
+            // If user types anything, immediately highlight the button
+            if (this.value && parseInt(this.value) > 0) {
+                buyButton.classList.add('ticket-selected');
+            } else {
+                buyButton.classList.remove('ticket-selected');
+            }
+
+            // Then update selection state
+            if (input.dataset.ticketId) {
+                window.updateTicketSelection(input);
+            } else if (input.dataset.ticketTable) {
+                window.updateTableTicketSelection(input);
+            }
+        });
+
+        // On change (when user completes entry)
+        input.addEventListener('change', function() {
+            if (input.dataset.ticketId) {
+                window.updateTicketSelection(input);
+            } else if (input.dataset.ticketTable) {
+                window.updateTableTicketSelection(input);
+            }
+        });
+    });
+});
+
+// Main initialization when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Add ripple effect to all buy buttons
+    document.querySelectorAll('.buy-ticket-btn').forEach(button => {
+        // Add ripple effect
+        button.addEventListener('click', createRipple);
+
+        // Add ticket functionality
+        button.addEventListener('click', function() {
+            if (this.dataset.ticketId || this.closest('.spotify-ticket-card').querySelector('[data-ticket-id]')) {
+                window.updateTicketFromButton(this);
+            } else if (this.dataset.ticketTable || this.closest('.spotify-ticket-card').querySelector('[data-ticket-table]')) {
+                window.updateTableTicketFromButton(this);
+            }
+        });
+    });
+
+    // 2. Add input listeners to all ticket quantity fields
+    document.querySelectorAll('.direct-quantity-input').forEach(input => {
+        // Force numeric input only, but don't restrict values
+        input.addEventListener('input', function(e) {
+            // Remove non-numeric characters
+            this.value = this.value.replace(/[^0-9]/g, '');
+
+            // Get parent card and buy button
+            const card = this.closest('.spotify-ticket-card');
+            const buyButton = card.querySelector('.buy-ticket-btn');
+
+            // If user types anything, immediately highlight the button
+            if (this.value && parseInt(this.value) > 0) {
+                buyButton.classList.add('ticket-selected');
+            } else {
+                buyButton.classList.remove('ticket-selected');
+            }
+
+            // Update the selection state
+            if (input.dataset.ticketId) {
+                updateTicketSelection(input);
+            } else if (input.dataset.ticketTable) {
+                updateTableTicketSelection(input);
+            }
+        });
+
+        // On focus, select all text for easy replacement
+        input.addEventListener('focus', function() {
+            this.select();
+        });
+
+        // On blur, ensure valid value but don't cap at max
+        input.addEventListener('blur', function() {
+            // If empty, set to 0
+            if (this.value === '' || isNaN(parseInt(this.value, 10))) {
+                this.value = 0;
+            }
+
+            // Trigger change event to update state
+            const event = new Event('change', { bubbles: true });
+            this.dispatchEvent(event);
+        });
+
+        // On change (when user completes entry)
+        input.addEventListener('change', function() {
+            if (input.dataset.ticketId) {
+                updateTicketSelection(input);
+            } else if (input.dataset.ticketTable) {
+                updateTableTicketSelection(input);
+            }
+        });
+    });
+
+    // 3. Initialize any other components
+    try {
+        // Set up countdown timer if present
+        if (typeof countDownDate !== 'undefined') {
+            // Countdown is already set up in the global scope
+        }
+
+        // Initialize QR code if present
+        if (document.getElementById("qrcode") && typeof QRCode !== 'undefined') {
+            var qrcode = new QRCode(document.getElementById("qrcode"), {
+                text: document.getElementById("text").value,
+                width: 128,
+                height: 128,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+    } catch (e) {
+        console.error('Error initializing components:', e);
+    }
+});
+
+window.showCartNotification = function(quantity, ticketName) {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('cart-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'cart-notification';
+        notification.style.position = 'fixed';
+        notification.style.top = '20px';
+        notification.style.right = '20px';  // Position at top right
+        notification.style.backgroundColor = 'rgba(40, 40, 55, 0.9)';
+        notification.style.color = 'white';
+        notification.style.padding = '15px 20px';
+        notification.style.borderRadius = '8px';
+        notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+        notification.style.zIndex = '9999';
+        notification.style.display = 'flex';
+        notification.style.alignItems = 'center';
+        notification.style.gap = '15px';
+        notification.style.transform = 'translateY(-100px)';
+        notification.style.opacity = '0';
+        notification.style.transition = 'all 0.3s ease-out';
+        notification.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        document.body.appendChild(notification);
+    }
+
+    // Set content of notification
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-check-circle" style="color: #C04888; font-size: 24px;"></i>
+            <div>
+                <div style="font-weight: 600; margin-bottom: 2px;">Added to Cart</div>
+                <div style="font-size: 14px; color: rgba(255, 255, 255, 0.7);">${quantity} ${ticketName} ${quantity === 1 ? 'ticket' : 'tickets'} added</div>
+            </div>
+        </div>
+        <a href="{{ route('cart') }}" style="background: #C04888; color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; white-space: nowrap; transition: all 0.2s;">
+            View Cart
+        </a>
+    `;
+
+    // Show notification with animation
+    setTimeout(() => {
+        notification.style.transform = 'translateY(0)';
+        notification.style.opacity = '1';
+
+        // Hide notification after 5 seconds
+        setTimeout(() => {
+            notification.style.transform = 'translateY(-100px)';
+            notification.style.opacity = '0';
+        }, 5000);
+    }, 100);
 };
 </script>
 @endsection
@@ -1851,15 +2361,15 @@ window.proceedToCheckout = function() {
                         @foreach($listonee->ticketTypes as $ticket)
                             <div class="spotify-ticket-card {{ !$ticket->isOnSale() || $ticket->isSoldOut() ? 'inactive' : '' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-name="{{ $ticket->name }}" data-ticket-price="{{ $ticket->price }}" data-ticket-description="{{ $ticket->description }}" data-ticket-max="{{ $ticket->capacity ? min(10, $ticket->getAvailableQuantity()) : 10 }}">
                                 @if($ticket->isOnSale() && !$ticket->isSoldOut())
-                                    <div class="ticket-tag available">Available</div>
+                                    <div class="ticket-tag available">{{ $ticket->name }} for {{ $listonee['name'] }}</div>
                                 @elseif($ticket->isSoldOut())
-                                    <div class="ticket-tag sold-out">Sold Out</div>
+                                    <div class="ticket-tag sold-out">{{ $ticket->name }} - Sold Out</div>
                                 @elseif(!$ticket->isOnSale() && $ticket->sales_start && $ticket->sales_start->isFuture())
-                                    <div class="ticket-tag upcoming">Coming Soon</div>
+                                    <div class="ticket-tag upcoming">{{ $ticket->name }} - Coming Soon</div>
                                 @elseif(!$ticket->isOnSale() && $ticket->sales_end && $ticket->sales_end->isPast())
-                                    <div class="ticket-tag sold-out">Ended</div>
+                                    <div class="ticket-tag sold-out">{{ $ticket->name }} - Ended</div>
                                 @else
-                                    <div class="ticket-tag">Unavailable</div>
+                                    <div class="ticket-tag">{{ $ticket->name }} - Unavailable</div>
                                 @endif
 
                                 <div class="ticket-header">
@@ -1891,7 +2401,16 @@ window.proceedToCheckout = function() {
 
                                 @if($ticket->isOnSale() && !$ticket->isSoldOut())
                                     <div class="direct-quantity-control">
-                                        <input type="number" min="0" max="{{ $ticket->capacity ? min(10, $ticket->getAvailableQuantity()) : 10 }}" value="0" class="direct-quantity-input" data-ticket-id="{{ $ticket->id }}" data-ticket-price="{{ $ticket->price }}" onchange="updateTicketSelection(this)" placeholder="How many?">
+                                        <input type="number"
+                                               min="0"
+                                               value="0"
+                                               class="direct-quantity-input"
+                                               data-ticket-id="{{ $ticket->id }}"
+                                               data-ticket-price="{{ $ticket->price }}"
+                                               onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                                               oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                               onchange="updateTicketSelection(this)"
+                                               placeholder="Enter quantity">
                                     </div>
                                     <button type="button" class="buy-ticket-btn" onclick="updateTicketFromButton(this)" data-ticket-id="{{ $ticket->id }}">
                                         <i class="fa-solid fa-cart-plus"></i> Add to Cart
@@ -1934,9 +2453,9 @@ window.proceedToCheckout = function() {
                                     <input type="hidden" name="quantities[]" value="0" class="hidden-quantity">
 
                                     @if($isSoldOut)
-                                        <div class="ticket-tag sold-out">Sold Out</div>
+                                        <div class="ticket-tag sold-out">{{ $ticketName }} for {{ $listonee['name'] }} - Sold Out</div>
                                     @else
-                                        <div class="ticket-tag available">Available</div>
+                                        <div class="ticket-tag available">{{ $ticketName }} for {{ $listonee['name'] }}</div>
                                     @endif
 
                                     <div class="ticket-header">
@@ -1958,7 +2477,17 @@ window.proceedToCheckout = function() {
                                         </div>
                                     @else
                                         <div class="direct-quantity-control">
-                                            <input type="number" min="0" max="10" value="0" class="direct-quantity-input" data-ticket-table="{{ $tableName }}" data-ticket-name="{{ $ticketName }}" data-ticket-price="{{ $ticketPrice }}" onchange="updateTableTicketSelection(this)" placeholder="How many?">
+                                            <input type="number"
+                                                   min="0"
+                                                   value="0"
+                                                   class="direct-quantity-input"
+                                                   data-ticket-table="{{ $tableName }}"
+                                                   data-ticket-name="{{ $ticketName }}"
+                                                   data-ticket-price="{{ $ticketPrice }}"
+                                                   onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                                   onchange="updateTableTicketSelection(this)"
+                                                   placeholder="Enter quantity">
                                         </div>
                                         <button type="button" class="buy-ticket-btn" onclick="updateTableTicketFromButton(this)" data-ticket-table="{{ $tableName }}">
                                             <i class="fa-solid fa-cart-plus"></i> Add to Cart
@@ -2219,20 +2748,26 @@ window.proceedToCheckout = function() {
         // Function to update ticket selection when input changes
         window.updateTicketSelection = function(input) {
             const card = input.closest('.spotify-ticket-card');
-            const quantity = parseInt(input.value) || 0;
+
+            // Force numeric input
+            let quantity = input.value;
+
+            // Remove any non-numeric characters
+            quantity = quantity.replace(/[^0-9]/g, '');
+
+            // Convert to integer
+            quantity = parseInt(quantity || 0);
+
+            // Update input value to ensure it's a clean number
+            input.value = quantity;
+
             const ticketId = input.dataset.ticketId;
             const ticketPrice = parseFloat(input.dataset.ticketPrice.toString().replace(/,/g, ''));
-            const maxQuantity = parseInt(input.max);
 
-            // Make sure quantity is within limits
+            // Make sure quantity is not negative
             if (quantity < 0) {
                 input.value = 0;
-                return;
-            }
-
-            if (quantity > maxQuantity) {
-                input.value = maxQuantity;
-                return;
+                quantity = 0;
             }
 
             // Update the hidden quantity input
@@ -2241,11 +2776,11 @@ window.proceedToCheckout = function() {
                 hiddenQuantity.value = quantity;
             }
 
-            // Update the button text
+            // Update the button text - Changed to "Add to Cart" regardless of selection
             const buyButton = card.querySelector('.buy-ticket-btn');
             if (buyButton) {
                 if (quantity > 0) {
-                    buyButton.innerHTML = `<i class="fa-solid fa-check"></i> ${quantity} Selected`;
+                    buyButton.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart`;
                     buyButton.classList.add('ticket-selected');
                 } else {
                     buyButton.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart`;
@@ -2256,7 +2791,7 @@ window.proceedToCheckout = function() {
             // Store in the selected tickets object
             const ticketKey = ticketId;
             if (quantity > 0) {
-                window.selectedTickets[ticketKey] = {
+                selectedTickets[ticketKey] = {
                     id: ticketId,
                     table: null,
                     name: card.dataset.ticketName,
@@ -2266,15 +2801,15 @@ window.proceedToCheckout = function() {
                 };
             } else {
                 // Remove if quantity is 0
-                delete window.selectedTickets[ticketKey];
+                delete selectedTickets[ticketKey];
             }
 
             // Update the cart summary
-            window.updateCartSummary();
+            updateCartSummary();
 
             // Update fixed buy footer if it exists
-            if (typeof window.updateFixedBuyFooter === 'function') {
-                window.updateFixedBuyFooter();
+            if (typeof updateFixedBuyFooter === 'function') {
+                updateFixedBuyFooter();
             }
         };
 
@@ -2285,16 +2820,10 @@ window.proceedToCheckout = function() {
             const ticketTable = input.dataset.ticketTable;
             const ticketName = input.dataset.ticketName;
             const ticketPrice = parseFloat(input.dataset.ticketPrice.toString().replace(/,/g, ''));
-            const maxQuantity = 10;
 
-            // Make sure quantity is within limits
+            // Make sure quantity is not negative
             if (quantity < 0) {
                 input.value = 0;
-                return;
-            }
-
-            if (quantity > maxQuantity) {
-                input.value = maxQuantity;
                 return;
             }
 
@@ -2304,11 +2833,11 @@ window.proceedToCheckout = function() {
                 hiddenQuantity.value = quantity;
             }
 
-            // Update the button text
+            // Update the button text - Use "Add to Cart" regardless of selection
             const buyButton = card.querySelector('.buy-ticket-btn');
             if (buyButton) {
                 if (quantity > 0) {
-                    buyButton.innerHTML = `<i class="fa-solid fa-check"></i> ${quantity} Selected`;
+                    buyButton.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart`;
                     buyButton.classList.add('ticket-selected');
                 } else {
                     buyButton.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Add to Cart`;
@@ -2319,7 +2848,7 @@ window.proceedToCheckout = function() {
             // Store in the selected tickets object
             const ticketKey = 'table-' + ticketTable;
             if (quantity > 0) {
-                window.selectedTickets[ticketKey] = {
+                selectedTickets[ticketKey] = {
                     id: null,
                     table: ticketTable,
                     name: ticketName,
@@ -2329,15 +2858,15 @@ window.proceedToCheckout = function() {
                 };
             } else {
                 // Remove if quantity is 0
-                delete window.selectedTickets[ticketKey];
+                delete selectedTickets[ticketKey];
             }
 
             // Update the cart summary
-            window.updateCartSummary();
+            updateCartSummary();
 
             // Update fixed buy footer if it exists
-            if (typeof window.updateFixedBuyFooter === 'function') {
-                window.updateFixedBuyFooter();
+            if (typeof updateFixedBuyFooter === 'function') {
+                updateFixedBuyFooter();
             }
         };
 
@@ -2347,7 +2876,7 @@ window.proceedToCheckout = function() {
             let totalAmount = 0;
 
             // Calculate totals based on selected tickets
-            Object.values(window.selectedTickets).forEach(ticket => {
+            Object.values(selectedTickets).forEach(ticket => {
                 if (ticket.quantity > 0) {
                     totalTickets += ticket.quantity;
                     const ticketPrice = parseFloat(ticket.price.toString().replace(/,/g, ''));
@@ -2357,8 +2886,19 @@ window.proceedToCheckout = function() {
                 }
             });
 
-            // Update the UI
+            // Update the selected tickets count display
             document.getElementById('selected-tickets-count').textContent = totalTickets;
+
+            // Update the UI to show selected tickets with event name
+            const countElement = document.getElementById('selected-tickets-count');
+            if (countElement) {
+                if (totalTickets > 0) {
+                    countElement.textContent = `${totalTickets} for {{ $listonee['name'] }}`;
+                } else {
+                    countElement.textContent = "0";
+                }
+            }
+
             document.getElementById('total-amount').textContent = totalAmount.toLocaleString();
 
             // Enable/disable checkout button based on selection
@@ -2392,8 +2932,9 @@ window.proceedToCheckout = function() {
                 window.updateTableTicketSelection(input);
             }
 
-            // Add to cart with notification
+            // Add to cart with animation
             const quantity = parseInt(input.value) || 0;
+            const ticketName = card.dataset.ticketName || "tickets";
 
             if (quantity <= 0) {
                 // If quantity is 0 or invalid, update the button to show "Add to Cart"
@@ -2403,11 +2944,6 @@ window.proceedToCheckout = function() {
                 button.style.color = '';
                 return; // Don't proceed with cart update
             }
-
-            // Get all selected tickets and prepare for cart
-            const allTickets = Object.values(window.selectedTickets);
-            const hasTicketTypes = allTickets.some(t => t.id);
-            const hasTableTickets = allTickets.some(t => t.table);
 
             // Only proceed with cart update if quantity > 0
             if (quantity > 0) {
@@ -2424,7 +2960,7 @@ window.proceedToCheckout = function() {
                 // Create a FormData object from the form (to include CSRF token)
                 const formData = new FormData(form);
 
-                // Add the no_redirect flag
+                // Add the no_redirect flag to prevent automatic redirect
                 formData.append('no_redirect', 'true');
 
                 // Add the current ticket to cart
@@ -2439,11 +2975,11 @@ window.proceedToCheckout = function() {
 
                 // Update button to show processing state
                 const originalText = button.innerHTML;
-                button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
+                button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
                 button.style.background = '#FECC01';
                 button.style.color = '#000';
 
-                // Submit using fetch API
+                // Submit using fetch API with animation
                 fetch(form.action, {
                     method: 'POST',
                     body: formData,
@@ -2454,17 +2990,37 @@ window.proceedToCheckout = function() {
                 .then(response => response.json())
                 .then(data => {
                     console.log('Cart response:', data);
-                    // Show success state
-                    button.innerHTML = '<i class="fa-solid fa-check"></i> Added!';
 
-                    // Show notification
-                    window.showCartNotification(quantity);
+                    // Show success animation on button
+                    button.innerHTML = `<i class="fa-solid fa-check"></i> ${quantity} ${ticketName} added`;
+
+                    // Update cart count in header if possible
+                    if (data.total_cart_items) {
+                        const cartCounter = document.querySelector('.cart-count');
+                        if (cartCounter) {
+                            cartCounter.textContent = data.total_cart_items;
+                            cartCounter.style.display = 'block';
+                        }
+                    }
+
+                    // Show the notification with option to go to cart
+                    showCartNotification(quantity, ticketName);
 
                     // Reset button after delay
                     setTimeout(() => {
                         button.innerHTML = originalText;
                         button.style.background = '';
                         button.style.color = '';
+
+                        // Reset the input value to prevent accidental additions
+                        input.value = 0;
+
+                        // Update selection state
+                        if (input.dataset.ticketId) {
+                            window.updateTicketSelection(input);
+                        } else if (input.dataset.ticketTable) {
+                            window.updateTableTicketSelection(input);
+                        }
                     }, 2000);
                 })
                 .catch(error => {
@@ -2485,56 +3041,9 @@ window.proceedToCheckout = function() {
         };
 
         window.showCartNotification = function(itemCount) {
-            console.log("Showing notification for", itemCount, "tickets");
-            // Create notification element if it doesn't exist
-            let notification = document.getElementById('cart-notification');
-            if (!notification) {
-                notification = document.createElement('div');
-                notification.id = 'cart-notification';
-                notification.style.position = 'fixed';
-                notification.style.top = '20px';
-                notification.style.right = '20px';  // Position at top right
-                notification.style.backgroundColor = 'rgba(40, 40, 55, 0.9)';
-                notification.style.color = 'white';
-                notification.style.padding = '15px 20px';
-                notification.style.borderRadius = '8px';
-                notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
-                notification.style.zIndex = '9999';
-                notification.style.display = 'flex';
-                notification.style.alignItems = 'center';
-                notification.style.gap = '15px';
-                notification.style.transform = 'translateY(-100px)';
-                notification.style.opacity = '0';
-                notification.style.transition = 'all 0.3s ease-out';
-                notification.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-                document.body.appendChild(notification);
-            }
-
-            // Set content of notification
-            notification.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fa-solid fa-check-circle" style="color: #FECC01; font-size: 20px;"></i>
-                    <div>
-                        <div style="font-weight: 600; margin-bottom: 2px;">Added to Cart</div>
-                        <div style="font-size: 14px; color: rgba(255, 255, 255, 0.7);">${itemCount} ${itemCount === 1 ? 'ticket' : 'tickets'} added</div>
-                    </div>
-                </div>
-                <a href="{{ route('cart') }}" style="background: #FECC01; color: black; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; white-space: nowrap;">
-                    View Cart
-                </a>
-            `;
-
-            // Show notification with animation
-            setTimeout(() => {
-                notification.style.transform = 'translateY(0)';
-                notification.style.opacity = '1';
-
-                // Hide notification after 5 seconds
-                setTimeout(() => {
-                    notification.style.transform = 'translateY(-100px)';
-                    notification.style.opacity = '0';
-                }, 5000);
-            }, 100);
+            // Deprecated - now redirecting to cart directly
+            console.log("Redirecting to cart instead of showing notification");
+            window.location.href = "{{ route('cart') }}";
         };
 
         // Also define the updateFixedBuyFooter function
@@ -2579,6 +3088,18 @@ window.proceedToCheckout = function() {
         document.querySelectorAll('.direct-quantity-input').forEach(input => {
             // On input (as user types)
             input.addEventListener('input', function() {
+                // Get parent card and buy button
+                const card = this.closest('.spotify-ticket-card');
+                const buyButton = card.querySelector('.buy-ticket-btn');
+
+                // If user types anything, immediately highlight the button
+                if (this.value && parseInt(this.value) > 0) {
+                    buyButton.classList.add('ticket-selected');
+                } else {
+                    buyButton.classList.remove('ticket-selected');
+                }
+
+                // Then update selection state
                 if (input.dataset.ticketId) {
                     window.updateTicketSelection(input);
                 } else if (input.dataset.ticketTable) {
@@ -2593,6 +3114,55 @@ window.proceedToCheckout = function() {
                 } else if (input.dataset.ticketTable) {
                     window.updateTableTicketSelection(input);
                 }
+            });
+        });
+    });
+
+    // Add a function to fix numeric input handling
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fix for numeric inputs
+        const quantityInputs = document.querySelectorAll('.direct-quantity-input');
+
+        quantityInputs.forEach(input => {
+            // On focus, select all text for easy replacement
+            input.addEventListener('focus', function() {
+                this.select();
+            });
+
+            // Ensure clean numeric input
+            input.addEventListener('input', function() {
+                // Remove non-numeric characters
+                this.value = this.value.replace(/[^0-9]/g, '');
+
+                // If empty, allow it during typing
+                if (this.value === '') return;
+
+                // Parse as integer to remove leading zeros
+                const parsed = parseInt(this.value, 10);
+
+                // Update with parsed value
+                if (!isNaN(parsed)) {
+                    this.value = parsed;
+
+                    // Check against max
+                    const max = parseInt(this.getAttribute('max'), 10);
+                    if (parsed > max) {
+                        this.value = max;
+                    }
+                } else {
+                    this.value = 0;
+                }
+            });
+
+            // On blur, ensure valid value
+            input.addEventListener('blur', function() {
+                if (this.value === '' || isNaN(parseInt(this.value, 10))) {
+                    this.value = 0;
+                }
+
+                // Trigger change event to update state
+                const event = new Event('change', { bubbles: true });
+                this.dispatchEvent(event);
             });
         });
     });

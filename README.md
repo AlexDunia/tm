@@ -64,3 +64,67 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+# Performance Optimization Guide
+
+This application has been optimized for maximum performance and security. Here are the key optimizations implemented:
+
+## Configuration Optimizations
+
+1. **PHP Settings**:
+   - Increased `max_execution_time` to 120 seconds in .htaccess
+   - Optimized memory usage and upload limits
+   - Enabled opcache for better PHP performance
+
+2. **Database Optimizations**:
+   - Added indexes to critical tables (carts, mctlists, ticket_types)
+   - Implemented query timeout limits to prevent long-running queries
+   - Optimized model queries with eager loading and scoped methods
+
+3. **Caching System**:
+   - Implemented model-level caching for frequently accessed data
+   - Added cache invalidation on record updates
+   - Created dedicated performance cache store
+
+4. **Front-end Performance**:
+   - Enabled browser caching through .htaccess
+   - Implemented Gzip compression for all text-based assets
+   - Added cache headers for static assets
+
+## Security Enhancements
+
+1. **HTTP Headers**:
+   - Added security headers (X-Content-Type-Options, X-XSS-Protection, etc.)
+   - Implemented referrer policy
+   - Configured content security policy
+
+2. **Request Protection**:
+   - Added request monitoring for slow operations
+   - Implemented input validation and sanitization
+   - Added database transaction support for data integrity
+
+## Monitoring
+
+1. **Performance Monitoring**:
+   - Added PerformanceMonitorMiddleware to track request execution time
+   - Created dedicated performance logging channel
+   - Implemented slow query logging
+
+## Deployment Recommendations
+
+For production deployment, consider the following:
+
+1. Use a dedicated Redis or Memcached server for caching
+2. Consider using a CDN for static assets
+3. Implement a queue system for long-running tasks
+4. Configure a proper production server with opcache, APCu, etc.
+5. Use load balancing if necessary for high traffic
+
+## Troubleshooting
+
+If you encounter "Maximum execution time exceeded" errors:
+
+1. Identify the slow operation using the performance logs
+2. Check if the database queries are properly optimized
+3. Consider moving long-running operations to queue jobs
+4. Optimize database indexes for frequently used queries

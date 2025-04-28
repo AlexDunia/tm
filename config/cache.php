@@ -79,6 +79,20 @@ return [
             'connection' => 'cache',
             'lock_connection' => 'default',
         ],
+        
+        // Optimized file cache for production
+        'optimized_file' => [
+            'driver' => 'file',
+            'path' => storage_path('framework/cache/optimized'),
+        ],
+        
+        // High-performance cache for frequently accessed data
+        'performance' => [
+            'driver' => env('PERFORMANCE_CACHE_DRIVER', 'file'),
+            'connection' => 'performance',
+            'path' => storage_path('framework/cache/performance'),
+            'ttl' => env('PERFORMANCE_CACHE_TTL', 600),  // 10 minutes default
+        ],
 
         'dynamodb' => [
             'driver' => 'dynamodb',

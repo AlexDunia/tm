@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Stevebauman\Location\Facades\Location;
 use Illuminate\Validation\ValidationException;
+use App\Models\User as AppUser;
+use Illuminate\Support\Facades\Password;
 
 // $cartItemCount = Cart::count();
 
@@ -267,10 +269,12 @@ class ListingController extends Controller
 
       public function forgotpasswordpost(Request $request){
         // Validate the email address
-
         $request->validate([
             'email' => "required|email|exists:users",
         ]);
+
+        // Delete any existing tokens for this email to prevent token buildup
+        DB::table('password_resets')->where('email', $request->email)->delete();
 
         // Generate a random token securely
         $token = Str::random(64);
@@ -278,62 +282,115 @@ class ListingController extends Controller
         // Validate the generated token
         if (!is_string($token) || !preg_match('/^[A-Za-z0-9]+$/', $token) || strlen($token) !== 64) {
             // Invalid token generated, handle the error (e.g., log it)
+            \Log::error('Invalid token generated for password reset');
             throw ValidationException::withMessages([
-                'token' => 'Invalid token generated.',
+                'token' => 'Error generating security token. Please try again.',
             ]);
         }
 
-        // Now add data into the table data created by Laravel
+        // Set token expiration (1 hour from now)
+        $expires = now()->addHour();
+
+        // Now add data into the password_resets table
         DB::table('password_resets')->insert([
             'email' => $request->email,
             'token' => $token,
             'created_at' => now(),
         ]);
 
-        // Next, send an email to the email address
+        try {
+            // Send password reset email
+            Mail::send('Emailtemplate', ['token' => $token], function ($message) use ($request){
+                $message->to($request->email);
+                $message->subject('Tixdemand Password Reset Request');
+            });
 
-        // Mail::to($request->email)->send(new EmailTemplate($token));
-
-        Mail::send('Emailtemplate', ['token' => $token], function ($message) use ($request){
-            $message->to($request->email);
-            $message->subject('Reset password');
-        });
-
-        // return view('Login');
-
-        // return view('Login')->with('message', 'Nothing was added to the cart. Please add items with a quantity greater than zero.');
-        return redirect()->route('logg')->with('message', 'Password Reset Link Sent To Your Email! Click to Change Now.');
+            return redirect()->route('logg')->with('message', 'Password reset link sent to your email. Please check your inbox.');
+        } catch (\Exception $e) {
+            \Log::error('Failed to send password reset email: ' . $e->getMessage());
+            return back()->withErrors(['email' => 'Could not send password reset link. Please try again later.']);
+        }
     }
 
     public function resetpassword($token){
-        // So we actually have to pass the token of the previous form because we will use that
-        // in the new database
-    return view('Resetpassword', compact('token'));
+        // Validate token format for basic security
+        if (!preg_match('/^[A-Za-z0-9]{64}$/', $token)) {
+            return redirect()->route('logg')->with('error', 'Invalid password reset token.');
+        }
+
+        // Check if token exists and is not expired (1 hour validity)
+        $resetRecord = DB::table('password_resets')
+            ->where('token', $token)
+            ->where('created_at', '>', now()->subHour())
+            ->first();
+
+        if (!$resetRecord) {
+            return redirect()->route('fp')->with('error', 'Password reset link has expired or is invalid. Please request a new one.');
+        }
+
+        return view('Resetpassword', compact('token'));
     }
 
     public function resetpasswordpost(Request $request){
-// start with checking if the requests in the form are entered
-    $request->validate([
-        "email" => "required|email|exists:users",
-        "password" => "required|string|min:6|confirmed",
-        "password_confirmation" => "required"
-    ]);
+        // Validate form inputs with stronger password requirements
+        $request->validate([
+            "email" => "required|email|exists:users",
+            "password" => [
+                "required",
+                "string",
+                "min:8",
+                "confirmed",
+                "regex:/[a-z]/", // at least one lowercase letter
+                "regex:/[A-Z]/", // at least one uppercase letter
+                "regex:/[0-9]/", // at least one number
+                "regex:/[@$!%*#?&]/" // at least one special character
+            ],
+            "password_confirmation" => "required",
+            "token" => "required|string|size:64"
+        ], [
+            'password.regex' => 'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character.',
+        ]);
 
-    // Next is to search the database, store it inside a vriable and and see if it mathces the input
-     $updatepassword = DB::table('password_resets')
-     ->where([
-        "email" => $request->email,
-        "token" => $request->token,
-     ]);
+        // Find the password reset record
+        $resetRecord = DB::table('password_resets')
+            ->where([
+                "email" => $request->email,
+                "token" => $request->token,
+            ])
+            ->first();
 
-    //  Now we want to use th variable that searches
-     if(!$updatepassword){
-        return view('Signup');
-     };
+        // Check if reset record exists and is valid
+        if (!$resetRecord) {
+            return redirect()->route('fp')
+                ->with('error', 'Invalid password reset link. Please request a new password reset link.');
+        }
 
-    //  if it is the case, however, update the password
-     User::where('email', $request->email)->update(['password' => Hash::make($request->password)]);
-     return view('login');
+        // Check if the token is expired (1 hour validity)
+        if (Carbon::parse($resetRecord->created_at)->addHour()->isPast()) {
+            DB::table('password_resets')->where('email', $request->email)->delete();
+            return redirect()->route('fp')
+                ->with('error', 'Password reset link has expired. Please request a new one.');
+        }
+
+        // Update the user's password
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return redirect()->route('logg')
+                ->with('error', 'Could not find your account. Please try again.');
+        }
+
+        // Update password with proper hashing
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        // Delete all password reset tokens for this user
+        DB::table('password_resets')->where('email', $request->email)->delete();
+
+        // Log a password change event for security
+        \Log::info('Password reset successful for user: ' . $user->email);
+
+        return redirect()->route('logg')
+            ->with('message', 'Your password has been reset successfully. Please log in with your new password.');
     }
 
     // public function search(Request $request) {
@@ -430,14 +487,28 @@ class ListingController extends Controller
     // The next controller shows the cart page.
     // After you have done authentication,. its going to show according to users email.
     public function cartpage(){
+        // Add debug log to track cart page access
+        \Illuminate\Support\Facades\Log::info('CART DEBUG - Cart Page Accessed');
+
         if (Auth::check()) {
             // Get cart items for authenticated users
             $carts = Cart::where('user_id', auth()->id())->get();
 
-            // Log the cart items for debugging
-            \Illuminate\Support\Facades\Log::info('Cart Items for User: ' . auth()->id(), [
-                'count' => $carts->count(),
-                'items' => $carts->toArray()
+            // Enhanced logging for cart items
+            \Illuminate\Support\Facades\Log::info('CART DEBUG - Authenticated User Cart Items:', [
+                'user_id' => auth()->id(),
+                'cart_count' => $carts->count(),
+                'total_quantity' => $carts->sum('cquantity'),
+                'items' => $carts->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->cname,
+                        'event' => $item->eventname,
+                        'quantity' => $item->cquantity,
+                        'price' => $item->cprice,
+                        'total' => $item->ctotalprice
+                    ];
+                })->toArray()
             ]);
         } else {
             // For non-authenticated users, check if we have session data
@@ -452,8 +523,10 @@ class ListingController extends Controller
                     $carts->push($cartObj);
                 }
 
-                \Illuminate\Support\Facades\Log::info('Session Cart Items:', [
+                // Enhanced logging for session cart items
+                \Illuminate\Support\Facades\Log::info('CART DEBUG - Session Cart Items:', [
                     'count' => count($cartItems),
+                    'total_quantity' => collect($cartItems)->sum('cquantity'),
                     'items' => $cartItems
                 ]);
             } else if (session()->has('tname')) {
@@ -469,8 +542,17 @@ class ListingController extends Controller
                 $tempCart->cdescription = session()->get('timage');
 
                 $carts = collect([$tempCart]);
+
+                // Log the legacy cart
+                \Illuminate\Support\Facades\Log::info('CART DEBUG - Legacy Session Cart:', [
+                    'name' => $tempCart->cname,
+                    'event' => $tempCart->eventname,
+                    'quantity' => $tempCart->cquantity,
+                    'price' => $tempCart->cprice
+                ]);
             } else {
                 $carts = collect([]);
+                \Illuminate\Support\Facades\Log::info('CART DEBUG - Empty Cart');
             }
         }
 
@@ -481,40 +563,231 @@ class ListingController extends Controller
 
 
     // Delete
-    public function delete($id){
-    //    Question now is, what do you want to achieve?
-        $cdelete = Cart::find($id);
-        $cdelete->delete();
+    public function delete($id) {
+        // Log the delete request for debugging
+        \Illuminate\Support\Facades\Log::info('CART DEBUG - Delete request:', [
+            'id' => $id,
+            'authenticated' => Auth::check(),
+            'request_data' => request()->all()
+        ]);
+
+        if (!$id) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Invalid item ID.'], 400);
+            }
+
+            session()->flash('error', 'Invalid item ID.');
+            return redirect()->back();
+        }
+
+        // Check for JSON data
+        $isJsonRequest = request()->expectsJson() || request()->header('Content-Type') === 'application/json';
+        $ticketType = null;
+
+        if ($isJsonRequest && request()->json()->has('ticket_type')) {
+            $ticketType = request()->json()->get('ticket_type');
+        } else {
+            // Extract ticket_type from regular POST request
+            $ticketType = request()->input('ticket_type');
+        }
+
+        // Log the extracted ticket type
+        \Illuminate\Support\Facades\Log::info('CART DEBUG - Delete parameters:', [
+            'id' => $id,
+            'ticket_type' => $ticketType,
+            'method' => request()->method(),
+            'is_json' => $isJsonRequest,
+            'all_inputs' => request()->all()
+        ]);
+
+        // First check if user is authenticated
+        if (Auth::check()) {
+            // For authenticated users, delete from database
+            $cdelete = Cart::find($id);
+
+            // Check if item exists before attempting to delete
+            if ($cdelete) {
+                // Log what's being deleted
+                \Illuminate\Support\Facades\Log::info('CART DEBUG - Deleting item:', [
+                    'item_id' => $cdelete->id,
+                    'name' => $cdelete->cname,
+                    'event' => $cdelete->eventname,
+                    'quantity' => $cdelete->cquantity
+                ]);
+
+                $cdelete->delete();
+
+                if (request()->ajax()) {
+                    return response()->json(['success' => true, 'message' => 'Item successfully removed from cart.']);
+                }
+
+                session()->flash('success', 'Item successfully removed from cart.');
+            } else {
+                // Log the error for debugging
+                \Illuminate\Support\Facades\Log::error('CART DEBUG - Delete error: Item not found', [
+                    'id' => $id
+                ]);
+
+                if (request()->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Could not find the item to remove.'], 404);
+                }
+
+                session()->flash('error', 'Could not find the item to remove.');
+            }
+        } else {
+            // For non-authenticated users, delete from session
+            if (session()->has('cart_items')) {
+                $cartItems = session()->get('cart_items', []);
+                $originalCount = count($cartItems);
+
+                // Log session cart before deletion
+                \Illuminate\Support\Facades\Log::info('CART DEBUG - Session cart before deletion:', [
+                    'count' => count($cartItems),
+                    'items' => $cartItems,
+                    'ticket_type_to_remove' => $ticketType,
+                    'id_to_remove' => $id
+                ]);
+
+                $found = false;
+                $itemsToKeep = [];
+
+                // ALWAYS prioritize removing by ticket_type if it's provided
+                if ($ticketType) {
+                    foreach ($cartItems as $item) {
+                        // Skip items matching the ticket type (don't keep them)
+                        if (!isset($item['cname']) || trim($item['cname']) != trim($ticketType)) {
+                            $itemsToKeep[] = $item;
+                        } else {
+                            $found = true;
+                            \Illuminate\Support\Facades\Log::info('CART DEBUG - Found item to remove by ticket type:', [
+                                'item' => $item
+                            ]);
+                        }
+                    }
+                } else {
+                    // No ticket_type provided, try to find by ID
+                    foreach ($cartItems as $key => $item) {
+                        if (!isset($item['id']) || $item['id'] != $id) {
+                            $itemsToKeep[] = $item;
+                        } else {
+                            $found = true;
+                            \Illuminate\Support\Facades\Log::info('CART DEBUG - Found item to remove by ID:', [
+                                'item' => $item
+                            ]);
+                        }
+                    }
+                }
+
+                // If we found and removed items
+                if ($found) {
+                    // Re-index the array and update session
+                    session()->put('cart_items', $itemsToKeep);
+
+                    // Log the updated cart
+                    \Illuminate\Support\Facades\Log::info('CART DEBUG - Session cart after deletion:', [
+                        'items_removed' => $originalCount - count($itemsToKeep),
+                        'count_remaining' => count($itemsToKeep),
+                        'removed_by' => $ticketType ? 'ticket_type' : 'id'
+                    ]);
+
+                    if (request()->ajax()) {
+                        return response()->json(['success' => true, 'message' => 'Item successfully removed from cart.']);
+                    }
+
+                    session()->flash('success', 'Item successfully removed from cart.');
+                } else {
+                    // Log the error
+                    \Illuminate\Support\Facades\Log::error('CART DEBUG - Delete error: Session item not found', [
+                        'requested_id' => $id,
+                        'ticket_type' => $ticketType,
+                        'available_items' => collect($cartItems)->map(function ($item) {
+                            return [
+                                'id' => $item['id'] ?? 'missing',
+                                'cname' => $item['cname'] ?? 'missing'
+                            ];
+                        })->toArray()
+                    ]);
+
+                    if (request()->ajax()) {
+                        return response()->json(['success' => false, 'message' => 'Could not find the item to remove.'], 404);
+                    }
+
+                    session()->flash('error', 'Could not find the item to remove.');
+                }
+            } elseif (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'No cart items in session.'], 404);
+            } else {
+                session()->flash('error', 'Your cart is empty.');
+            }
+        }
+
+        if (request()->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Item removed successfully.']);
+        }
+
         return redirect()->back();
     }
 
     // Update cart quantity
-    public function updateCart(Request $request){
-        $request->validate([
-            'item_id' => 'required|exists:carts,id',
-            'quantity' => 'required|integer|min:1|max:10',
-        ]);
+    public function updateCart(Request $request, $id = null){
+        // Check if the request is a JSON request
+        $isJsonRequest = $request->expectsJson() || $request->header('Content-Type') === 'application/json';
 
-        $cartItem = Cart::find($request->item_id);
+        // Handle JSON request data
+        if ($isJsonRequest) {
+            $data = $request->json()->all();
+            $itemId = $id ?? $data['item_id'] ?? null;
+            $quantity = $data['quantity'] ?? null;
+            $ticketType = $data['ticket_type'] ?? null; // For filtering by ticket type
+        } else {
+            // Handle form POST data
+            $itemId = $id ?? $request->input('item_id');
+            $quantity = $request->input('quantity');
+            $ticketType = $request->input('ticket_type');
+        }
 
-        if ($cartItem) {
+        // Validate the input
+        if (!$itemId || !is_numeric($quantity) || $quantity < 1) {
+            if ($isJsonRequest) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid input data.'
+                ], 400);
+            }
+            return redirect()->back()->with('error', 'Invalid input data.');
+        }
+
+        // For authenticated users, update in database
+        if (Auth::check()) {
+            $cartItem = Cart::find($itemId);
+
+            if (!$cartItem) {
+                if ($isJsonRequest) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cart item not found.'
+                    ], 404);
+                }
+                return redirect()->back()->with('error', 'Cart item not found.');
+            }
+
             // Update quantity
-            $cartItem->cquantity = $request->quantity;
+            $cartItem->cquantity = $quantity;
 
             // Recalculate total price
-            $cartItem->ctotalprice = $cartItem->cprice * $request->quantity;
+            $cartItem->ctotalprice = $cartItem->cprice * $quantity;
 
             // Generate unique ticket IDs and store them in session
             $ticketIds = [];
             $baseId = 'TIX-' . strtoupper(substr(md5($cartItem->eventname . $cartItem->cname), 0, 6));
-            for ($i = 1; $i <= $request->quantity; $i++) {
+            for ($i = 1; $i <= $quantity; $i++) {
                 $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
             }
             session(['ticket_ids_' . $cartItem->id => $ticketIds]);
 
             $cartItem->save();
 
-            if ($request->ajax()) {
+            if ($isJsonRequest) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Cart updated successfully',
@@ -523,7 +796,97 @@ class ListingController extends Controller
                 ]);
             }
         }
+        // For non-authenticated users, update in session
+        else if (session()->has('cart_items')) {
+            $cartItems = session()->get('cart_items', []);
+            $updated = false;
+            $updatedItem = null;
 
-        return redirect()->back();
+            // If we have a ticket type, we need to update all items of that type
+            if ($ticketType) {
+                // Calculate how much to add/remove per item
+                $currentTotalQty = 0;
+                $itemsOfType = [];
+
+                // First, gather all items of this ticket type
+                foreach ($cartItems as $key => $item) {
+                    if (trim($item['cname']) == trim($ticketType)) {
+                        $currentTotalQty += $item['cquantity'];
+                        $itemsOfType[] = $key;
+                    }
+                }
+
+                // If we have items of this type and the target quantity differs from current
+                if (count($itemsOfType) > 0 && $currentTotalQty != $quantity) {
+                    // For simplicity, let's update the first item only
+                    $mainKey = $itemsOfType[0];
+                    $cartItems[$mainKey]['cquantity'] = $quantity;
+                    $cartItems[$mainKey]['ctotalprice'] = $cartItems[$mainKey]['cprice'] * $quantity;
+                    $updated = true;
+                    $updatedItem = $cartItems[$mainKey];
+
+                    // Remove other items of same type
+                    foreach ($itemsOfType as $k) {
+                        if ($k != $mainKey) {
+                            unset($cartItems[$k]);
+                        }
+                    }
+
+                    // Re-index the array
+                    $cartItems = array_values($cartItems);
+                }
+            } else {
+                // Classic single-item update by ID
+                foreach ($cartItems as $key => $item) {
+                    if ($item['id'] == $itemId) {
+                        $cartItems[$key]['cquantity'] = $quantity;
+                        $cartItems[$key]['ctotalprice'] = $cartItems[$key]['cprice'] * $quantity;
+                        $updated = true;
+                        $updatedItem = $cartItems[$key];
+
+                        // Generate ticket IDs
+                        $ticketIds = [];
+                        $baseId = 'TIX-' . strtoupper(substr(md5($item['eventname'] . $item['cname']), 0, 6));
+                        for ($i = 1; $i <= $quantity; $i++) {
+                            $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+                        }
+                        session(['ticket_ids_' . $itemId => $ticketIds]);
+                        break;
+                    }
+                }
+            }
+
+            if ($updated) {
+                session()->put('cart_items', $cartItems);
+
+                if ($isJsonRequest) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Cart updated successfully',
+                        'item' => (object)$updatedItem,
+                        'ticket_ids' => $ticketIds ?? []
+                    ]);
+                }
+            } else if ($isJsonRequest) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cart item not found in session.'
+                ], 404);
+            }
+        } else if ($isJsonRequest) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No cart items in session.'
+            ], 404);
+        }
+
+        if ($isJsonRequest) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cart updated successfully'
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Cart updated successfully.');
     }
 }

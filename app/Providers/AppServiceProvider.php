@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +23,42 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Set default string length for MySQL older than 5.7.7
+        Schema::defaultStringLength(191);
+        
+        // Enable query logging in development environment
+        if ($this->app->environment('local')) {
+            DB::enableQueryLog();
+            
+            // Log slow queries (over 1 second)
+            DB::listen(function($query) {
+                if ($query->time > 1000) {
+                    Log::channel('daily')->warning('Slow query detected', [
+                        'sql' => $query->sql,
+                        'bindings' => $query->bindings,
+                        'time' => $query->time . 'ms',
+                    ]);
+                }
+            });
+        }
+        
+        // Set reasonable default select limits to prevent large result sets
+        Builder::macro('smartPaginate', function ($perPage = 15) {
+            return $this->paginate($perPage);
+        });
+        
+        // Set default query timeout to prevent long-running queries
+        DB::connection()->getPdo()->setAttribute(\PDO::ATTR_TIMEOUT, 30);
+        
+        // Add select timeout to MySQL connections
+        $dbConnection = config('database.default');
+        if ($dbConnection === 'mysql') {
+            DB::statement('SET SESSION MAX_EXECUTION_TIME=30000'); // 30 seconds in milliseconds
+        }
+        
+        // Add global scope to all queries to ensure they're properly indexed
+        // Builder::macro('withOptimizedIndexes', function () {
+        //     return $this->whereRaw('1=1');
+        // });
     }
 }

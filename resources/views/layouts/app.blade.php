@@ -25,6 +25,29 @@
 
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+
+    <style>
+        body {
+            background-color: #13121a;
+            color: white;
+            font-family: 'Nunito', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .site-main {
+            min-height: calc(100vh - 200px);
+            padding-bottom: 50px;
+        }
+
+        .site-footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #a0aec0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
 </head>
 <body>
     <div id="app">

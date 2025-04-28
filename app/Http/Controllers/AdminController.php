@@ -6,9 +6,12 @@ use App\Models\User;
 use App\Models\mctlists;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Stevebauman\Location\Facades\Location;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -58,102 +61,242 @@ class AdminController extends Controller
 
     public function storeuser(Request $request)
     {
-        // Validate the form data, excluding 'profilepic'
+        // Validate the form data with stronger password requirements
         $Formfield = $request->validate([
-            'firstname' => 'required',
-            'lastname' => 'required',
-            'email'=>['required', 'email', Rule::unique('users', 'email')],
-            'password' => 'required',
+            'firstname' => 'required|string|max:255',
+            'lastname' => 'required|string|max:255',
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+            'password' => [
+                'required',
+                'string',
+                'min:8',             // minimum 8 characters
+                'regex:/[a-z]/',     // at least one lowercase letter
+                'regex:/[A-Z]/',     // at least one uppercase letter
+                'regex:/[0-9]/',     // at least one number
+                'regex:/[@$!%*#?&]/' // at least one special character
+            ],
+        ], [
+            'password.regex' => 'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character.',
         ]);
 
         // Check if 'profilepic' file exists in the request
         if ($request->hasFile('profilepic')) {
             // Validate and store the uploaded file
             $request->validate([
-                'profilepic' => 'image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust mime types and max file size as needed
+                'profilepic' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
             $profilePicPath = $request->file('profilepic')->store('uploadedimage', 'public');
             $Formfield['profilepic'] = $profilePicPath;
         }
 
+        // Store IP address for security tracking
         $Formfield['ipaddress'] = $request->ip();
 
-        $Formfield['password'] = bcrypt($Formfield['password']);
+        // Hash the password
+        $Formfield['password'] = Hash::make($Formfield['password']);
 
+        // Create the user
         $adminuserr = User::create($Formfield);
 
         $adminUser = $adminuserr->firstname;
 
+        // Send welcome email
         if($adminuserr){
-            Mail::send('userwelcome', ['firstname' => $adminUser], function ($message) use ($request, $adminUser) {
-                $message->to($request->email);
-                $message->subject("Welcome to Tixdemand, " . $adminUser);
-            });
-
+            try {
+                Mail::send('userwelcome', ['firstname' => $adminUser], function ($message) use ($request, $adminUser) {
+                    $message->to($request->email);
+                    $message->subject("Welcome to Tixdemand, " . $adminUser);
+                });
+            } catch (\Exception $e) {
+                // Log the error but continue with the registration process
+                // We don't want email sending failures to prevent user registration
+                \Log::error('Failed to send welcome email: ' . $e->getMessage());
+            }
         }
 
+        // Log the user in
         Auth()->login($adminuserr);
 
-        return redirect('/');
+        return redirect('/')->with('message', 'Account created successfully! Welcome to Tixdemand.');
     }
 
     public function authenticate(Request $request)
-{
-    $formFields = $request->validate([
-        'email' => ['required', 'email'],
-        'password' => 'required',
-    ]);
+    {
+        // Implement rate limiting for login attempts
+        $key = 'login.' . $request->ip();
+        $maxAttempts = 5; // Maximum login attempts
+        $decayMinutes = 1; // Time window in minutes
 
-
-    $ip = $request->ip();
-    // Get the user's IP address from the request
-
-    // Get location data based on the user's IP address
-    $ld = Location::get($ip);
-    if (!$ld) {
-        // Handle the case where location data couldn't be obtained
-        // For example, you can set default values or show an error message.
-        $ld = (object) [
-            'ip' => 'N/A',
-            'countryName' => 'N/A',
-            'countryCode' => 'N/A',
-            'regionCode' => 'N/A',
-            'cityName' => 'N/A',
-            // Add more default properties as needed
-        ];
-    }
-
-    if (auth()->attempt($formFields)) {
-        $request->session()->regenerate();
-        $user = auth()->user();
-
-        // Check if the device is new
-        $deviceIp = $ip;
-        $existingDevice = User::where('id', auth()->user()->id)
-            ->where('ipaddress', $deviceIp)
-            ->first();
-
-        // Send the login notification email here
-        if (!$existingDevice) {
-            // Send the login notification email only for new devices
-            Mail::send('logindeviceinfo', ['firstname' => $user->firstname, 'locationData' => $ld], function ($message) use ($request) {
-                $message->to($request->email);
-                $message->subject('Login attempt on your account');
-            });
+        if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
+            $seconds = RateLimiter::availableIn($key);
+            throw ValidationException::withMessages([
+                'email' => "Too many login attempts. Please try again in {$seconds} seconds.",
+            ])->status(429);
         }
-        return redirect('/');
+
+        // Validate form input
+        $formFields = $request->validate([
+            'email' => ['required', 'email', 'string', 'max:255'],
+            'password' => ['required', 'string'],
+        ]);
+
+        // First check if user exists before attempting login
+        $user = User::where('email', $formFields['email'])->first();
+
+        if (!$user) {
+            // Increment the rate limiter on failed login
+            RateLimiter::hit($key, $decayMinutes * 60);
+
+            // Log the failed attempt for security monitoring
+            \Log::warning('Login attempt with non-existent email', [
+                'email' => $formFields['email'],
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+
+            // Track non-existent account attempts in session
+            $nonExistentAttempts = $request->session()->get('non_existent_attempts', 0) + 1;
+            $request->session()->put('non_existent_attempts', $nonExistentAttempts);
+
+            // After 2 attempts with non-existent accounts, redirect to signup
+            if ($nonExistentAttempts >= 2) {
+                $request->session()->forget('non_existent_attempts');
+                return redirect()->route('signup')
+                    ->with('message', 'We couldn\'t find an account with that email. We\'ve redirected you to our signup page.')
+                    ->withInput(['email' => $formFields['email']]);
+            }
+
+            throw ValidationException::withMessages([
+                'email' => 'Account not found. Please check your email or create a new account.',
+            ]);
+        }
+
+        // Clear the non-existent account counter if user exists
+        $request->session()->forget('non_existent_attempts');
+
+        // Get IP and location data for security
+        $ip = $request->ip();
+
+        // Get location data based on the user's IP address
+        try {
+            $ld = Location::get($ip);
+            if (!$ld) {
+                $ld = (object) [
+                    'ip' => $ip,
+                    'countryName' => 'Unknown',
+                    'countryCode' => 'Unknown',
+                    'regionCode' => 'Unknown',
+                    'cityName' => 'Unknown',
+                ];
+            }
+        } catch (\Exception $e) {
+            $ld = (object) [
+                'ip' => $ip,
+                'countryName' => 'Unknown',
+                'countryCode' => 'Unknown',
+                'regionCode' => 'Unknown',
+                'cityName' => 'Unknown',
+            ];
+        }
+
+        // Attempt login
+        if (auth()->attempt($formFields, $request->filled('remember'))) {
+            // Reset rate limiter on successful login
+            RateLimiter::clear($key);
+
+            // Generate new session ID to prevent session fixation attacks
+            $request->session()->regenerate();
+
+            $user = auth()->user();
+
+            // Check if the device is new by comparing IP addresses
+            $deviceIp = $ip;
+            $existingDevice = User::where('id', $user->id)
+                ->where('ipaddress', $deviceIp)
+                ->first();
+
+            // Send the login notification email for new devices
+            if (!$existingDevice) {
+                try {
+                    // Enhanced device information for better security awareness
+                    $deviceInfo = [
+                        'browser' => $this->getBrowserInfo($request->userAgent()),
+                        'device_type' => $this->getDeviceType($request->userAgent()),
+                        'ip' => $ip,
+                        'time' => now()->format('F j, Y \a\t g:i a'),
+                        'locationData' => $ld
+                    ];
+
+                    Mail::send('logindeviceinfo', [
+                        'firstname' => $user->firstname,
+                        'locationData' => $ld,
+                        'deviceInfo' => $deviceInfo
+                    ], function ($message) use ($request, $user) {
+                        $message->to($user->email);
+                        $message->subject('Security Alert: New Login Detected on Your Tixdemand Account');
+                    });
+
+                    // Update user's IP address
+                    User::where('id', $user->id)->update(['ipaddress' => $deviceIp]);
+                } catch (\Exception $e) {
+                    // Log the error but continue with the login process
+                    \Log::error('Failed to send login notification email: ' . $e->getMessage());
+                }
+            }
+
+            return redirect('/');
+        }
+
+        // Increment the rate limiter on failed login
+        RateLimiter::hit($key, $decayMinutes * 60);
+
+        // Return with error message
+        throw ValidationException::withMessages([
+            'email' => 'The provided credentials do not match our records.',
+        ]);
     }
 
-    return back();
-}
+    /**
+     * Get browser information from user agent
+     */
+    private function getBrowserInfo($userAgent)
+    {
+        if (strpos($userAgent, 'Chrome') !== false) {
+            return 'Chrome';
+        } elseif (strpos($userAgent, 'Firefox') !== false) {
+            return 'Firefox';
+        } elseif (strpos($userAgent, 'Safari') !== false) {
+            return 'Safari';
+        } elseif (strpos($userAgent, 'Edge') !== false) {
+            return 'Microsoft Edge';
+        } elseif (strpos($userAgent, 'MSIE') !== false || strpos($userAgent, 'Trident') !== false) {
+            return 'Internet Explorer';
+        } else {
+            return 'Unknown Browser';
+        }
+    }
 
+    /**
+     * Get device type from user agent
+     */
+    private function getDeviceType($userAgent)
+    {
+        if (strpos($userAgent, 'Mobile') !== false) {
+            return 'Mobile';
+        } elseif (strpos($userAgent, 'Tablet') !== false) {
+            return 'Tablet';
+        } else {
+            return 'Desktop';
+        }
+    }
 
     public function disauthenticate(Request $request){
         // logout here
-      auth()->logout();
-      $request->session()->invalidate();
-      $request->session()->regenerateToken();
-        return back();
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/login')->with('message', 'You have been logged out successfully.');
     }
 }

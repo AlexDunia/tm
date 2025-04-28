@@ -72,6 +72,24 @@ return [
             'days' => 14,
             'replace_placeholders' => true,
         ],
+        
+        // New performance monitoring channel
+        'performance' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/performance.log'),
+            'level' => 'debug',
+            'days' => 7,
+            'permission' => 0664,
+        ],
+        
+        // New security monitoring channel
+        'security' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/security.log'),
+            'level' => 'notice',
+            'days' => 30,
+            'permission' => 0664,
+        ],
 
         'slack' => [
             'driver' => 'slack',
