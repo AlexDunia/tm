@@ -194,10 +194,21 @@ class ListingController extends Controller
     }
 
 
-    public function index(Request $request)
+    public function index()
     {
         // Fetch real data from the database
         $events = mctlists::latest()->paginate(10);
+
+        // Log the number of events for debugging
+        \Log::info('Home page loaded with ' . $events->count() . ' events');
+
+        // If no events, log a warning
+        if ($events->isEmpty()) {
+            \Log::warning('No events found in the database');
+        } else {
+            // Log the first event's details
+            \Log::info('First event: ' . json_encode($events->first()->toArray()));
+        }
 
         return view('welcome', [
             'heading' => 'My Laravel Application',

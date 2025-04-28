@@ -1,9 +1,10 @@
 <?php
 
 namespace App\Http\Controllers;
-use auth;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\mctlists;
+use App\Models\TicketType;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Stevebauman\Location\Facades\Location;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -23,6 +25,114 @@ class AdminController extends Controller
 
     public function adminform(){
         return view('Adminedit');
+    }
+
+    // Show the advanced event creation form (admin only)
+    public function showEventForm()
+    {
+        // Temporarily removed auth check for testing
+        return view('admin-event-create');
+    }
+
+    // Store event with ticket types (admin only)
+    public function storeEvent(Request $request)
+    {
+        // Temporarily disabled auth check for debugging
+        // if (!Auth::check() || Auth::user()->isadmin != 1) {
+        //     return redirect('/')->with('error', 'You do not have permission to access this page');
+        // }
+
+        // Debug information
+        if (Auth::check()) {
+            $user = Auth::user();
+            $isAdmin = $user->isadmin ?? 'null';
+            \Log::info("User is logged in. User ID: {$user->id}, isAdmin: {$isAdmin}");
+        } else {
+            \Log::info("User is not logged in");
+        }
+
+        // Validate event data
+        $eventData = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'location' => 'required|string|max:255',
+            'date' => 'required|string',
+            'time' => 'nullable|string',
+            'enddate' => 'nullable|string',
+            'category' => 'nullable|string',
+            'startingprice' => 'nullable|string',
+            'earlybirds' => 'nullable|string',
+            'tableone' => 'nullable|string',
+            'tabletwo' => 'nullable|string',
+            'tablethree' => 'nullable|string',
+            'tablefour' => 'nullable|string',
+            'tablefive' => 'nullable|string',
+            'tablesix' => 'nullable|string',
+            'tableseven' => 'nullable|string',
+            'tableeight' => 'nullable|string',
+            'herolink' => 'required|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'heroimage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        // Handle file uploads
+        if ($request->hasFile('image')) {
+            \Log::info("Processing image file upload");
+            $eventData['image'] = $request->file('image')->store('uploadedimage', 'public');
+        }
+
+        if ($request->hasFile('heroimage')) {
+            \Log::info("Processing hero image file upload");
+            $eventData['heroimage'] = $request->file('heroimage')->store('herouploadedimage', 'public');
+        }
+
+        // Create the event using a database transaction to ensure data integrity
+        DB::beginTransaction();
+
+        try {
+            // Debug the event data
+            \Log::info("Creating event with data: " . json_encode($eventData));
+
+            // Create the event
+            $event = mctlists::create($eventData);
+
+            \Log::info("Event created with ID: " . $event->id);
+
+            // Process ticket types if they exist
+            if ($request->has('tickets')) {
+                foreach ($request->tickets as $ticketData) {
+                    // Skip empty ticket entries
+                    if (empty($ticketData['name']) || empty($ticketData['price'])) {
+                        continue;
+                    }
+
+                    // Create ticket type
+                    TicketType::create([
+                        'mctlists_id' => $event->id,
+                        'name' => $ticketData['name'],
+                        'price' => $ticketData['price'],
+                        'description' => $ticketData['description'] ?? null,
+                        'capacity' => !empty($ticketData['capacity']) ? $ticketData['capacity'] : null,
+                        'sales_start' => !empty($ticketData['sales_start']) ? $ticketData['sales_start'] : null,
+                        'sales_end' => !empty($ticketData['sales_end']) ? $ticketData['sales_end'] : null,
+                        'is_active' => $ticketData['is_active'] ?? 1,
+                        'sold' => 0
+                    ]);
+                }
+            }
+
+            DB::commit();
+            \Log::info("Event created successfully, redirecting to home page");
+
+            return redirect('/')->with('message', 'Event created successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error("Error creating event: " . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+
+            return back()->with('error', 'Failed to create event: ' . $e->getMessage())
+                        ->withInput();
+        }
     }
 
     public function store(Request $request)

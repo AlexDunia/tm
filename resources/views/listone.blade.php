@@ -1041,10 +1041,6 @@
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .cart-summary {
-        flex-direction: column;
-        gap: 1.5rem;
-    }
 
     .summary-details {
         width: 100%;
@@ -1602,15 +1598,10 @@ function updateTicketFromButton(button) {
                 button.style.background = '';
                 button.style.color = '';
 
-                // Reset the input value to prevent accidental additions
-                input.value = 0;
+                // DO NOT reset the input value to 0 anymore
+                // input.value = 0;
 
-                // Update selection state
-                if (input.dataset.ticketId) {
-                    window.updateTicketSelection(input);
-                } else if (input.dataset.ticketTable) {
-                    window.updateTableTicketSelection(input);
-                }
+                // No need to update selection state here, since nothing changed
             }, 2000);
         })
         .catch(error => {
@@ -1758,11 +1749,13 @@ function updateFixedBuyFooter() {
     document.getElementById('fixedBuyCount').textContent = `${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'} selected`;
     document.getElementById('fixedBuyTotal').textContent = `₦${totalAmount.toLocaleString()}`;
 
-    // Show or hide the footer
+    // Show or hide the footer immediately
     if (totalTickets > 0) {
-        footer.classList.add('visible');
+        footer.style.display = 'flex';
+        footer.style.transform = 'translateY(0)';
     } else {
-        footer.classList.remove('visible');
+        footer.style.display = 'none';
+        footer.style.transform = 'translateY(100%)';
     }
 }
 
@@ -1929,15 +1922,10 @@ window.updateTicketFromButton = function(button) {
                 button.style.background = '';
                 button.style.color = '';
 
-                // Reset the input value to prevent accidental additions
-                input.value = 0;
+                // DO NOT reset the input value to 0 anymore
+                // input.value = 0;
 
-                // Update selection state
-                if (input.dataset.ticketId) {
-                    window.updateTicketSelection(input);
-                } else if (input.dataset.ticketTable) {
-                    window.updateTableTicketSelection(input);
-                }
+                // No need to update selection state here, since nothing changed
             }, 2000);
         })
         .catch(error => {
@@ -2386,17 +2374,7 @@ window.showCartNotification = function(quantity, ticketName) {
                                 </div>
 
                                 @if($ticket->capacity !== null)
-                                    <div class="ticket-capacity">
-                                        <div class="capacity-label">
-                                            <i class="fa-solid fa-users"></i> Availability
-                                        </div>
-                                        <div class="capacity-bar-container">
-                                            <div class="capacity-bar" style="width: {{ min(100, ($ticket->sold / $ticket->capacity) * 100) }}%"></div>
-                                        </div>
-                                        <div class="capacity-text">
-                                            {{ $ticket->getAvailableQuantity() }} remaining
-                                        </div>
-                                    </div>
+                                    <!-- Removed ticket-capacity div -->
                                 @endif
 
                                 @if($ticket->isOnSale() && !$ticket->isSoldOut())
@@ -2509,28 +2487,25 @@ window.showCartNotification = function(quantity, ticketName) {
                     </div>
                 @endif
 
+                <!-- Cart summary section -->
                 <div class="cart-summary">
                     <div class="summary-details">
                         <div class="summary-item">
-                            <span class="summary-label">Selected Tickets:</span>
-                            <span class="summary-value" id="selected-tickets-count">0</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Total:</span>
-                            <div class="summary-total">
-                                <span class="currency">₦</span>
-                                <span class="amount" id="total-amount">0</span>
+                            <div class="summary-label">Selected tickets</div>
+                            <div class="summary-value">
+                                <span id="selected-tickets-count">0</span>
                             </div>
                         </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Total</div>
+                            <div class="summary-total">₦<span id="total-amount">0</span></div>
+                        </div>
                     </div>
-
-                    <div class="cart-actions">
-                        <button type="button" onclick="proceedToCheckout()" class="add-to-cart-button disabled" disabled>
-                            <i class="fa-solid fa-shopping-bag"></i>
-                            Buy Now
-                        </button>
-                    </div>
+                    <button type="button" class="add-to-cart-button disabled" onclick="proceedToCheckout()" disabled>
+                        <i class="fa-solid fa-cart-plus"></i> Buy Tickets
+                    </button>
                 </div>
+                <!-- Cart summary removed -->
             </form>
         </section>
 
@@ -3012,15 +2987,10 @@ window.showCartNotification = function(quantity, ticketName) {
                         button.style.background = '';
                         button.style.color = '';
 
-                        // Reset the input value to prevent accidental additions
-                        input.value = 0;
+                        // DO NOT reset the input value to 0 anymore
+                        // input.value = 0;
 
-                        // Update selection state
-                        if (input.dataset.ticketId) {
-                            window.updateTicketSelection(input);
-                        } else if (input.dataset.ticketTable) {
-                            window.updateTableTicketSelection(input);
-                        }
+                        // No need to update selection state here, since nothing changed
                     }, 2000);
                 })
                 .catch(error => {
@@ -3042,8 +3012,7 @@ window.showCartNotification = function(quantity, ticketName) {
 
         window.showCartNotification = function(itemCount) {
             // Deprecated - now redirecting to cart directly
-            console.log("Redirecting to cart instead of showing notification");
-            window.location.href = "{{ route('cart') }}";
+
         };
 
         // Also define the updateFixedBuyFooter function
@@ -3065,11 +3034,13 @@ window.showCartNotification = function(quantity, ticketName) {
             document.getElementById('fixedBuyCount').textContent = `${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'} selected`;
             document.getElementById('fixedBuyTotal').textContent = `₦${totalAmount.toLocaleString()}`;
 
-            // Show or hide the footer
+            // Show or hide the footer immediately
             if (totalTickets > 0) {
-                footer.classList.add('visible');
+                footer.style.display = 'flex';
+                footer.style.transform = 'translateY(0)';
             } else {
-                footer.classList.remove('visible');
+                footer.style.display = 'none';
+                footer.style.transform = 'translateY(100%)';
             }
         };
 

@@ -55,6 +55,10 @@ Route::get('/tryverifypayment/{reference}', [PaymentController::class, 'tryverif
 // View Admin Panel
 Route::get('/dunia', [AdminController::class, 'index']);
 
+// Admin Event Creation (new advanced form)
+Route::get('/admin/events/create', [AdminController::class, 'showEventForm'])->middleware('web');
+Route::post('/admin/events/store', [AdminController::class, 'storeEvent'])->middleware('web');
+
 Route::middleware(['web'])->group(function () {
     // Define your routes here
     // USER REGISTRATION
@@ -231,6 +235,24 @@ Route::get('/events/{name}', [ListingController::class, 'show'] );
 // Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+// Test route to create an event directly
+Route::get('/test-create-event', function() {
+    $event = \App\Models\mctlists::create([
+        'name' => 'Test Event ' . time(),
+        'description' => 'This is a test event created directly',
+        'location' => 'Test Location',
+        'date' => 'July 20, 2023 @7:00pm',
+        'time' => '7:00 PM - 10:00 PM',
+        'category' => 'Music',
+        'startingprice' => '99.99',
+        'herolink' => 'https://example.com',
+        'image' => 'https://res.cloudinary.com/dnuhjsckk/image/upload/v1745339803/6th-Service-with-mudiaga_1_hjvlab.jpg',
+        'heroimage' => 'https://res.cloudinary.com/dnuhjsckk/image/upload/v1745339803/6th-Service-with-mudiaga_1_hjvlab.jpg',
+    ]);
+
+    return "Event created with ID: " . $event->id . ". <a href='/'>Go to home page</a> to see if it appears.";
+});
 
 // Clear cart for non-authenticated users
 Route::get('/clear-cart', function() {

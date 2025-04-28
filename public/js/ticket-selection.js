@@ -247,11 +247,6 @@ function addTicketsToCart() {
 
     // Update cart count
     updateCartCount();
-
-    // Redirect to cart page after delay
-    setTimeout(() => {
-        window.location.href = '/cart';
-    }, 1500);
 }
 
 /**

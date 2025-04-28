@@ -558,48 +558,31 @@
             @foreach($mycart as $item)
                 <div class="cart-item">
                     <div class="ticket-type-badge">
-                        @if(isset($item->cname))
-                            {{ $item->cname }}
-                        @elseif(isset($item['product_name']))
-                            {{ $item['product_name'] }}
-                        @endif
+                        {{ $item->cname ?? $item->product_name ?? '' }}
                     </div>
 
                     <div class="item-image">
                         @if(isset($item->image) && $item->image)
-                        <img src="{{ asset($item->image) }}" alt="{{ isset($item->eventname) ? $item->eventname : $item['item_name'] ?? 'Product' }}" onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
+                        <img src="{{ asset($item->image) }}" alt="{{ $item->eventname ?? $item->item_name ?? 'Product' }}" onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
                         @elseif(isset($item->cdescription) && $item->cdescription)
-                        <img src="{{ asset('storage/' . $item->cdescription) }}" alt="{{ isset($item->eventname) ? $item->eventname : $item['item_name'] ?? 'Product' }}" onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
+                        <img src="{{ asset('storage/' . $item->cdescription) }}" alt="{{ $item->eventname ?? $item->item_name ?? 'Product' }}" onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
                         @else
-                            <img src="{{ asset('/images/placeholder.jpg') }}" alt="{{ isset($item->eventname) ? $item->eventname : $item['item_name'] ?? 'Product' }}">
+                            <img src="{{ asset('/images/placeholder.jpg') }}" alt="{{ $item->eventname ?? $item->item_name ?? 'Product' }}">
                         @endif
                     </div>
 
                     <div class="item-details">
                         <div class="item-event">
-                            @if(isset($item->eventname))
-                                {{ $item->eventname }}
-                            @elseif(isset($item['item_name']))
-                                {{ $item['item_name'] }}
-                            @endif
+                            {{ $item->eventname ?? $item->item_name ?? '' }}
                         </div>
 
                         <div class="item-meta">
                             <div class="item-price-info">
-                                <div class="item-price">₦{{
-                                    isset($item->cprice)
-                                    ? number_format($item->cprice)
-                                    : (isset($item['price']) ? number_format($item['price']) : '0')
-                                }}</div>
-                                <div class="ticket-quantity-display">{{
-                                    isset($item->cquantity)
-                                    ? $item->cquantity
-                                    : (isset($item['quantity']) ? $item['quantity'] : '0')
-                                }} ticket{{
-                                    (isset($item->cquantity) && $item->cquantity > 1) ||
-                                    (isset($item['quantity']) && $item['quantity'] > 1)
-                                    ? 's' : ''
-                                }}</div>
+                                <div class="item-price">₦{{ number_format($item->cprice ?? $item->price ?? 0) }}</div>
+                                <div class="ticket-quantity-display">
+                                    {{ $item->cquantity ?? $item->quantity ?? 0 }}
+                                    ticket{{ (($item->cquantity ?? $item->quantity ?? 0) > 1) ? 's' : '' }}
+                                </div>
                                 <div class="shipping-info">
                                     Eligible for returns up to 30 days
                                 </div>
@@ -607,16 +590,16 @@
 
                             <div class="item-actions">
                                 <div class="quantity-controls">
-                                    <button class="quantity-btn decrease-btn" onclick="updateQuantity('{{ isset($item->id) ? $item->id : $loop->index }}', '{{ isset($item->cname) ? $item->cname : (isset($item['product_name']) ? $item['product_name'] : '') }}', 'decrease', {{ isset($item->cquantity) ? $item->cquantity : (isset($item['quantity']) ? $item['quantity'] : 0) }})">
+                                    <button class="quantity-btn decrease-btn" onclick="updateQuantity('{{ isset($item->id) ? $item->id : $loop->index }}', '{{ $item->cname ?? $item->product_name ?? '' }}', 'decrease', {{ $item->cquantity ?? $item->quantity ?? 0 }})">
                                         <i class="fa-solid fa-minus"></i>
                                     </button>
-                                    <input type="number" class="quantity-input" value="{{ isset($item->cquantity) ? $item->cquantity : (isset($item['quantity']) ? $item['quantity'] : 0) }}" min="1" max="50" readonly>
-                                    <button class="quantity-btn increase-btn" onclick="updateQuantity('{{ isset($item->id) ? $item->id : $loop->index }}', '{{ isset($item->cname) ? $item->cname : (isset($item['product_name']) ? $item['product_name'] : '') }}', 'increase', {{ isset($item->cquantity) ? $item->cquantity : (isset($item['quantity']) ? $item['quantity'] : 0) }})">
+                                    <input type="number" class="quantity-input" value="{{ $item->cquantity ?? $item->quantity ?? 0 }}" min="1" max="50" readonly>
+                                    <button class="quantity-btn increase-btn" onclick="updateQuantity('{{ isset($item->id) ? $item->id : $loop->index }}', '{{ $item->cname ?? $item->product_name ?? '' }}', 'increase', {{ $item->cquantity ?? $item->quantity ?? 0 }})">
                                         <i class="fa-solid fa-plus"></i>
                                     </button>
                                 </div>
 
-                                <button class="remove-btn" onclick="removeCartItem('{{ isset($item->id) ? $item->id : $loop->index }}', '{{ isset($item->cname) ? $item->cname : (isset($item['product_name']) ? $item['product_name'] : '') }}')">
+                                <button class="remove-btn" onclick="removeCartItem('{{ isset($item->id) ? $item->id : $loop->index }}', '{{ $item->cname ?? $item->product_name ?? '' }}')">
                                     <i class="fa-solid fa-trash"></i> Remove
                                 </button>
                             </div>

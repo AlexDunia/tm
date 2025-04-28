@@ -17,15 +17,18 @@ class mctlists extends Model
         'category',
         'date',
         'startingprice',
+        'time',
+        'enddate',
+        'status',
         'earlybirds',
-        'tableforone',
-        'tablefortwo',
-        'tableforthree',
-        'tableforfour',
-        'tableforfive',
-        'tableforsix',
-        'tableforseven',
-        'tableforeight',
+        'tableone',
+        'tabletwo',
+        'tablethree',
+        'tablefour',
+        'tablefive',
+        'tablesix',
+        'tableseven',
+        'tableeight',
         'image',
         'heroimage',
         'herolink'
@@ -46,7 +49,7 @@ class mctlists extends Model
     {
         // Cache the query results for 10 minutes to improve performance
         $cacheKey = 'event_' . $this->id . '_available_tickets';
-        
+
         return Cache::remember($cacheKey, 600, function () {
             return $this->ticketTypes()
                     ->where('is_active', true)
@@ -58,25 +61,25 @@ class mctlists extends Model
                     ->get();
         });
     }
-    
+
     /**
      * Optimized method to get all events with caching
      */
     public static function getAllCached($limit = null)
     {
         $cacheKey = 'all_events' . ($limit ? '_' . $limit : '');
-        
+
         return Cache::remember($cacheKey, 600, function () use ($limit) {
             $query = static::latest();
-            
+
             if ($limit) {
                 return $query->take($limit)->get();
             }
-            
+
             return $query->get();
         });
     }
-    
+
     /**
      * Optimized scoped method to search by name
      */
@@ -85,13 +88,13 @@ class mctlists extends Model
         if (!$searchTerm) {
             return $query;
         }
-        
+
         return $query->where('name', 'like', '%' . $searchTerm . '%')
                      ->orWhere('description', 'like', '%' . $searchTerm . '%')
                      ->orWhere('location', 'like', '%' . $searchTerm . '%')
                      ->orWhere('category', 'like', '%' . $searchTerm . '%');
     }
-    
+
     /**
      * Optimized scoped method to filter by category
      */
@@ -100,10 +103,10 @@ class mctlists extends Model
         if (!$category || $category === 'all') {
             return $query;
         }
-        
+
         return $query->where('category', $category);
     }
-    
+
     /**
      * Clear the cache for this model
      */
@@ -112,7 +115,7 @@ class mctlists extends Model
         Cache::forget('event_' . $this->id . '_available_tickets');
         Cache::forget('all_events');
     }
-    
+
     /**
      * Override the save method to clear cache on save
      */
