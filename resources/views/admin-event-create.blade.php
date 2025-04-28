@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Create Event | Admin</title>
     <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -582,6 +583,57 @@
             font-size: 14px;
             color: var(--info);
         }
+
+        /* Styling for the spinner and message containers */
+        .spinner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert-success, .alert-danger {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .alert-success {
+            background-color: rgba(0, 200, 150, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .alert-danger {
+            background-color: rgba(255, 84, 112, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .alert-success i, .alert-danger i {
+            font-size: 20px;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -669,7 +721,7 @@
                             <label for="date" class="required">Event Date *</label>
                             <div class="input-icon">
                                 <i class="fas fa-calendar-alt"></i>
-                                <input type="text" id="date" name="date" value="{{ old('date') }}" placeholder="e.g. December 15 @6:30pm" required class="form-control">
+                            <input type="text" id="date" name="date" value="{{ old('date') }}" placeholder="e.g. December 15 @6:30pm" required class="form-control">
                             </div>
                             @error('date')
                                 <div class="form-error">{{ $message }}</div>
@@ -680,7 +732,7 @@
                             <label for="time">Event Time</label>
                             <div class="input-icon">
                                 <i class="fas fa-clock"></i>
-                                <input type="text" id="time" name="time" value="{{ old('time') }}" class="form-control" placeholder="e.g. 6:30 PM - 10:30 PM">
+                            <input type="text" id="time" name="time" value="{{ old('time') }}" class="form-control" placeholder="e.g. 6:30 PM - 10:30 PM">
                             </div>
                             @error('time')
                                 <div class="form-error">{{ $message }}</div>
@@ -691,7 +743,7 @@
                             <label for="enddate">End Date</label>
                             <div class="input-icon">
                                 <i class="fas fa-calendar-alt"></i>
-                                <input type="text" id="enddate" name="enddate" value="{{ old('enddate') }}" placeholder="e.g. December 16 @10:00pm" class="form-control">
+                            <input type="text" id="enddate" name="enddate" value="{{ old('enddate') }}" placeholder="e.g. December 16 @10:00pm" class="form-control">
                             </div>
                             @error('enddate')
                                 <div class="form-error">{{ $message }}</div>
@@ -928,10 +980,26 @@
                 </div>
 
                 <div class="submit-container">
-                    <button type="submit" class="btn">
+                    <button type="submit" class="btn" id="submitBtn">
                         <i class="fas fa-check"></i> Create Event
                     </button>
+                    <div class="spinner-container" style="display: none;">
+                        <div class="spinner"></div>
+                        <span>Creating event...</span>
+                    </div>
                     <p class="submit-helper">By clicking Create Event, you confirm that all provided information is accurate.</p>
+                </div>
+
+                <!-- Success message container -->
+                <div id="success-message" class="alert-success" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Event created successfully!</span>
+                </div>
+
+                <!-- Error message container -->
+                <div id="error-message" class="alert-danger" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
                 </div>
             </form>
         </div>
@@ -1114,9 +1182,11 @@
                 });
             });
 
-            // Form validation
+            // Form validation and submission
             const form = document.getElementById('eventForm');
             form.addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent default form submission
+
                 const requiredFields = form.querySelectorAll('[required]');
                 let valid = true;
 
@@ -1130,10 +1200,160 @@
                 });
 
                 if (!valid) {
-                    event.preventDefault();
-                    alert('Please fill in all required fields.');
+                    showError('Please fill in all required fields.');
+                    return;
                 }
+
+                // Show loading spinner
+                document.getElementById('submitBtn').style.display = 'none';
+                document.querySelector('.spinner-container').style.display = 'flex';
+
+                // Hide any existing messages
+                document.getElementById('success-message').style.display = 'none';
+                document.getElementById('error-message').style.display = 'none';
+
+                // Get CSRF token from meta tag
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                // Create FormData object to send form data with files
+                const formData = new FormData(form);
+
+                // Ensure CSRF token is included
+                formData.append('_token', csrfToken);
+
+                // Log form data for debugging
+                console.log('Form data entries:');
+                for (let pair of formData.entries()) {
+                    if (pair[1] instanceof File) {
+                        console.log(pair[0], 'File:', pair[1].name, 'type:', pair[1].type, 'size:', pair[1].size);
+                    } else {
+                        console.log(pair[0], pair[1]);
+                    }
+                }
+
+                // Send the AJAX request
+                console.log('Sending AJAX request to /admin/events/store');
+
+                fetch('/admin/events/store', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    console.log('Response received, status:', response.status);
+
+                    // Try to get the content type of the response
+                    const contentType = response.headers.get('content-type');
+                    console.log('Content-Type:', contentType);
+
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            console.error('Error response text:', text);
+
+                            let errorMsg = 'Server error: ' + response.status;
+                            try {
+                                // Try to parse as JSON
+                                const data = JSON.parse(text);
+
+                                if (response.status === 422 && data.errors) {
+                                    // Validation errors
+                                    throw new ValidationError(data);
+                                } else if (data.message) {
+                                    errorMsg = data.message;
+                                }
+                            } catch (e) {
+                                if (!(e instanceof ValidationError)) {
+                                    console.error('Could not parse error response as JSON:', e);
+                                } else {
+                                    throw e;
+                                }
+                            }
+
+                            throw new Error(errorMsg);
+                        });
+                    }
+
+                    // Check if the response is JSON
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    }
+
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error('Response is not valid JSON:', text);
+                            return { message: 'Event created, but server returned non-JSON response.' };
+                        }
+                    });
+                })
+                .then(data => {
+                    // Hide loading spinner
+                    document.querySelector('.spinner-container').style.display = 'none';
+
+                    // Show success message
+                    const successMessage = document.getElementById('success-message');
+                    successMessage.style.display = 'flex';
+                    successMessage.querySelector('span').textContent = data.message || 'Event created successfully!';
+
+                    // Scroll to success message
+                    successMessage.scrollIntoView({ behavior: 'smooth' });
+
+                    // Reset the form after a delay (optional)
+                    setTimeout(() => {
+                        // Redirect to the events list or show a button to add another event
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                        } else {
+                            document.getElementById('submitBtn').style.display = 'flex';
+                        }
+                    }, 2000);
+                })
+                .catch(error => {
+                    // Hide loading spinner
+                    document.querySelector('.spinner-container').style.display = 'none';
+                    document.getElementById('submitBtn').style.display = 'flex';
+
+                    // Handle validation errors
+                    if (error instanceof ValidationError) {
+                        const errors = error.data.errors;
+                        // Show the first validation error
+                        const firstError = Object.values(errors)[0][0];
+                        showError(firstError);
+
+                        // Mark fields with errors
+                        Object.keys(errors).forEach(field => {
+                            const fieldElement = document.querySelector(`[name="${field}"]`);
+                            if (fieldElement) {
+                                fieldElement.classList.add('error');
+                            }
+                        });
+                    } else {
+                        // Show general error message
+                        showError(error.message || 'An error occurred while creating the event.');
+                    }
+                });
             });
+
+            // Function to display error messages
+            function showError(message) {
+                const errorMessage = document.getElementById('error-message');
+                errorMessage.style.display = 'flex';
+                errorMessage.querySelector('span').textContent = message;
+                errorMessage.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // Custom validation error class
+            class ValidationError extends Error {
+                constructor(data) {
+                    super('Validation error');
+                    this.data = data;
+                }
+            }
 
             // Initialize first ticket with sample data
             document.querySelector('input[name="tickets[0][name]"]').value = 'General Admission';

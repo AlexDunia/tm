@@ -1293,30 +1293,27 @@ function updateCartSummary() {
         }
     });
 
-    // Update the selected tickets count display
-    document.getElementById('selected-tickets-count').textContent = totalTickets;
-
-    // Update the UI to show selected tickets with event name
-    const countElement = document.getElementById('selected-tickets-count');
-    if (countElement) {
-        if (totalTickets > 0) {
-            countElement.textContent = `${totalTickets} for {{ $listonee['name'] }}`;
-        } else {
-            countElement.textContent = "0";
-        }
+    // Skip updating count display as it was removed
+    // Update fixed buy footer which is still in the document
+    const fixedBuyCount = document.getElementById('fixedBuyCount');
+    if (fixedBuyCount) {
+        fixedBuyCount.textContent = `${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'} selected`;
     }
 
-    document.getElementById('total-amount').textContent = totalAmount.toLocaleString();
+    const fixedBuyTotal = document.getElementById('fixedBuyTotal');
+    if (fixedBuyTotal) {
+        fixedBuyTotal.textContent = `₦${totalAmount.toLocaleString()}`;
+    }
 
-    // Enable/disable checkout button based on selection
-    const checkoutButton = document.querySelector('.add-to-cart-button');
-    if (checkoutButton) {
+    // Show/hide fixed buy footer
+    const fixedBuyFooter = document.getElementById('fixedBuyFooter');
+    if (fixedBuyFooter) {
         if (totalTickets > 0) {
-            checkoutButton.classList.remove('disabled');
-            checkoutButton.disabled = false;
+            fixedBuyFooter.style.display = 'flex';
+            fixedBuyFooter.style.transform = 'translateY(0)';
         } else {
-            checkoutButton.classList.add('disabled');
-            checkoutButton.disabled = true;
+            fixedBuyFooter.style.display = 'none';
+            fixedBuyFooter.style.transform = 'translateY(100%)';
         }
     }
 }
@@ -1376,6 +1373,7 @@ function showCartNotification(quantity, ticketName) {
 
 // Set the date we're counting down to
 var eventDateString = "{{$listonee['date']}}";
+var eventTimeString = "{{$listonee['time'] ?? ''}}";
 var countDownDate;
 
 // Global variable to track selected tickets
@@ -1383,8 +1381,21 @@ var selectedTickets = {};
 
 // Try to parse the date, handling different formats
 try {
-    // First attempt: Try the default format
-    countDownDate = new Date(eventDateString).getTime();
+    // Create a complete datetime string
+    var dateTimeStr = eventDateString;
+
+    // Add time if available (just use the start time if it's a range)
+    if (eventTimeString) {
+        // If time contains a range (with hyphen), just take the start time
+        if (eventTimeString.includes('-')) {
+            var timeParts = eventTimeString.split('-');
+            eventTimeString = timeParts[0].trim();
+        }
+        dateTimeStr += ' ' + eventTimeString;
+    }
+
+    // Try to parse the combined date and time
+    countDownDate = new Date(dateTimeStr).getTime();
 
     // Check if the date is invalid
     if (isNaN(countDownDate)) {
@@ -1393,27 +1404,6 @@ try {
             // Replace @ with space
             var cleanDateStr = eventDateString.replace('@', ' ');
             countDownDate = new Date(cleanDateStr).getTime();
-
-            // If still invalid, try more parsing
-            if (isNaN(countDownDate)) {
-                // Extract parts
-                var parts = eventDateString.split('@');
-                var datePart = parts[0].trim();
-                var timePart = parts[1].trim();
-
-                // Convert timePart to 24-hour format if needed
-                if (timePart.toLowerCase().includes('pm')) {
-                    timePart = timePart.toLowerCase().replace('pm', '');
-                    var timeComponents = timePart.split(':');
-                    var hours = parseInt(timeComponents[0]);
-                    if (hours < 12) hours += 12;
-                    timePart = hours + ':' + timeComponents[1];
-                } else if (timePart.toLowerCase().includes('am')) {
-                    timePart = timePart.toLowerCase().replace('am', '');
-                }
-
-                countDownDate = new Date(datePart + ' ' + timePart).getTime();
-            }
         }
     }
 
@@ -1732,31 +1722,8 @@ function proceedToCheckout() {
 
 // Update the fixed footer when ticket selections change
 function updateFixedBuyFooter() {
-    const footer = document.getElementById('fixedBuyFooter');
-    if (!footer) return;
-
-    let totalTickets = 0;
-    let totalAmount = 0;
-
-    // Calculate totals
-    Object.values(selectedTickets).forEach(ticket => {
-        totalTickets += ticket.quantity;
-        const price = parseFloat(ticket.price.toString().replace(/,/g, ''));
-        totalAmount += price * ticket.quantity;
-    });
-
-    // Update the UI
-    document.getElementById('fixedBuyCount').textContent = `${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'} selected`;
-    document.getElementById('fixedBuyTotal').textContent = `₦${totalAmount.toLocaleString()}`;
-
-    // Show or hide the footer immediately
-    if (totalTickets > 0) {
-        footer.style.display = 'flex';
-        footer.style.transform = 'translateY(0)';
-    } else {
-        footer.style.display = 'none';
-        footer.style.transform = 'translateY(100%)';
-    }
+    // Just call updateCartSummary to handle everything in one place
+    window.updateCartSummary();
 }
 
 window.proceedToCheckout = function() {
@@ -2253,7 +2220,33 @@ window.showCartNotification = function(quantity, ticketName) {
                     </div>
                     <div class="event-time-icon">
                         <i class="fas fa-clock"></i>
-                        {{ \Carbon\Carbon::parse($listonee['time'])->format('h:i A') }}
+                        @php
+                        try {
+                            if (!empty($listonee['time'])) {
+                                // Handle various time formats
+                                if (strpos($listonee['time'], '-') !== false) {
+                                    // For time ranges (e.g., "2:00 PM - 11:00 PM")
+                                    $timeRange = explode('-', $listonee['time']);
+                                    $startTime = trim($timeRange[0]);
+                                    $endTime = isset($timeRange[1]) ? trim($timeRange[1]) : '';
+
+                                    if (!empty($endTime)) {
+                                        echo \Carbon\Carbon::parse($startTime)->format('h:i A') . ' - ' . \Carbon\Carbon::parse($endTime)->format('h:i A');
+                                    } else {
+                                        echo \Carbon\Carbon::parse($startTime)->format('h:i A');
+                                    }
+                                } else {
+                                    // For single time format
+                                    echo \Carbon\Carbon::parse($listonee['time'])->format('h:i A');
+                                }
+                            } else {
+                                echo "TBA";
+                            }
+                        } catch (\Exception $e) {
+                            // Fallback if parsing fails
+                            echo $listonee['time'] ?? "TBA";
+                        }
+                        @endphp
                     </div>
                 </div>
 
@@ -2488,24 +2481,9 @@ window.showCartNotification = function(quantity, ticketName) {
                 @endif
 
                 <!-- Cart summary section -->
-                <div class="cart-summary">
-                    <div class="summary-details">
-                        <div class="summary-item">
-                            <div class="summary-label">Selected tickets</div>
-                            <div class="summary-value">
-                                <span id="selected-tickets-count">0</span>
-                            </div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Total</div>
-                            <div class="summary-total">₦<span id="total-amount">0</span></div>
-                        </div>
-                    </div>
-                    <button type="button" class="add-to-cart-button disabled" onclick="proceedToCheckout()" disabled>
-                        <i class="fa-solid fa-cart-plus"></i> Buy Tickets
-                    </button>
-                </div>
-                <!-- Cart summary removed -->
+                <!-- Removing this cart-summary div as requested -->
+
+                <!-- End of removed cart summary -->
             </form>
         </section>
 
@@ -2861,30 +2839,27 @@ window.showCartNotification = function(quantity, ticketName) {
                 }
             });
 
-            // Update the selected tickets count display
-            document.getElementById('selected-tickets-count').textContent = totalTickets;
-
-            // Update the UI to show selected tickets with event name
-            const countElement = document.getElementById('selected-tickets-count');
-            if (countElement) {
-                if (totalTickets > 0) {
-                    countElement.textContent = `${totalTickets} for {{ $listonee['name'] }}`;
-                } else {
-                    countElement.textContent = "0";
-                }
+            // Skip updating count display as it was removed
+            // Update fixed buy footer which is still in the document
+            const fixedBuyCount = document.getElementById('fixedBuyCount');
+            if (fixedBuyCount) {
+                fixedBuyCount.textContent = `${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'} selected`;
             }
 
-            document.getElementById('total-amount').textContent = totalAmount.toLocaleString();
+            const fixedBuyTotal = document.getElementById('fixedBuyTotal');
+            if (fixedBuyTotal) {
+                fixedBuyTotal.textContent = `₦${totalAmount.toLocaleString()}`;
+            }
 
-            // Enable/disable checkout button based on selection
-            const checkoutButton = document.querySelector('.add-to-cart-button');
-            if (checkoutButton) {
+            // Show/hide fixed buy footer
+            const fixedBuyFooter = document.getElementById('fixedBuyFooter');
+            if (fixedBuyFooter) {
                 if (totalTickets > 0) {
-                    checkoutButton.classList.remove('disabled');
-                    checkoutButton.disabled = false;
+                    fixedBuyFooter.style.display = 'flex';
+                    fixedBuyFooter.style.transform = 'translateY(0)';
                 } else {
-                    checkoutButton.classList.add('disabled');
-                    checkoutButton.disabled = true;
+                    fixedBuyFooter.style.display = 'none';
+                    fixedBuyFooter.style.transform = 'translateY(100%)';
                 }
             }
         };
@@ -3015,33 +2990,10 @@ window.showCartNotification = function(quantity, ticketName) {
 
         };
 
-        // Also define the updateFixedBuyFooter function
+        // updateFixedBuyFooter is no longer needed as its functionality is in updateCartSummary
         window.updateFixedBuyFooter = function() {
-            const footer = document.getElementById('fixedBuyFooter');
-            if (!footer) return;
-
-            let totalTickets = 0;
-            let totalAmount = 0;
-
-            // Calculate totals
-            Object.values(window.selectedTickets).forEach(ticket => {
-                totalTickets += ticket.quantity;
-                const price = parseFloat(ticket.price.toString().replace(/,/g, ''));
-                totalAmount += price * ticket.quantity;
-            });
-
-            // Update the UI
-            document.getElementById('fixedBuyCount').textContent = `${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'} selected`;
-            document.getElementById('fixedBuyTotal').textContent = `₦${totalAmount.toLocaleString()}`;
-
-            // Show or hide the footer immediately
-            if (totalTickets > 0) {
-                footer.style.display = 'flex';
-                footer.style.transform = 'translateY(0)';
-            } else {
-                footer.style.display = 'none';
-                footer.style.transform = 'translateY(100%)';
-            }
+            // Just call updateCartSummary to handle everything in one place
+            window.updateCartSummary();
         };
 
         // Add click event listeners directly to all buttons
