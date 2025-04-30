@@ -47,7 +47,29 @@ class CartController extends Controller
      */
     public function checkout()
     {
-        return view('checkout');
+        // Get cart items based on authentication state
+        if (auth()->check()) {
+            // For authenticated users, get cart items from database
+            $cartItems = Cart::where('user_id', auth()->id())->get();
+        } else {
+            // For non-authenticated users, get cart items from session
+            $sessionCartItems = session()->get('cart_items', []);
+            $cartItems = collect();
+
+            foreach ($sessionCartItems as $id => $item) {
+                // Convert array item to object-like structure for consistent template handling
+                $cartObj = new \stdClass();
+                $cartObj->id = $id;
+                $cartObj->cname = $item['product_name'] ?? '';
+                $cartObj->eventname = $item['item_name'] ?? '';
+                $cartObj->cprice = (float)($item['price'] ?? 0);
+                $cartObj->cquantity = (int)($item['quantity'] ?? 0);
+                $cartObj->ctotalprice = (float)($item['total'] ?? ($cartObj->cprice * $cartObj->cquantity));
+                $cartItems->push($cartObj);
+            }
+        }
+
+        return view('Checkout', ['mycart' => $cartItems]);
     }
 
     /**
@@ -142,20 +164,32 @@ class CartController extends Controller
 
             DB::commit();
 
-            // Cache cart totals for performance
+            // Get the total cart count for the response
+            $totalCartCount = 0;
+
             if (auth()->check()) {
+                $totalCartCount = Cart::where('user_id', auth()->id())->sum(DB::raw('CAST(cquantity AS INTEGER)'));
+
+                // Cache cart totals for performance
                 $cacheKey = 'cart_totals_' . auth()->id();
                 Cache::put($cacheKey, [
-                    'count' => Cart::where('user_id', auth()->id())->sum(DB::raw('CAST(cquantity AS INTEGER)')),
+                    'count' => $totalCartCount,
                     'total' => Cart::where('user_id', auth()->id())->sum(DB::raw('CAST(ctotalprice AS DECIMAL(10,2))'))
                 ], now()->addMinutes(10));
+            } else {
+                // For guest users, count from session
+                $cartItems = session()->get('cart_items', []);
+                foreach ($cartItems as $item) {
+                    $totalCartCount += (int)($item['quantity'] ?? 0);
+                }
             }
 
             if ($request->ajax() || $request->has('no_redirect')) {
                 return response()->json([
                     'success' => true,
                     'items_added' => $addedItems,
-                    'updated_items' => $updatedItems
+                    'updated_items' => $updatedItems,
+                    'total_cart_items' => $totalCartCount
                 ]);
             }
 
@@ -248,194 +282,136 @@ class CartController extends Controller
     /**
      * Update cart item quantity
      */
-    public function updateCart(Request $request, $id)
+    public function updateItem(Request $request, $id)
     {
+        // Validate request
         $request->validate([
             'quantity' => 'required|integer|min:1'
         ]);
 
         try {
             if (auth()->check()) {
+                // For authenticated users, update database record
                 $cartItem = Cart::where('id', $id)
                     ->where('user_id', auth()->id())
                     ->firstOrFail();
 
-                $cartItem->cquantity = (int)$request->quantity;
-                $cartItem->ctotalprice = (float)$cartItem->cprice * (int)$request->quantity;
+                $cartItem->cquantity = $request->quantity;
+                $cartItem->ctotalprice = $cartItem->cprice * $request->quantity;
                 $cartItem->save();
 
-                // Invalidate cart cache
-                Cache::forget('cart_totals_' . auth()->id());
+                // Get cart count for response
+                $totalCartCount = Cart::where('user_id', auth()->id())->sum(DB::raw('CAST(cquantity AS INTEGER)'));
 
-                if ($request->ajax()) {
-                    return response()->json([
-                        'success' => true,
+                return response()->json([
+                    'success' => true,
+                    'item' => [
+                        'id' => $cartItem->id,
                         'quantity' => $cartItem->cquantity,
-                        'total' => $cartItem->ctotalprice,
-                        'cart_total' => Cart::where('user_id', auth()->id())->sum(DB::raw('CAST(ctotalprice AS DECIMAL(10,2))'))
-                    ]);
-                }
+                        'total' => $cartItem->ctotalprice
+                    ],
+                    'total_cart_items' => $totalCartCount
+                ]);
             } else {
+                // For non-authenticated users, update session cart
                 $cartItems = session()->get('cart_items', []);
 
-                if (isset($cartItems[$id])) {
-                    $cartItems[$id]['quantity'] = $request->quantity;
-                    $cartItems[$id]['total'] = $cartItems[$id]['price'] * $request->quantity;
-                    session()->put('cart_items', $cartItems);
-
-                    if ($request->ajax()) {
-                        // Calculate total from all items
-                        $cartTotal = 0;
-                        foreach ($cartItems as $item) {
-                            $cartTotal += $item['total'];
-                        }
-
-                        return response()->json([
-                            'success' => true,
-                            'quantity' => $cartItems[$id]['quantity'],
-                            'total' => $cartItems[$id]['total'],
-                            'cart_total' => $cartTotal
-                        ]);
-                    }
+                if (!isset($cartItems[$id])) {
+                    return $this->securityFailureResponse($request, 'Cart item not found');
                 }
-            }
 
-            return redirect()->back()->with('success', 'Cart updated successfully');
+                $cartItems[$id]['quantity'] = $request->quantity;
+                $cartItems[$id]['total'] = $cartItems[$id]['price'] * $request->quantity;
+                session()->put('cart_items', $cartItems);
+
+                // Get cart count for response
+                $totalCartCount = 0;
+                foreach ($cartItems as $item) {
+                    $totalCartCount += (int)($item['quantity'] ?? 0);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'item' => [
+                        'id' => $id,
+                        'quantity' => $cartItems[$id]['quantity'],
+                        'total' => $cartItems[$id]['total']
+                    ],
+                    'total_cart_items' => $totalCartCount
+                ]);
+            }
         } catch (\Exception $e) {
-            Log::error('Update cart error: ' . $e->getMessage());
+            Log::error('Cart update error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'id' => $id,
+                'request' => $request->all()
+            ]);
 
-            if ($request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Failed to update cart']);
-            }
-
-            return redirect()->back()->with('error', 'Failed to update cart');
+            return $this->securityFailureResponse($request);
         }
     }
 
     /**
-     * Remove an item from the cart with enhanced security
+     * Remove item from cart
      */
     public function removeItem(Request $request, $id)
     {
-        // Validate inputs
-        $id = filter_var($id, FILTER_VALIDATE_INT);
-        if ($id === false) {
-            return $this->securityFailureResponse($request, 'Invalid item ID format');
-        }
-
-        // Sanitize inputs to prevent XSS in logs
-        $ticketType = $request->input('ticket_type');
-        if ($ticketType) {
-            $ticketType = filter_var($ticketType, FILTER_SANITIZE_STRING);
-        }
-
-        // Rate limiting to prevent brute force attempts
-        // Only allow 10 delete attempts per minute per IP
-        $ipAddress = $request->ip();
-        $rateLimitKey = 'cart_delete_' . md5($ipAddress);
-        $attempts = Cache::get($rateLimitKey, 0);
-
-        if ($attempts > 10) {
-            Log::warning('SECURITY - Rate limit exceeded for cart item removal', [
-                'ip' => $ipAddress,
-                'attempts' => $attempts
-            ]);
-            return $this->securityFailureResponse($request, 'Too many attempts, please try again later');
-        }
-
-        Cache::put($rateLimitKey, $attempts + 1, now()->addMinutes(1));
-
-        // Log the removal request with sanitized data
-        Log::info('CART DEBUG - Remove Item Request', [
-            'id' => $id,
-            'ticket_type' => $ticketType ? htmlspecialchars($ticketType) : null,
-            'is_authenticated' => auth()->check(),
-            'user_id' => auth()->id(),
-            'ip' => $ipAddress
-        ]);
-
-        // For authenticated users, use database with strict ownership validation
-        if (auth()->check()) {
-            // Only find items belonging to the current user
-            $cartItem = Cart::where('user_id', auth()->id())->find($id);
-
-            // If ID doesn't exist but we have a ticket type, try to find by ticket type (but only one item)
-            if (!$cartItem && $ticketType) {
-                $cartItem = Cart::where('user_id', auth()->id())
-                    ->where('cname', $ticketType)
-                    ->first();
-            }
-
-            if ($cartItem) {
-                // Double-check ownership before deletion
-                if ($cartItem->user_id !== auth()->id()) {
-                    Log::warning('SECURITY - User attempted to delete another user\'s cart item', [
-                        'user_id' => auth()->id(),
-                        'attempted_item_id' => $id,
-                        'item_owner' => $cartItem->user_id
-                    ]);
-                    return $this->securityFailureResponse($request, 'Unauthorized action');
-                }
+        try {
+            if (auth()->check()) {
+                // For authenticated users, remove from database
+                $cartItem = Cart::where('id', $id)
+                    ->where('user_id', auth()->id())
+                    ->firstOrFail();
 
                 $cartItem->delete();
 
-                // Invalidate cart cache to prevent stale data
-                Cache::forget('cart_totals_' . auth()->id());
+                // Get updated cart count for response
+                $totalCartCount = Cart::where('user_id', auth()->id())->sum(DB::raw('CAST(cquantity AS INTEGER)'));
 
-                if ($request->ajax()) {
-                    return response()->json(['success' => true, 'message' => 'Item removed successfully']);
+                // Update cache
+                $cacheKey = 'cart_totals_' . auth()->id();
+                Cache::put($cacheKey, [
+                    'count' => $totalCartCount,
+                    'total' => Cart::where('user_id', auth()->id())->sum(DB::raw('CAST(ctotalprice AS DECIMAL(10,2))'))
+                ], now()->addMinutes(10));
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Item removed from cart',
+                    'total_cart_items' => $totalCartCount
+                ]);
+            } else {
+                // For non-authenticated users, remove from session
+                $cartItems = session()->get('cart_items', []);
+
+                if (!isset($cartItems[$id])) {
+                    return $this->securityFailureResponse($request, 'Cart item not found');
                 }
-                return redirect()->route('cart')->with('success', 'Item removed successfully');
-            }
-        }
-        // For non-authenticated users, use session with proper validation
-        else {
-            $cartItems = session()->get('cart_items', []);
 
-            // Try to remove by ID first with strict validation
-            if (isset($cartItems[$id]) && is_array($cartItems[$id])) {
-                // Save item info for logging
-                $removedItem = $cartItems[$id];
-
-                // Delete just this specific item
                 unset($cartItems[$id]);
                 session()->put('cart_items', $cartItems);
 
-                Log::info('CART DEBUG - Removed session item by ID', [
-                    'id' => $id
+                // Get updated cart count for response
+                $totalCartCount = 0;
+                foreach ($cartItems as $item) {
+                    $totalCartCount += (int)($item['quantity'] ?? 0);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Item removed from cart',
+                    'total_cart_items' => $totalCartCount
                 ]);
-
-                if ($request->ajax()) {
-                    return response()->json(['success' => true, 'message' => 'Item removed successfully']);
-                }
-                return redirect()->route('cart')->with('success', 'Item removed successfully');
             }
+        } catch (\Exception $e) {
+            Log::error('Cart remove error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'id' => $id,
+                'request' => $request->all()
+            ]);
 
-            // If we couldn't find by ID and we have a ticket type, remove just one item of that type
-            if ($ticketType) {
-                // Find the first item matching the ticket type
-                foreach ($cartItems as $key => $item) {
-                    if (isset($item['product_name']) && $item['product_name'] == $ticketType) {
-                        // Delete just this specific item
-                        unset($cartItems[$key]);
-                        session()->put('cart_items', $cartItems);
-
-                        Log::info('CART DEBUG - Removed session item by ticket type', [
-                            'ticket_type' => htmlspecialchars($ticketType),
-                            'key' => $key
-                        ]);
-
-                        if ($request->ajax()) {
-                            return response()->json(['success' => true, 'message' => 'Item removed successfully']);
-                        }
-                        return redirect()->route('cart')->with('success', 'Item removed successfully');
-                    }
-                }
-            }
+            return $this->securityFailureResponse($request);
         }
-
-        // If we get here, nothing was removed
-        return $this->securityFailureResponse($request, 'Item not found', 404);
     }
 
     /**
@@ -467,6 +443,155 @@ class CartController extends Controller
             }
 
             return $count;
+        }
+    }
+
+    /**
+     * Get cart totals for AJAX requests
+     */
+    public function getCartTotals(Request $request)
+    {
+        try {
+            if (auth()->check()) {
+                // For authenticated users, calculate from database
+                $subtotal = Cart::where('user_id', auth()->id())->sum(DB::raw('CAST(ctotalprice AS DECIMAL(10,2))'));
+
+                // You can add discount logic here if needed
+                $total = $subtotal;
+
+                return response()->json([
+                    'success' => true,
+                    'subtotal' => $subtotal,
+                    'total' => $total
+                ]);
+            } else {
+                // For non-authenticated users, calculate from session
+                $cartItems = session()->get('cart_items', []);
+                $subtotal = 0;
+
+                foreach ($cartItems as $item) {
+                    $subtotal += (float)($item['total'] ?? 0);
+                }
+
+                // You can add discount logic here if needed
+                $total = $subtotal;
+
+                return response()->json([
+                    'success' => true,
+                    'subtotal' => $subtotal,
+                    'total' => $total
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Cart totals error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get cart totals'
+            ], 500);
+        }
+    }
+
+    /**
+     * Store pending order information in session before payment
+     */
+    public function preparePayment(Request $request)
+    {
+        try {
+            // Validate the request
+            $request->validate([
+                'email' => 'required|email',
+                'first_name' => 'required|string|max:100',
+                'last_name' => 'required|string|max:100',
+                'phone' => 'required|string|max:20',
+                'amount' => 'required|numeric',
+                'ticket_data' => 'required|array'
+            ]);
+
+            // Generate a unique order reference
+            $orderRef = 'ORD-' . strtoupper(uniqid()) . '-' . rand(1000, 9999);
+
+            // Store order data in session
+            $orderData = [
+                'ref' => $orderRef,
+                'email' => $request->email,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone' => $request->phone,
+                'amount' => $request->amount,
+                'ticket_data' => $request->ticket_data,
+                'created_at' => now()->toDateTimeString()
+            ];
+
+            session()->put('pending_order', $orderData);
+
+            return response()->json([
+                'success' => true,
+                'order_ref' => $orderRef
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Prepare payment error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to prepare payment data'
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle successful payment processing
+     */
+    public function processSuccessfulPayment($paymentRef)
+    {
+        try {
+            // Get pending order from session
+            $pendingOrder = session()->get('pending_order');
+
+            if (!$pendingOrder) {
+                Log::error('No pending order found for payment: ' . $paymentRef);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No order information found'
+                ], 404);
+            }
+
+            // Process the order (save to orders table, etc.)
+            // This would typically involve creating an actual order record
+
+            // Clear the cart after successful payment
+            if (auth()->check()) {
+                Cart::where('user_id', auth()->id())->delete();
+            } else {
+                session()->forget('cart_items');
+            }
+
+            // Clear the pending order but keep ticket data for success page
+            session()->put('completed_order', $pendingOrder);
+            session()->forget('pending_order');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment processed successfully',
+                'payment_ref' => $paymentRef,
+                'redirect_url' => route('success')
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Process payment error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'payment_ref' => $paymentRef
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error processing payment'
+            ], 500);
         }
     }
 }

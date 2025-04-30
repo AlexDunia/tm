@@ -2,19 +2,189 @@
 
 @section('content')
 <style>
-/* Spotify-inspired Ticket Grid Styling */
+/* Premium Animated Loader */
+.premium-loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(18, 18, 26, 0.98);
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    transition: opacity 0.7s ease, visibility 0.7s ease;
+}
+
+.premium-loader-content {
+    position: relative;
+    text-align: center;
+}
+
+.premium-spinner {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.premium-spinner:before,
+.premium-spinner:after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    animation-duration: 1.8s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+    filter: drop-shadow(0 0 10px rgba(192, 72, 136, 0.8));
+}
+
+.premium-spinner:before {
+    width: 100%;
+    height: 100%;
+    border: 3px solid transparent;
+    border-top-color: #C04888;
+    border-left-color: #C04888;
+    animation-name: premium-spin-clockwise;
+    box-shadow: 0 0 20px rgba(192, 72, 136, 0.5);
+}
+
+.premium-spinner:after {
+    width: 80%;
+    height: 80%;
+    border: 3px solid transparent;
+    border-right-color: #FECC01;
+    border-bottom-color: #FECC01;
+    top: 10%;
+    left: 10%;
+    animation-name: premium-spin-counter-clockwise;
+    box-shadow: 0 0 10px rgba(254, 204, 1, 0.5);
+}
+
+@keyframes premium-spin-clockwise {
+    0% {
+        transform: rotate(0deg);
+    }
+    50% {
+        transform: rotate(360deg);
+    }
+    100% {
+        transform: rotate(720deg);
+    }
+}
+
+@keyframes premium-spin-counter-clockwise {
+    0% {
+        transform: rotate(0deg);
+    }
+    50% {
+        transform: rotate(-360deg);
+    }
+    100% {
+        transform: rotate(-720deg);
+    }
+}
+
+.premium-loader-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 20px;
+    opacity: 0;
+    animation: text-fade 2s ease infinite;
+}
+
+@keyframes text-fade {
+    0%, 100% {
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+.premium-progress {
+    width: 100px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    margin: 10px auto 0;
+    overflow: hidden;
+}
+
+.premium-progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #C04888, #FECC01);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+    animation: progress-pulse 1.5s ease infinite;
+}
+
+@keyframes progress-pulse {
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
+}
+
+/* No loading or transitions */
+.pricing-section {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Hide standalone cards outside the ticket grid */
+.spotify-ticket-card:not(.ticket-grid .spotify-ticket-card) {
+    display: none !important;
+}
+
+/* Hide any preview cards that might be generated */
+body > .general-admission-card,
+body > [class*="ticket-card"],
+body > [class*="admission-card"],
+.main-container > .general-admission-card,
+.main-container > [class*="ticket-card"],
+.main-container > [class*="admission-card"],
+.content-wrapper > .general-admission-card,
+.content-wrapper > [class*="ticket-card"],
+.content-wrapper > [class*="admission-card"] {
+    display: none !important;
+}
+
+/* Prevent layout shifts by setting minimum dimensions */
+.ticket-grid {
+    min-height: 400px;
+}
+
+.direct-quantity-control {
+    min-height: 38px;
+}
+
+.buy-ticket-btn {
+    min-height: 42px;
+}
+
+/* Hide any ticket tags */
+.ticket-tag {
+    display: none !important;
+}
+
+/* Spotify-inspired Ticket Grid Styling - Consolidated to remove duplicates */
 .ticket-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
     margin-bottom: 40px;
-    width: 85%;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Center the grid */
-.ticket-grid {
     width: 85%;
     margin-left: auto;
     margin-right: auto;
@@ -180,11 +350,12 @@
 
 /* Updated ticket card styles to match modern design */
 .spotify-ticket-card {
+    min-height: 320px;
     background-color: rgba(18, 18, 18, 0.4);
     border-radius: 8px;
     overflow: hidden;
     padding: 20px;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease, opacity 0.5s ease, transform 0.5s ease;
     position: relative;
     overflow: hidden;
     color: white;
@@ -1041,10 +1212,6 @@
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .cart-summary {
-        flex-direction: column;
-        gap: 1.5rem;
-    }
 
     .summary-details {
         width: 100%;
@@ -1297,30 +1464,27 @@ function updateCartSummary() {
         }
     });
 
-    // Update the selected tickets count display
-    document.getElementById('selected-tickets-count').textContent = totalTickets;
-
-    // Update the UI to show selected tickets with event name
-    const countElement = document.getElementById('selected-tickets-count');
-    if (countElement) {
-        if (totalTickets > 0) {
-            countElement.textContent = `${totalTickets} for {{ $listonee['name'] }}`;
-        } else {
-            countElement.textContent = "0";
-        }
+    // Skip updating count display as it was removed
+    // Update fixed buy footer which is still in the document
+    const fixedBuyCount = document.getElementById('fixedBuyCount');
+    if (fixedBuyCount) {
+        fixedBuyCount.textContent = `${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'} selected`;
     }
 
-    document.getElementById('total-amount').textContent = totalAmount.toLocaleString();
+    const fixedBuyTotal = document.getElementById('fixedBuyTotal');
+    if (fixedBuyTotal) {
+        fixedBuyTotal.textContent = `₦${totalAmount.toLocaleString()}`;
+    }
 
-    // Enable/disable checkout button based on selection
-    const checkoutButton = document.querySelector('.add-to-cart-button');
-    if (checkoutButton) {
+    // Show/hide fixed buy footer
+    const fixedBuyFooter = document.getElementById('fixedBuyFooter');
+    if (fixedBuyFooter) {
         if (totalTickets > 0) {
-            checkoutButton.classList.remove('disabled');
-            checkoutButton.disabled = false;
+            fixedBuyFooter.style.display = 'flex';
+            fixedBuyFooter.style.transform = 'translateY(0)';
         } else {
-            checkoutButton.classList.add('disabled');
-            checkoutButton.disabled = true;
+            fixedBuyFooter.style.display = 'none';
+            fixedBuyFooter.style.transform = 'translateY(100%)';
         }
     }
 }
@@ -1380,6 +1544,7 @@ function showCartNotification(quantity, ticketName) {
 
 // Set the date we're counting down to
 var eventDateString = "{{$listonee['date']}}";
+var eventTimeString = "{{$listonee['time'] ?? ''}}";
 var countDownDate;
 
 // Global variable to track selected tickets
@@ -1387,8 +1552,21 @@ var selectedTickets = {};
 
 // Try to parse the date, handling different formats
 try {
-    // First attempt: Try the default format
-    countDownDate = new Date(eventDateString).getTime();
+    // Create a complete datetime string
+    var dateTimeStr = eventDateString;
+
+    // Add time if available (just use the start time if it's a range)
+    if (eventTimeString) {
+        // If time contains a range (with hyphen), just take the start time
+        if (eventTimeString.includes('-')) {
+            var timeParts = eventTimeString.split('-');
+            eventTimeString = timeParts[0].trim();
+        }
+        dateTimeStr += ' ' + eventTimeString;
+    }
+
+    // Try to parse the combined date and time
+    countDownDate = new Date(dateTimeStr).getTime();
 
     // Check if the date is invalid
     if (isNaN(countDownDate)) {
@@ -1397,27 +1575,6 @@ try {
             // Replace @ with space
             var cleanDateStr = eventDateString.replace('@', ' ');
             countDownDate = new Date(cleanDateStr).getTime();
-
-            // If still invalid, try more parsing
-            if (isNaN(countDownDate)) {
-                // Extract parts
-                var parts = eventDateString.split('@');
-                var datePart = parts[0].trim();
-                var timePart = parts[1].trim();
-
-                // Convert timePart to 24-hour format if needed
-                if (timePart.toLowerCase().includes('pm')) {
-                    timePart = timePart.toLowerCase().replace('pm', '');
-                    var timeComponents = timePart.split(':');
-                    var hours = parseInt(timeComponents[0]);
-                    if (hours < 12) hours += 12;
-                    timePart = hours + ':' + timeComponents[1];
-                } else if (timePart.toLowerCase().includes('am')) {
-                    timePart = timePart.toLowerCase().replace('am', '');
-                }
-
-                countDownDate = new Date(datePart + ' ' + timePart).getTime();
-            }
         }
     }
 
@@ -1586,10 +1743,16 @@ function updateTicketFromButton(button) {
 
             // Update cart count in header if possible
             if (data.total_cart_items) {
-                const cartCounter = document.querySelector('.cart-count');
-                if (cartCounter) {
-                    cartCounter.textContent = data.total_cart_items;
-                    cartCounter.style.display = 'block';
+                // Use the global cart count updater function
+                if (window.updateGlobalCartCount) {
+                    window.updateGlobalCartCount(data.total_cart_items);
+                } else {
+                    // Fallback for older pages without the global updater
+                    const cartCounter = document.querySelector('.cart-count');
+                    if (cartCounter) {
+                        cartCounter.textContent = data.total_cart_items;
+                        cartCounter.classList.add('active');
+                    }
                 }
             }
 
@@ -1602,15 +1765,10 @@ function updateTicketFromButton(button) {
                 button.style.background = '';
                 button.style.color = '';
 
-                // Reset the input value to prevent accidental additions
-                input.value = 0;
+                // DO NOT reset the input value to 0 anymore
+                // input.value = 0;
 
-                // Update selection state
-                if (input.dataset.ticketId) {
-                    window.updateTicketSelection(input);
-                } else if (input.dataset.ticketTable) {
-                    window.updateTableTicketSelection(input);
-                }
+                // No need to update selection state here, since nothing changed
             }, 2000);
         })
         .catch(error => {
@@ -1664,67 +1822,6 @@ function updateCartCounter(quantity) {
     }
 }
 
-// Improve the direct quantity input handlers
-// REMOVED: Consolidated with main DOM ready event at the bottom of the file
-/*
-document.addEventListener('DOMContentLoaded', function() {
-    // Add input listeners to all ticket quantity fields
-    const allQuantityInputs = document.querySelectorAll('.direct-quantity-input');
-    allQuantityInputs.forEach(input => {
-        // Force numeric input only
-        input.addEventListener('input', function(e) {
-            // Remove non-numeric characters
-            this.value = this.value.replace(/[^0-9]/g, '');
-
-            // Make sure it's not beyond max
-            const maxVal = parseInt(this.max || 10);
-            if (parseInt(this.value) > maxVal) {
-                this.value = maxVal;
-            }
-
-            // Update the selection state
-            if (input.dataset.ticketId) {
-                updateTicketSelection(input);
-            } else if (input.dataset.ticketTable) {
-                updateTableTicketSelection(input);
-            }
-        });
-
-        // On blur (when input loses focus)
-        input.addEventListener('blur', function() {
-            // If empty, set to 0
-            if (this.value === '' || isNaN(parseInt(this.value))) {
-                this.value = 0;
-            }
-
-            // Make sure it's not beyond max
-            const maxVal = parseInt(this.max || 10);
-            if (parseInt(this.value) > maxVal) {
-                this.value = maxVal;
-            }
-
-            // Update the selection state
-            if (input.dataset.ticketId) {
-                updateTicketSelection(input);
-            } else if (input.dataset.ticketTable) {
-                updateTableTicketSelection(input);
-            }
-        });
-    });
-
-    // Ensure the buy tickets button works correctly
-    document.querySelectorAll('.buy-ticket-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.dataset.ticketId || this.closest('.spotify-ticket-card').querySelector('[data-ticket-id]')) {
-                updateTicketFromButton(this);
-            } else if (this.dataset.ticketTable || this.closest('.spotify-ticket-card').querySelector('[data-ticket-table]')) {
-                updateTableTicketFromButton(this);
-            }
-        });
-    });
-});
-*/
-
 // Function for table tickets - uses the same logic as regular tickets
 function updateTableTicketFromButton(button) {
     updateTicketFromButton(button);
@@ -1741,29 +1838,8 @@ function proceedToCheckout() {
 
 // Update the fixed footer when ticket selections change
 function updateFixedBuyFooter() {
-    const footer = document.getElementById('fixedBuyFooter');
-    if (!footer) return;
-
-    let totalTickets = 0;
-    let totalAmount = 0;
-
-    // Calculate totals
-    Object.values(selectedTickets).forEach(ticket => {
-        totalTickets += ticket.quantity;
-        const price = parseFloat(ticket.price.toString().replace(/,/g, ''));
-        totalAmount += price * ticket.quantity;
-    });
-
-    // Update the UI
-    document.getElementById('fixedBuyCount').textContent = `${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'} selected`;
-    document.getElementById('fixedBuyTotal').textContent = `₦${totalAmount.toLocaleString()}`;
-
-    // Show or hide the footer
-    if (totalTickets > 0) {
-        footer.classList.add('visible');
-    } else {
-        footer.classList.remove('visible');
-    }
+    // Just call updateCartSummary to handle everything in one place
+    window.updateCartSummary();
 }
 
 window.proceedToCheckout = function() {
@@ -1913,10 +1989,16 @@ window.updateTicketFromButton = function(button) {
 
             // Update cart count in header if possible
             if (data.total_cart_items) {
-                const cartCounter = document.querySelector('.cart-count');
-                if (cartCounter) {
-                    cartCounter.textContent = data.total_cart_items;
-                    cartCounter.style.display = 'block';
+                // Use the global cart count updater function
+                if (window.updateGlobalCartCount) {
+                    window.updateGlobalCartCount(data.total_cart_items);
+                } else {
+                    // Fallback for older pages without the global updater
+                    const cartCounter = document.querySelector('.cart-count');
+                    if (cartCounter) {
+                        cartCounter.textContent = data.total_cart_items;
+                        cartCounter.classList.add('active');
+                    }
                 }
             }
 
@@ -1929,15 +2011,10 @@ window.updateTicketFromButton = function(button) {
                 button.style.background = '';
                 button.style.color = '';
 
-                // Reset the input value to prevent accidental additions
-                input.value = 0;
+                // DO NOT reset the input value to 0 anymore
+                // input.value = 0;
 
-                // Update selection state
-                if (input.dataset.ticketId) {
-                    window.updateTicketSelection(input);
-                } else if (input.dataset.ticketTable) {
-                    window.updateTableTicketSelection(input);
-                }
+                // No need to update selection state here, since nothing changed
             }, 2000);
         })
         .catch(error => {
@@ -2188,58 +2265,182 @@ window.showCartNotification = function(quantity, ticketName) {
         }, 5000);
     }, 100);
 };
+
+// Add this at the beginning of your script to handle page loading
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all JS functionality after DOM is ready
+    initializePage();
+});
+
+// Consolidate all initialization functions
+function initializePage() {
+    // Pre-style all ticket cards to prevent flicker
+    const ticketCards = document.querySelectorAll('.spotify-ticket-card');
+    ticketCards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+    });
+
+    // Initialize QR code if present
+    if (document.getElementById("qrcode") && typeof QRCode !== 'undefined') {
+        var qrcode = new QRCode(document.getElementById("qrcode"), {
+            text: document.getElementById("text").value,
+            width: 128,
+            height: 128,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+
+    // Initialize quantity inputs
+    const allQuantityInputs = document.querySelectorAll('.direct-quantity-input');
+    allQuantityInputs.forEach(input => {
+        // On input (as user types)
+        input.addEventListener('input', function() {
+            // Force numeric input
+            this.value = this.value.replace(/[^0-9]/g, '');
+
+            if (input.dataset.ticketId) {
+                updateTicketSelection(input);
+            } else if (input.dataset.ticketTable) {
+                updateTableTicketSelection(input);
+            }
+        });
+
+        // On focus, select all text
+        input.addEventListener('focus', function() {
+            this.select();
+        });
+
+        // On blur, ensure valid value
+        input.addEventListener('blur', function() {
+            if (this.value === '' || isNaN(parseInt(this.value, 10))) {
+                this.value = 0;
+            }
+
+            if (input.dataset.ticketId) {
+                updateTicketSelection(input);
+            } else if (input.dataset.ticketTable) {
+                updateTableTicketSelection(input);
+            }
+        });
+    });
+
+    // Initialize buy buttons
+    document.querySelectorAll('.buy-ticket-btn').forEach(button => {
+        button.addEventListener('click', createRipple);
+        button.addEventListener('click', function() {
+            if (this.dataset.ticketId || this.closest('.spotify-ticket-card').querySelector('[data-ticket-id]')) {
+                updateTicketFromButton(this);
+            } else if (this.dataset.ticketTable || this.closest('.spotify-ticket-card').querySelector('[data-ticket-table]')) {
+                updateTableTicketFromButton(this);
+            }
+        });
+    });
+
+    // Initialize countdown timer
+    initializeCountdown();
+}
+
+// Set the date we're counting down to - moved into its own function
+function initializeCountdown() {
+    var eventDateString = "{{$listonee['date']}}";
+    var eventTimeString = "{{$listonee['time'] ?? ''}}";
+    var countDownDate;
+
+    // Try to parse the date, handling different formats
+    try {
+        // Create a complete datetime string
+        var dateTimeStr = eventDateString;
+
+        // Add time if available (just use the start time if it's a range)
+        if (eventTimeString) {
+            // If time contains a range (with hyphen), just take the start time
+            if (eventTimeString.includes('-')) {
+                var timeParts = eventTimeString.split('-');
+                eventTimeString = timeParts[0].trim();
+            }
+            dateTimeStr += ' ' + eventTimeString;
+        }
+
+        // Try to parse the combined date and time
+        countDownDate = new Date(dateTimeStr).getTime();
+
+        // Check if the date is invalid
+        if (isNaN(countDownDate)) {
+            // Try to handle special formats like "December 15 @6:30pm"
+            if (eventDateString.includes('@')) {
+                // Replace @ with space
+                var cleanDateStr = eventDateString.replace('@', ' ');
+                countDownDate = new Date(cleanDateStr).getTime();
+            }
+        }
+
+        // If still invalid, use a fallback date (e.g., current date + 30 days)
+        if (isNaN(countDownDate)) {
+            var fallbackDate = new Date();
+            fallbackDate.setDate(fallbackDate.getDate() + 30);
+            countDownDate = fallbackDate.getTime();
+            console.log("Warning: Could not parse date string. Using fallback date.");
+        }
+    } catch (e) {
+        // If all parsing attempts fail, use a fallback date
+        var fallbackDate = new Date();
+        fallbackDate.setDate(fallbackDate.getDate() + 30);
+        countDownDate = fallbackDate.getTime();
+        console.log("Error parsing date: " + e.message + ". Using fallback date.");
+    }
+
+    // Update the count down every 1 second
+    var x = setInterval(function() {
+        // Get today's date and time
+        var now = new Date().getTime();
+
+        // Find the distance between now and the count down date
+        var distance = countDownDate - now;
+
+        // Time calculations for days, hours, minutes and seconds
+        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        // Output the result to elements if they exist
+        if (document.getElementById("countdown-days")) {
+            document.getElementById("countdown-days").innerHTML = days;
+            document.getElementById("countdown-hours").innerHTML = hours;
+            document.getElementById("countdown-mins").innerHTML = minutes;
+            document.getElementById("countdown-secs").innerHTML = seconds;
+        }
+
+        // If the count down is over, write some text
+        if (distance < 0) {
+            clearInterval(x);
+            if (document.getElementById("countdown-days")) {
+                document.getElementById("countdown-days").innerHTML = "0";
+                document.getElementById("countdown-hours").innerHTML = "0";
+                document.getElementById("countdown-mins").innerHTML = "0";
+                document.getElementById("countdown-secs").innerHTML = "0";
+            }
+        }
+    }, 1000);
+}
+
+// Global variable to track selected tickets
+var selectedTickets = {};
+
+// ... rest of your existing JavaScript ...
 </script>
 @endsection
 
-<!-- Ticket Modal -->
-<div class="ticket-modal-overlay" id="ticketModal">
-    <div class="ticket-modal">
-        <div class="modal-header">
-            <h3>Select Tickets</h3>
-            <button type="button" class="close-modal" onclick="closeTicketModal()">×</button>
-        </div>
-        <div class="modal-body">
-            <div class="modal-ticket-details">
-                <div class="modal-ticket-name" id="modalTicketName">VIP Access</div>
-                <div class="modal-ticket-price" id="modalTicketPrice">₦15,000</div>
-                <div class="modal-ticket-description" id="modalTicketDescription">
-                    Premium seating with complimentary drinks
-                </div>
-            </div>
-
-            <div class="modal-quantity-selector">
-                <div class="quantity-control-row">
-                    <div class="quantity-label">Quantity</div>
-                    <div class="modal-quantity-control">
-                        <button type="button" class="modal-quantity-btn" onclick="decrementModalQuantity()">
-                            <i class="fa-solid fa-minus"></i>
-                        </button>
-                        <input type="number" id="modalQuantityInput" class="modal-quantity-input" value="1" min="0" max="10" onchange="updateModalTotal()">
-                        <button type="button" class="modal-quantity-btn" onclick="incrementModalQuantity()">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-ticket-list" id="otherTicketsSection">
-                <div class="modal-ticket-list-title">Other Available Tickets</div>
-                <div id="otherTicketsList">
-                    <!-- Other tickets will be dynamically added here -->
-                </div>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            <div class="modal-total">
-                Total: <span class="modal-total-amount" id="modalTotalAmount">₦15,000</span>
-            </div>
-            <button type="button" class="add-to-cart-modal-btn" id="addToCartModalBtn" onclick="addToCartFromModal()">
-                <i class="fa-solid fa-cart-plus"></i> Add to Cart
-            </button>
-            <button type="button" class="checkout-modal-btn" id="checkoutModalBtn" onclick="checkoutFromModal()">
-                <i class="fa-solid fa-arrow-right"></i> Checkout
-            </button>
+<!-- Premium Animated Loader -->
+<div class="premium-loader-overlay" id="premiumLoader">
+    <div class="premium-loader-content">
+        <div class="premium-spinner"></div>
+        <div class="premium-loader-text">LOADING</div>
+        <div class="premium-progress">
+            <div class="premium-progress-bar" id="progressBar"></div>
         </div>
     </div>
 </div>
@@ -2256,95 +2457,60 @@ window.showCartNotification = function(quantity, ticketName) {
     @endif
 
         <!-- Hero Section - Pixel Perfect Replica -->
-        <section class="event-hero-section">
-            <div class="event-hero-wrapper">
-                <div class="event-date-badge">
-                    <div class="event-date-icon">
-                        <i class="fas fa-calendar-alt"></i>
-                        {{ \Carbon\Carbon::parse($listonee['date'])->format('F d, Y') }}
-                    </div>
-                    <div class="event-time-icon">
-                        <i class="fas fa-clock"></i>
-                        {{ \Carbon\Carbon::parse($listonee['time'])->format('h:i A') }}
-                    </div>
-                </div>
+        <section class="event-hero-section" style="background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('{{ str_starts_with($listonee->image, 'http') ? $listonee->image : asset('storage/' . $listonee->image) }}') center/cover no-repeat;">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">INTERNATIONAL FILM FESTIVAL</h1>
 
-                <h1 class="event-title">{{ $listonee['name'] }}</h1>
-                <p class="event-description">{{ $listonee['description'] }}</p>
-
-                <div class="event-location">
-                    <i class="fas fa-map-marker-alt"></i>
-                    {{ $listonee['location'] }}
-                </div>
-
-                <div class="event-info-container">
-                    <div class="info-box ticket-types">
-                        <div class="info-icon">
-                            <i class="fas fa-ticket-alt"></i>
+                    <div class="hero-actions">
+                        <div class="ticket-btn-container">
+                            <button class="book-tickets-btn" onclick="document.querySelector('.pricing-section').scrollIntoView({behavior: 'smooth'})">
+                                <i class="fas fa-ticket-alt" aria-hidden="true"></i>
+                                Book Tickets
+                            </button>
                         </div>
-                        <div class="info-content">
-                            <h3>Ticket Types</h3>
-                            <p>{{ count($listonee->ticketTypes) }} ticket types available</p>
+
+                        <div class="hero-action-buttons">
+                            <button class="share-btn" onclick="shareEvent()">
+                                <i class="fas fa-share-alt" aria-hidden="true"></i>
+                            </button>
+                            <button class="bookmark-btn" onclick="bookmarkEvent()">
+                                <i class="far fa-bookmark" aria-hidden="true"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="info-box attendees">
-                        <div class="info-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="info-content">
-                            <h3>Attendees</h3>
-                            <p>{{ $listonee->attendees_count ?? 0 }} people attending</p>
-                        </div>
-                    </div>
-
-                    <div class="info-box share">
-                        <div class="info-icon">
-                            <i class="fas fa-share-alt"></i>
-                        </div>
-                        <div class="info-content">
-                            <h3>Share</h3>
-                            <div class="social-icons">
-                                <a href="#"><i class="fab fa-facebook-f"></i></a>
-                                <a href="#"><i class="fab fa-twitter"></i></a>
-                                <a href="#"><i class="fab fa-instagram"></i></a>
+                    <div class="event-details">
+                        <div class="event-detail">
+                            <div class="detail-icon">
+                                <i class="far fa-calendar-alt" aria-hidden="true"></i>
                             </div>
+                            <div class="detail-text">Saturday, August 10, 2024</div>
+                        </div>
+                        <div class="event-detail">
+                            <div class="detail-icon">
+                                <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                            </div>
+                            <div class="detail-text">Cinema Plaza, Los Angeles</div>
+                        </div>
+                        <div class="event-detail">
+                            <div class="detail-icon">
+                                <i class="far fa-clock" aria-hidden="true"></i>
+                            </div>
+                            <div class="detail-text">3 hours</div>
                         </div>
                     </div>
-                </div>
 
-                <div class="event-qr-container">
-                    <div id="qrcode"></div>
-                </div>
-            </div>
-
-            <div class="event-image-container">
-                <img src="{{ str_starts_with($listonee->image, 'http') ? $listonee->image : asset('storage/' . $listonee->image) }}" alt="{{ $listonee['name'] }}">
-                <div class="countdown-overlay">
-                    <div class="countdown-heading">Event starts in</div>
-                    <div class="countdown-timer" id="event-countdown">
-                        <div class="countdown-item">
-                            <div class="countdown-value" id="countdown-days">00</div>
-                            <div class="countdown-label">Days</div>
-                        </div>
-                        <div class="countdown-item">
-                            <div class="countdown-value" id="countdown-hours">00</div>
-                            <div class="countdown-label">Hours</div>
-                        </div>
-                        <div class="countdown-item">
-                            <div class="countdown-value" id="countdown-mins">00</div>
-                            <div class="countdown-label">Minutes</div>
-                        </div>
-                        <div class="countdown-item">
-                            <div class="countdown-value" id="countdown-secs">00</div>
-                            <div class="countdown-label">Seconds</div>
-                        </div>
+                    <div class="event-tags">
+                        <span class="event-tag">Live performance</span>
+                        <span class="event-tag">Food & drinks</span>
+                        <span class="event-tag">Indoor event</span>
                     </div>
                 </div>
             </div>
         </section>
 
-<input id="text" type="hidden" value="{{ URL::current() }}" />
+        <input id="text" type="hidden" value="{{ URL::current() }}" />
 
         <!-- Pricing Section -->
         <section class="pricing-section">
@@ -2361,15 +2527,10 @@ window.showCartNotification = function(quantity, ticketName) {
                         @foreach($listonee->ticketTypes as $ticket)
                             <div class="spotify-ticket-card {{ !$ticket->isOnSale() || $ticket->isSoldOut() ? 'inactive' : '' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-name="{{ $ticket->name }}" data-ticket-price="{{ $ticket->price }}" data-ticket-description="{{ $ticket->description }}" data-ticket-max="{{ $ticket->capacity ? min(10, $ticket->getAvailableQuantity()) : 10 }}">
                                 @if($ticket->isOnSale() && !$ticket->isSoldOut())
-                                    <div class="ticket-tag available">{{ $ticket->name }} for {{ $listonee['name'] }}</div>
                                 @elseif($ticket->isSoldOut())
-                                    <div class="ticket-tag sold-out">{{ $ticket->name }} - Sold Out</div>
                                 @elseif(!$ticket->isOnSale() && $ticket->sales_start && $ticket->sales_start->isFuture())
-                                    <div class="ticket-tag upcoming">{{ $ticket->name }} - Coming Soon</div>
                                 @elseif(!$ticket->isOnSale() && $ticket->sales_end && $ticket->sales_end->isPast())
-                                    <div class="ticket-tag sold-out">{{ $ticket->name }} - Ended</div>
                                 @else
-                                    <div class="ticket-tag">{{ $ticket->name }} - Unavailable</div>
                                 @endif
 
                                 <div class="ticket-header">
@@ -2386,17 +2547,7 @@ window.showCartNotification = function(quantity, ticketName) {
                                 </div>
 
                                 @if($ticket->capacity !== null)
-                                    <div class="ticket-capacity">
-                                        <div class="capacity-label">
-                                            <i class="fa-solid fa-users"></i> Availability
-                                        </div>
-                                        <div class="capacity-bar-container">
-                                            <div class="capacity-bar" style="width: {{ min(100, ($ticket->sold / $ticket->capacity) * 100) }}%"></div>
-                                        </div>
-                                        <div class="capacity-text">
-                                            {{ $ticket->getAvailableQuantity() }} remaining
-                                        </div>
-                                    </div>
+                                    <!-- Removed ticket-capacity div -->
                                 @endif
 
                                 @if($ticket->isOnSale() && !$ticket->isSoldOut())
@@ -2453,9 +2604,9 @@ window.showCartNotification = function(quantity, ticketName) {
                                     <input type="hidden" name="quantities[]" value="0" class="hidden-quantity">
 
                                     @if($isSoldOut)
-                                        <div class="ticket-tag sold-out">{{ $ticketName }} for {{ $listonee['name'] }} - Sold Out</div>
+                                        <!-- Removed sold out ticket tag -->
                                     @else
-                                        <div class="ticket-tag available">{{ $ticketName }} for {{ $listonee['name'] }}</div>
+                                        <!-- Removed available ticket tag -->
                                     @endif
 
                                     <div class="ticket-header">
@@ -2508,233 +2659,76 @@ window.showCartNotification = function(quantity, ticketName) {
                         @endif
                     </div>
                 @endif
-
-                <div class="cart-summary">
-                    <div class="summary-details">
-                        <div class="summary-item">
-                            <span class="summary-label">Selected Tickets:</span>
-                            <span class="summary-value" id="selected-tickets-count">0</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Total:</span>
-                            <div class="summary-total">
-                                <span class="currency">₦</span>
-                                <span class="amount" id="total-amount">0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="cart-actions">
-                        <button type="button" onclick="proceedToCheckout()" class="add-to-cart-button disabled" disabled>
-                            <i class="fa-solid fa-shopping-bag"></i>
-                            Buy Now
-                        </button>
-                    </div>
-                </div>
             </form>
         </section>
 
-        <!-- Event Details Section -->
-        <section class="event-details-section">
-            <div class="event-tabs">
-                <div class="tab-header">
-                    <button class="tab-btn active" data-tab="details">Event Details</button>
-                    <button class="tab-btn" data-tab="venue">Venue Info</button>
-                    <button class="tab-btn" data-tab="organizer">Organizer</button>
-                </div>
-
-                <div class="tab-content">
-                    <div class="tab-pane active" id="details-tab">
-                        <div class="event-full-description">
-                            <h3>About This Event</h3>
-                            <p>{{$listonee['description']}}</p>
-                            <p>Join us for an unforgettable experience at {{$listonee['name']}}. This event promises to be a landmark occasion featuring amazing performances, great music, and an electric atmosphere.</p>
-
-                            <h3>What to Expect</h3>
-                            <ul class="event-features">
-                                <li><i class="fa-solid fa-check"></i> Live performances from top artists</li>
-                                <li><i class="fa-solid fa-check"></i> Premium sound and lighting</li>
-                                <li><i class="fa-solid fa-check"></i> VIP experience available</li>
-                                <li><i class="fa-solid fa-check"></i> Food and beverages</li>
-                                <li><i class="fa-solid fa-check"></i> Security and safety measures</li>
-                            </ul>
-
-                            <div class="event-timeline">
-                                <h3>Event Schedule</h3>
-                                <div class="timeline-item">
-                                    <div class="timeline-point"></div>
-                                    <div class="timeline-content">
-                                        <div class="timeline-time">5:00 PM</div>
-                                        <div class="timeline-title">Doors Open</div>
-                                    </div>
-                                </div>
-                                <div class="timeline-item">
-                                    <div class="timeline-point"></div>
-                                    <div class="timeline-content">
-                                        <div class="timeline-time">6:30 PM</div>
-                                        <div class="timeline-title">Opening Act</div>
-                                    </div>
-                                </div>
-                                <div class="timeline-item">
-                                    <div class="timeline-point"></div>
-                                    <div class="timeline-content">
-                                        <div class="timeline-time">8:00 PM</div>
-                                        <div class="timeline-title">Main Performance</div>
-                                    </div>
-                                </div>
-                                <div class="timeline-item">
-                                    <div class="timeline-point"></div>
-                                    <div class="timeline-content">
-                                        <div class="timeline-time">11:00 PM</div>
-                                        <div class="timeline-title">Event Ends</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane" id="venue-tab">
-                        <div class="venue-info">
-                            <h3>Venue Information</h3>
-                            <div class="venue-address">
-                                <i class="fa-solid fa-location-dot"></i>
-                                <div>
-                                    <h4>{{$listonee['location']}}</h4>
-                                    <p>The venue features state-of-the-art facilities to ensure a comfortable and enjoyable experience for all attendees.</p>
-                                </div>
-                            </div>
-
-                            <div class="venue-map">
-                                <h4>Location Map</h4>
-                                <div class="map-placeholder">
-                                    <i class="fa-solid fa-map-location-dot"></i>
-                                    <p>Interactive map will be displayed here</p>
-                                </div>
-                            </div>
-
-                            <div class="venue-facilities">
-                                <h4>Facilities</h4>
-                                <ul class="facilities-list">
-                                    <li><i class="fa-solid fa-square-parking"></i> Parking Available</li>
-                                    <li><i class="fa-solid fa-wheelchair-move"></i> Wheelchair Accessible</li>
-                                    <li><i class="fa-solid fa-restroom"></i> Restrooms</li>
-                                    <li><i class="fa-solid fa-utensils"></i> Food & Beverages</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane" id="organizer-tab">
-                        <div class="organizer-info">
-                            <h3>Event Organizer</h3>
-                            <div class="organizer-details">
-                                <div class="organizer-logo">
-                                    <i class="fa-solid fa-building"></i>
-                                </div>
-                                <div class="organizer-content">
-                                    <h4>TixDemand Events</h4>
-                                    <p>TixDemand is a premier event management company specializing in concerts, theatrical performances, and cultural events across Nigeria.</p>
-                                    <div class="organizer-contact">
-                                        <div><i class="fa-solid fa-envelope"></i> contact@tixdemand.com</div>
-                                        <div><i class="fa-solid fa-phone"></i> +234 800 123 4567</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="contact-organizer">
-                                <h4>Have Questions?</h4>
-                                <button class="contact-btn">
-                                    <i class="fa-solid fa-message"></i> Contact Organizer
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Fixed Buy Now Footer -->
+        <div class="fixed-buy-footer" id="fixedBuyFooter">
+            <div class="fixed-buy-summary">
+                <div class="fixed-buy-count" id="fixedBuyCount">0 tickets selected</div>
+                <div class="fixed-buy-total">Total: <span class="amount" id="fixedBuyTotal">₦0</span></div>
             </div>
-        </section>
-
-        <!-- Related Events Section -->
-        <section class="related-events-section">
-            <h2 class="section-title">You Might Also Like</h2>
-            <div class="related-events-slider">
-                <div class="related-events-wrapper">
-                    <!-- Related events would dynamically be added here -->
-                    <div class="related-event-card">
-                        <div class="event-card-image">
-                            <img src="https://res.cloudinary.com/dnuhjsckk/image/upload/v1745339803/Miss-Treasure-Base_gh6jnz.jpg" alt="Related Event">
-                            <div class="event-card-date">
-                                <span class="month">Dec</span>
-                                <span class="day">15</span>
-                            </div>
-                        </div>
-                        <div class="event-card-content">
-                            <div class="event-card-category">Music</div>
-                            <h3 class="event-card-title">Davido Live in Concert</h3>
-                            <div class="event-card-location">
-                                <i class="fa-solid fa-location-dot"></i> Eko Convention Center
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="related-event-card">
-                        <div class="event-card-image">
-                            <img src="https://res.cloudinary.com/dnuhjsckk/image/upload/v1745339803/6th-Service-with-mudiaga_1_hjvlab.jpg" alt="Related Event">
-                            <div class="event-card-date">
-                                <span class="month">Jan</span>
-                                <span class="day">20</span>
-                            </div>
-                        </div>
-                        <div class="event-card-content">
-                            <div class="event-card-category">Theatre</div>
-                            <h3 class="event-card-title">The Lion King Musical</h3>
-                            <div class="event-card-location">
-                                <i class="fa-solid fa-location-dot"></i> Terra Kulture
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="related-event-card">
-                        <div class="event-card-image">
-                            <img src="https://res.cloudinary.com/dnuhjsckk/image/upload/v1745339804/IMG-20250219-WA0008_entmwi.jpg" alt="Related Event">
-                            <div class="event-card-date">
-                                <span class="month">Feb</span>
-                                <span class="day">05</span>
-                            </div>
-                        </div>
-                        <div class="event-card-content">
-                            <div class="event-card-category">Sports</div>
-                            <h3 class="event-card-title">Nigeria vs Ghana</h3>
-                            <div class="event-card-location">
-                                <i class="fa-solid fa-location-dot"></i> National Stadium
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="slider-controls">
-                    <button class="slider-arrow prev">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <button class="slider-arrow next">
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-<!-- Fixed Buy Now Footer -->
-<div class="fixed-buy-footer" id="fixedBuyFooter">
-    <div class="fixed-buy-summary">
-        <div class="fixed-buy-count" id="fixedBuyCount">0 tickets selected</div>
-        <div class="fixed-buy-total">Total: <span class="amount" id="fixedBuyTotal">₦0</span></div>
+            <button class="fixed-buy-btn" onclick="proceedToCheckout()">
+                <i class="fa-solid fa-shopping-bag"></i> Buy Now
+            </button>
+        </div>
     </div>
-    <button class="fixed-buy-btn" onclick="proceedToCheckout()">
-        <i class="fa-solid fa-shopping-bag"></i> Buy Now
-    </button>
 </div>
 
-</div>
-</div>
+<script>
+    // Share event function
+    function shareEvent() {
+        if (navigator.share) {
+            // Use Web Share API if available
+            navigator.share({
+                title: 'International Film Festival',
+                text: 'Join me at the International Film Festival on August 10, 2024',
+                url: window.location.href
+            })
+            .then(() => console.log('Share successful'))
+            .catch((error) => console.log('Error sharing:', error));
+        } else {
+            // Fallback for browsers that don't support Web Share API
+            // Create a temporary input to copy the URL
+            const tempInput = document.createElement('input');
+            tempInput.value = window.location.href;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            // Show a small notification
+            const shareBtn = document.querySelector('.share-btn');
+            const originalHTML = shareBtn.innerHTML;
+            shareBtn.innerHTML = '<i class="fas fa-check"></i>';
+            shareBtn.style.backgroundColor = '#4CAF50';
+
+            setTimeout(() => {
+                shareBtn.innerHTML = originalHTML;
+                shareBtn.style.backgroundColor = '';
+                alert('Link copied to clipboard!');
+            }, 1000);
+        }
+    }
+
+    // Bookmark event function
+    function bookmarkEvent() {
+        const bookmarkBtn = document.querySelector('.bookmark-btn');
+        const isBookmarked = bookmarkBtn.classList.contains('bookmarked');
+
+        if (isBookmarked) {
+            // Remove bookmark
+            bookmarkBtn.classList.remove('bookmarked');
+            bookmarkBtn.querySelector('i').classList.remove('fas');
+            bookmarkBtn.querySelector('i').classList.add('far');
+        } else {
+            // Add bookmark
+            bookmarkBtn.classList.add('bookmarked');
+            bookmarkBtn.querySelector('i').classList.remove('far');
+            bookmarkBtn.querySelector('i').classList.add('fas');
+        }
+    }
+</script>
 
 <!-- Fix for cart functionality -->
 <script>
@@ -2886,30 +2880,27 @@ window.showCartNotification = function(quantity, ticketName) {
                 }
             });
 
-            // Update the selected tickets count display
-            document.getElementById('selected-tickets-count').textContent = totalTickets;
-
-            // Update the UI to show selected tickets with event name
-            const countElement = document.getElementById('selected-tickets-count');
-            if (countElement) {
-                if (totalTickets > 0) {
-                    countElement.textContent = `${totalTickets} for {{ $listonee['name'] }}`;
-                } else {
-                    countElement.textContent = "0";
-                }
+            // Skip updating count display as it was removed
+            // Update fixed buy footer which is still in the document
+            const fixedBuyCount = document.getElementById('fixedBuyCount');
+            if (fixedBuyCount) {
+                fixedBuyCount.textContent = `${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'} selected`;
             }
 
-            document.getElementById('total-amount').textContent = totalAmount.toLocaleString();
+            const fixedBuyTotal = document.getElementById('fixedBuyTotal');
+            if (fixedBuyTotal) {
+                fixedBuyTotal.textContent = `₦${totalAmount.toLocaleString()}`;
+            }
 
-            // Enable/disable checkout button based on selection
-            const checkoutButton = document.querySelector('.add-to-cart-button');
-            if (checkoutButton) {
+            // Show/hide fixed buy footer
+            const fixedBuyFooter = document.getElementById('fixedBuyFooter');
+            if (fixedBuyFooter) {
                 if (totalTickets > 0) {
-                    checkoutButton.classList.remove('disabled');
-                    checkoutButton.disabled = false;
+                    fixedBuyFooter.style.display = 'flex';
+                    fixedBuyFooter.style.transform = 'translateY(0)';
                 } else {
-                    checkoutButton.classList.add('disabled');
-                    checkoutButton.disabled = true;
+                    fixedBuyFooter.style.display = 'none';
+                    fixedBuyFooter.style.transform = 'translateY(100%)';
                 }
             }
         };
@@ -2996,10 +2987,16 @@ window.showCartNotification = function(quantity, ticketName) {
 
                     // Update cart count in header if possible
                     if (data.total_cart_items) {
-                        const cartCounter = document.querySelector('.cart-count');
-                        if (cartCounter) {
-                            cartCounter.textContent = data.total_cart_items;
-                            cartCounter.style.display = 'block';
+                        // Use the global cart count updater function
+                        if (window.updateGlobalCartCount) {
+                            window.updateGlobalCartCount(data.total_cart_items);
+                        } else {
+                            // Fallback for older pages without the global updater
+                            const cartCounter = document.querySelector('.cart-count');
+                            if (cartCounter) {
+                                cartCounter.textContent = data.total_cart_items;
+                                cartCounter.classList.add('active');
+                            }
                         }
                     }
 
@@ -3012,15 +3009,10 @@ window.showCartNotification = function(quantity, ticketName) {
                         button.style.background = '';
                         button.style.color = '';
 
-                        // Reset the input value to prevent accidental additions
-                        input.value = 0;
+                        // DO NOT reset the input value to 0 anymore
+                        // input.value = 0;
 
-                        // Update selection state
-                        if (input.dataset.ticketId) {
-                            window.updateTicketSelection(input);
-                        } else if (input.dataset.ticketTable) {
-                            window.updateTableTicketSelection(input);
-                        }
+                        // No need to update selection state here, since nothing changed
                     }, 2000);
                 })
                 .catch(error => {
@@ -3042,35 +3034,19 @@ window.showCartNotification = function(quantity, ticketName) {
 
         window.showCartNotification = function(itemCount) {
             // Deprecated - now redirecting to cart directly
-            console.log("Redirecting to cart instead of showing notification");
-            window.location.href = "{{ route('cart') }}";
         };
 
-        // Also define the updateFixedBuyFooter function
+        // updateFixedBuyFooter is no longer needed as its functionality is in updateCartSummary
         window.updateFixedBuyFooter = function() {
-            const footer = document.getElementById('fixedBuyFooter');
-            if (!footer) return;
+            // Just call updateCartSummary to handle everything in one place
+            window.updateCartSummary();
+        };
 
-            let totalTickets = 0;
-            let totalAmount = 0;
-
-            // Calculate totals
-            Object.values(window.selectedTickets).forEach(ticket => {
-                totalTickets += ticket.quantity;
-                const price = parseFloat(ticket.price.toString().replace(/,/g, ''));
-                totalAmount += price * ticket.quantity;
-            });
-
-            // Update the UI
-            document.getElementById('fixedBuyCount').textContent = `${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'} selected`;
-            document.getElementById('fixedBuyTotal').textContent = `₦${totalAmount.toLocaleString()}`;
-
-            // Show or hide the footer
-            if (totalTickets > 0) {
-                footer.classList.add('visible');
-            } else {
-                footer.classList.remove('visible');
-            }
+        window.proceedToCheckout = function() {
+            // Set checkout direct to 1
+            document.getElementById('checkout_direct').value = "1";
+            // Submit the form
+            document.getElementById('addToCartForm').submit();
         };
 
         // Add click event listeners directly to all buttons
@@ -3168,4 +3144,81 @@ window.showCartNotification = function(quantity, ticketName) {
     });
 </script>
 
+<script>
+// Remove all loading code and make tickets display immediately
+document.body.classList.remove('body-loading');
 
+// Prevent any preview or promotional cards from displaying
+document.addEventListener('DOMContentLoaded', function() {
+    // Find and remove any standalone ticket cards outside the grid
+    const standaloneCards = document.querySelectorAll('.spotify-ticket-card:not(.ticket-grid .spotify-ticket-card)');
+    standaloneCards.forEach(card => card.remove());
+
+    // Find and remove any elements that might be preview cards
+    ['general-admission-card', 'ticket-card', 'admission-card', 'preview-card'].forEach(className => {
+        document.querySelectorAll(`[class*="${className}"]`).forEach(el => {
+            if (!el.closest('.ticket-grid')) {
+                el.remove();
+            }
+        });
+    });
+});
+</script>
+
+<script>
+// Premium loader animation and control
+(function() {
+    // Create loader at the start to ensure it appears immediately
+    if (!document.getElementById('premiumLoader')) {
+        const loaderHTML = `
+            <div class="premium-loader-overlay" id="premiumLoader">
+                <div class="premium-loader-content">
+                    <div class="premium-spinner"></div>
+                    <div class="premium-loader-text">LOADING</div>
+                    <div class="premium-progress">
+                        <div class="premium-progress-bar" id="progressBar"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('afterbegin', loaderHTML);
+    }
+
+    // Run immediately
+    const loader = document.getElementById('premiumLoader');
+    const progressBar = document.getElementById('progressBar');
+
+    // Show loader immediately
+    if (loader) loader.style.visibility = 'visible';
+    if (loader) loader.style.opacity = '1';
+
+    // Initial progress (simulate loading)
+    let progress = 0;
+    const loadingInterval = setInterval(function() {
+        if (!progressBar) return;
+
+        progress += 5;
+        if (progress > 100) progress = 100;
+
+        progressBar.style.width = progress + '%';
+
+        if (progress === 100) {
+            clearInterval(loadingInterval);
+
+            // Add a slight delay before hiding loader to see the completed progress
+            setTimeout(function() {
+                if (loader) loader.style.opacity = '0';
+                setTimeout(function() {
+                    if (loader) loader.style.visibility = 'hidden';
+                }, 700);
+            }, 500);
+        }
+    }, 100);
+})();
+
+// Remove all loading code and make tickets display immediately
+document.body.classList.remove('body-loading');
+
+// Prevent any preview or promotional cards from displaying
+// ... existing code ...
+</script>

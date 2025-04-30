@@ -139,15 +139,15 @@ Route::match(['get', 'post'], '/logout', [AdminController::class, 'disauthentica
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
 Route::post('/addtocart', [CartController::class, 'addToCart'])->name('addtocart');
-Route::post('/update-cart/{id}', [CartController::class, 'updateCart'])->name('cart.update');
-Route::get('/remove-cart-item/{id}', [CartController::class, 'removeItem'])->name('cart.remove');
-Route::post('/remove-cart-item/{id}', [CartController::class, 'removeItem']);
+Route::patch('/cart/update/{id}', [CartController::class, 'updateItem'])->name('cart.update');
+Route::delete('/cart/remove/{id}', [CartController::class, 'removeItem'])->name('cart.remove');
+Route::get('/cart/totals', [CartController::class, 'getCartTotals'])->name('cart.totals');
 
 Route::get('/trypayment', [ListingController::class, 'trypayment'] );
 Route::post('/tryverify/{reference}', [ListingController::class, 'tryverify'] );
 
 // Cart view.
-Route::get('/success', [PaymentController::class, 'success'] )->name('success');
+Route::get('/success', [PaymentController::class, 'success'])->name('success')->withoutMiddleware(['auth']);
 
 Route::get('/notfound', [ListingController::class, 'notfound'] );
 Route::get('/forgotpassword', [ListingController::class, 'forgotpassword'])->name('fp');
@@ -248,3 +248,7 @@ Route::get('/clear-cart', function() {
     }
     return redirect()->route('cart')->with('message', 'Cart cleared successfully');
 });
+
+// Add new cart payment processing routes
+Route::post('/prepare-payment', [CartController::class, 'preparePayment'])->name('prepare.payment');
+Route::get('/process-payment/{reference}', [CartController::class, 'processSuccessfulPayment'])->name('process.payment');

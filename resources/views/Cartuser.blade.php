@@ -2,6 +2,11 @@
 
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<!-- Include jQuery for AJAX functionality -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Include our custom cart.js script -->
+<script src="{{ asset('js/cart.js') }}"></script>
+
 <style>
     .cart-container {
         max-width: 1200px;
@@ -518,6 +523,35 @@
     .fixed-buy-btn i {
         font-size: 18px;
     }
+
+    /* Cart notification styles */
+    .cart-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: #333;
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .cart-notification.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .cart-notification.success {
+        background: #4CAF50;
+    }
+
+    .cart-notification.error {
+        background: #F44336;
+    }
 </style>
 
 <div class="cart-container">
@@ -543,80 +577,165 @@
             $totalAmount = 0;
             $totalItems = 0;
 
-            foreach($mycart as $cartItem) {
-                if (isset($cartItem->cprice) && isset($cartItem->cquantity)) {
-                    $totalAmount += $cartItem->cprice * $cartItem->cquantity;
-                    $totalItems += $cartItem->cquantity;
-                } else if (isset($cartItem['price']) && isset($cartItem['quantity'])) {
-                    $totalAmount += $cartItem['price'] * $cartItem['quantity'];
-                    $totalItems += $cartItem['quantity'];
+            // Helper functions to safely get values from either object or array
+            function getCartItemPrice($item) {
+                if(is_object($item)) {
+                    return isset($item->cprice) ? $item->cprice : 0;
+                } else {
+                    return isset($item['price']) ? $item['price'] : 0;
                 }
+            }
+
+            function getCartItemQuantity($item) {
+                if(is_object($item)) {
+                    return isset($item->cquantity) ? $item->cquantity : 0;
+                } else {
+                    return isset($item['quantity']) ? $item['quantity'] : 0;
+                }
+            }
+
+            function getCartItemName($item) {
+                if(is_object($item)) {
+                    return isset($item->cname) ? $item->cname : '';
+                } else {
+                    return isset($item['product_name']) ? $item['product_name'] : '';
+                }
+            }
+
+            function getCartItemEventName($item) {
+                if(is_object($item)) {
+                    return isset($item->eventname) ? $item->eventname : 'Product';
+                } else {
+                    return isset($item['item_name']) ? $item['item_name'] : 'Product';
+                }
+            }
+
+            function getCartItemImage($item) {
+                // Debug information - Check what properties are available
+                $debug = [];
+
+                if(is_object($item)) {
+                    // Collect object properties for debugging
+                    if(isset($item->image)) $debug['image'] = $item->image;
+                    if(isset($item->event_image)) $debug['event_image'] = $item->event_image;
+                    if(isset($item->cdescription)) $debug['cdescription'] = $item->cdescription;
+                    if(isset($item->thumbnail)) $debug['thumbnail'] = $item->thumbnail;
+
+                    // Check if image property exists
+                    if(isset($item->image) && !empty($item->image)) {
+                        return $item->image; // Use the image path directly
+                    }
+                    // Check for event_image property
+                    else if(isset($item->event_image) && !empty($item->event_image)) {
+                        return $item->event_image;
+                    }
+                    // Check for cdescription as image
+                    else if(isset($item->cdescription) && !empty($item->cdescription)) {
+                        // If it's a URL, return it directly
+                        if(strpos($item->cdescription, 'http') === 0) {
+                            return $item->cdescription;
+                        }
+                        // Otherwise treat as a storage path
+                        return '/storage/' . $item->cdescription;
+                    }
+                    // Check any other potential image properties
+                    else if(isset($item->thumbnail) && !empty($item->thumbnail)) {
+                        return $item->thumbnail;
+                    }
+                } else {
+                    // Collect array properties for debugging
+                    if(isset($item['image'])) $debug['image'] = $item['image'];
+                    if(isset($item['event_image'])) $debug['event_image'] = $item['event_image'];
+                    if(isset($item['cdescription'])) $debug['cdescription'] = $item['cdescription'];
+                    if(isset($item['thumbnail'])) $debug['thumbnail'] = $item['thumbnail'];
+
+                    // Array version
+                    if(isset($item['image']) && !empty($item['image'])) {
+                        return $item['image'];
+                    }
+                    else if(isset($item['event_image']) && !empty($item['event_image'])) {
+                        return $item['event_image'];
+                    }
+                    else if(isset($item['cdescription']) && !empty($item['cdescription'])) {
+                        if(strpos($item['cdescription'], 'http') === 0) {
+                            return $item['cdescription'];
+                        }
+                        return '/storage/' . $item['cdescription'];
+                    }
+                    else if(isset($item['thumbnail']) && !empty($item['thumbnail'])) {
+                        return $item['thumbnail'];
+                    }
+                }
+
+                // Fallback to placeholder
+                return '/images/placeholder.jpg';
+            }
+
+            function getCartItemId($item, $index) {
+                if(is_object($item)) {
+                    return isset($item->id) ? $item->id : $index;
+                } else {
+                    return isset($item['id']) ? $item['id'] : $index;
+                }
+            }
+
+            foreach($mycart as $cartItem) {
+                $totalAmount += getCartItemPrice($cartItem) * getCartItemQuantity($cartItem);
+                $totalItems += getCartItemQuantity($cartItem);
             }
         @endphp
 
         <div class="cart-items">
-            @foreach($mycart as $item)
-                <div class="cart-item">
+            @foreach($mycart as $index => $item)
+                <div class="cart-item" data-item-id="{{ getCartItemId($item, $index) }}">
                     <div class="ticket-type-badge">
-                        @if(isset($item->cname))
-                            {{ $item->cname }}
-                        @elseif(isset($item['product_name']))
-                            {{ $item['product_name'] }}
-                        @endif
+                        {{ getCartItemName($item) }}
                     </div>
 
                     <div class="item-image">
-                        @if(isset($item->image) && $item->image)
-                        <img src="{{ asset($item->image) }}" alt="{{ isset($item->eventname) ? $item->eventname : $item['item_name'] ?? 'Product' }}" onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
-                        @elseif(isset($item->cdescription) && $item->cdescription)
-                        <img src="{{ asset('storage/' . $item->cdescription) }}" alt="{{ isset($item->eventname) ? $item->eventname : $item['item_name'] ?? 'Product' }}" onerror="this.onerror=null; this.src='/images/placeholder.jpg'">
-                        @else
-                            <img src="{{ asset('/images/placeholder.jpg') }}" alt="{{ isset($item->eventname) ? $item->eventname : $item['item_name'] ?? 'Product' }}">
+                        <!-- Debug: Print available image properties -->
+                        @if(is_object($item))
+                            <!-- Show debug info for object properties -->
+                            <div style="position:absolute; top:0; left:0; background:rgba(0,0,0,0.7); color:white; padding:5px; font-size:10px; z-index:100;">
+                                ID: {{ isset($item->id) ? $item->id : 'none' }}<br>
+                                @foreach(get_object_vars($item) as $prop => $val)
+                                    @if(in_array($prop, ['image', 'event_image', 'cdescription', 'thumbnail']))
+                                        {{ $prop }}: {{ substr($val, 0, 30) }}{{ strlen($val) > 30 ? '...' : '' }}<br>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @elseif(is_array($item))
+                            <!-- Show debug info for array keys -->
+                            <div style="position:absolute; top:0; left:0; background:rgba(0,0,0,0.7); color:white; padding:5px; font-size:10px; z-index:100;">
+                                ID: {{ isset($item['id']) ? $item['id'] : 'none' }}<br>
+                                @foreach($item as $key => $val)
+                                    @if(in_array($key, ['image', 'event_image', 'cdescription', 'thumbnail']))
+                                        {{ $key }}: {{ substr($val, 0, 30) }}{{ strlen($val) > 30 ? '...' : '' }}<br>
+                                    @endif
+                                @endforeach
+                            </div>
                         @endif
+
+                        <img src="{{ getCartItemImage($item) }}" alt="{{ getCartItemEventName($item) }}"
+                            onerror="this.src='/images/placeholder.jpg'; console.log('Image failed to load:' + this.src);">
                     </div>
 
                     <div class="item-details">
                         <div class="item-event">
-                            @if(isset($item->eventname))
-                                {{ $item->eventname }}
-                            @elseif(isset($item['item_name']))
-                                {{ $item['item_name'] }}
-                            @endif
+                            {{ getCartItemEventName($item) }}
                         </div>
 
                         <div class="item-meta">
                             <div class="item-price-info">
-                                <div class="item-price">₦{{
-                                    isset($item->cprice)
-                                    ? number_format($item->cprice)
-                                    : (isset($item['price']) ? number_format($item['price']) : '0')
-                                }}</div>
-                                <div class="ticket-quantity-display">{{
-                                    isset($item->cquantity)
-                                    ? $item->cquantity
-                                    : (isset($item['quantity']) ? $item['quantity'] : '0')
-                                }} ticket{{
-                                    (isset($item->cquantity) && $item->cquantity > 1) ||
-                                    (isset($item['quantity']) && $item['quantity'] > 1)
-                                    ? 's' : ''
-                                }}</div>
+                                <div class="item-price">₦{{ number_format(getCartItemPrice($item)) }}</div>
+                                <div class="ticket-quantity-display">{{ getCartItemQuantity($item) }} ticket{{ getCartItemQuantity($item) > 1 ? 's' : '' }}</div>
                                 <div class="shipping-info">
                                     Eligible for returns up to 30 days
                                 </div>
                             </div>
 
                             <div class="item-actions">
-                                <div class="quantity-controls">
-                                    <button class="quantity-btn decrease-btn" onclick="updateQuantity('{{ isset($item->id) ? $item->id : $loop->index }}', '{{ isset($item->cname) ? $item->cname : (isset($item['product_name']) ? $item['product_name'] : '') }}', 'decrease', {{ isset($item->cquantity) ? $item->cquantity : (isset($item['quantity']) ? $item['quantity'] : 0) }})">
-                                        <i class="fa-solid fa-minus"></i>
-                                    </button>
-                                    <input type="number" class="quantity-input" value="{{ isset($item->cquantity) ? $item->cquantity : (isset($item['quantity']) ? $item['quantity'] : 0) }}" min="1" max="50" readonly>
-                                    <button class="quantity-btn increase-btn" onclick="updateQuantity('{{ isset($item->id) ? $item->id : $loop->index }}', '{{ isset($item->cname) ? $item->cname : (isset($item['product_name']) ? $item['product_name'] : '') }}', 'increase', {{ isset($item->cquantity) ? $item->cquantity : (isset($item['quantity']) ? $item['quantity'] : 0) }})">
-                                        <i class="fa-solid fa-plus"></i>
-                                    </button>
-                                </div>
-
-                                <button class="remove-btn" onclick="removeCartItem('{{ isset($item->id) ? $item->id : $loop->index }}', '{{ isset($item->cname) ? $item->cname : (isset($item['product_name']) ? $item['product_name'] : '') }}')">
+                                <button class="remove-btn cart-item-remove">
                                     <i class="fa-solid fa-trash"></i> Remove
                                 </button>
                             </div>
@@ -667,240 +786,4 @@
         </div>
     @endif
 </div>
-
-<script>
-    function updateQuantity(itemId, itemType, action, currentQty) {
-        if (!itemId || !itemType) {
-            console.error('Invalid item data');
-            alert('Invalid item information. Please refresh the page and try again.');
-            return;
-        }
-
-        const inputEl = event.target.closest('.quantity-controls').querySelector('.quantity-input');
-        let newQty = parseInt(inputEl.value);
-
-        if (action === 'increase') {
-            newQty = currentQty + 1;
-            inputEl.value = newQty;
-
-            const decreaseBtn = event.target.closest('.quantity-controls').querySelector('.decrease-btn');
-            decreaseBtn.classList.add('selected');
-
-            updateCartItemQuantity(itemId, itemType, newQty);
-        } else if (action === 'decrease' && currentQty > 1) {
-            newQty = currentQty - 1;
-            inputEl.value = newQty;
-
-            if (newQty === 1) {
-                const decreaseBtn = event.target;
-                decreaseBtn.classList.remove('selected');
-            }
-
-            updateCartItemQuantity(itemId, itemType, newQty);
-        }
-    }
-
-    function updateCartItemQuantity(itemId, itemType, newQuantity) {
-        const cartItem = event.target.closest('.cart-item');
-        cartItem.style.opacity = '0.7';
-        cartItem.style.pointerEvents = 'none';
-
-        fetch(`/update-cart/${itemId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                item_id: itemId,
-                quantity: newQuantity,
-                ticket_type: itemType
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Update DOM with the new values
-                const itemPrice = cartItem.querySelector('.item-price');
-                const ticketQuantity = cartItem.querySelector('.ticket-quantity-display');
-
-                // Update quantities in the DOM
-                if (ticketQuantity) {
-                    ticketQuantity.textContent = `${newQuantity} ticket${newQuantity > 1 ? 's' : ''}`;
-                }
-
-                // Update the cart totals
-                const cartTotal = document.querySelector('.total-value');
-                const fixedBuyTotal = document.getElementById('fixedBuyTotal');
-                const fixedBuyCount = document.getElementById('fixedBuyCount');
-
-                if (cartTotal && data.cart_total) {
-                    cartTotal.textContent = `₦${formatNumber(data.cart_total)}`;
-                }
-
-                if (fixedBuyTotal && data.cart_total) {
-                    fixedBuyTotal.textContent = `₦${formatNumber(data.cart_total)}`;
-                }
-
-                if (fixedBuyCount) {
-                    // Calculate total items
-                    let totalItems = 0;
-                    document.querySelectorAll('.quantity-input').forEach(input => {
-                        totalItems += parseInt(input.value);
-                    });
-
-                    fixedBuyCount.textContent = `${totalItems} ${totalItems === 1 ? 'ticket' : 'tickets'} selected`;
-                }
-
-                cartItem.style.opacity = '1';
-                cartItem.style.pointerEvents = 'auto';
-            } else {
-                cartItem.style.opacity = '1';
-                cartItem.style.pointerEvents = 'auto';
-                alert('Failed to update quantity: ' + (data.message || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            cartItem.style.opacity = '1';
-            cartItem.style.pointerEvents = 'auto';
-            console.error('Error updating quantity:', error);
-            alert('An error occurred while updating quantity');
-        });
-    }
-
-    function removeCartItem(itemId, itemType) {
-        if (!itemId || typeof itemId !== 'string' && typeof itemId !== 'number') {
-            console.error('Invalid item ID');
-            alert('Invalid item information. Please refresh the page and try again.');
-            return;
-        }
-
-        if (!itemType || typeof itemType !== 'string') {
-            console.error('Invalid ticket type');
-            alert('Invalid ticket information. Please refresh the page and try again.');
-            return;
-        }
-
-        itemId = itemId.toString().trim();
-        itemType = itemType.toString().trim();
-
-        if (confirm('Are you sure you want to remove this item from your cart?')) {
-            try {
-                const cartItem = event.target.closest('.cart-item');
-                if (!cartItem) {
-                    console.error('Could not find parent cart item');
-                    alert('An error occurred. Please refresh the page and try again.');
-                    return;
-                }
-
-                cartItem.style.opacity = '0.7';
-                cartItem.style.pointerEvents = 'none';
-
-                // Use fetch for AJAX removal instead of form submission
-                fetch(`/remove-cart-item/${encodeURIComponent(itemId)}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        ticket_type: itemType
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        // Remove the item from DOM
-                        cartItem.style.opacity = '0';
-                        cartItem.style.maxHeight = '0';
-
-                        setTimeout(() => {
-                            cartItem.remove();
-
-                            // Check if cart is empty and reload if needed
-                            const cartItems = document.querySelectorAll('.cart-item');
-                            if (cartItems.length === 0) {
-                                location.reload();
-                            } else {
-                                // Update counts and totals
-                                updateCartTotals();
-                            }
-                        }, 300);
-                    } else {
-                        cartItem.style.opacity = '1';
-                        cartItem.style.pointerEvents = 'auto';
-                        alert(data.message || 'Failed to remove item');
-                    }
-                })
-                .catch(error => {
-                    cartItem.style.opacity = '1';
-                    cartItem.style.pointerEvents = 'auto';
-                    console.error('Error removing item:', error);
-                    alert('An error occurred while removing the item');
-                });
-            } catch (error) {
-                console.error('Error removing cart item:', error);
-                alert('An unexpected error occurred. Please try again or contact support.');
-            }
-        }
-    }
-
-    function updateCartTotals() {
-        // Calculate new totals from DOM
-        let totalAmount = 0;
-        let totalItems = 0;
-
-        document.querySelectorAll('.cart-item').forEach(item => {
-            const priceText = item.querySelector('.item-price').textContent.replace('₦', '').replace(/,/g, '');
-            const quantityInput = item.querySelector('.quantity-input');
-
-            const price = parseFloat(priceText);
-            const quantity = parseInt(quantityInput.value);
-
-            if (!isNaN(price) && !isNaN(quantity)) {
-                totalAmount += price * quantity;
-                totalItems += quantity;
-            }
-        });
-
-        // Update total displays
-        const cartTotal = document.querySelector('.total-value');
-        const fixedBuyTotal = document.getElementById('fixedBuyTotal');
-        const fixedBuyCount = document.getElementById('fixedBuyCount');
-        const itemsCount = document.querySelector('.items-count');
-
-        if (cartTotal) {
-            cartTotal.textContent = `₦${formatNumber(totalAmount)}`;
-        }
-
-        if (fixedBuyTotal) {
-            fixedBuyTotal.textContent = `₦${formatNumber(totalAmount)}`;
-        }
-
-        if (fixedBuyCount) {
-            fixedBuyCount.textContent = `${totalItems} ${totalItems === 1 ? 'ticket' : 'tickets'} selected`;
-        }
-
-        if (itemsCount) {
-            const cartItemCount = document.querySelectorAll('.cart-item').length;
-            itemsCount.textContent = `${cartItemCount} ${cartItemCount === 1 ? 'item' : 'items'} in cart`;
-        }
-    }
-
-    function formatNumber(number) {
-        return new Intl.NumberFormat().format(number);
-    }
-</script>
 @endsection

@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
+    /**
+     * Constructor to set middleware exceptions
+     */
+    public function __construct()
+    {
+        // Apply auth middleware to all methods except success
+        $this->middleware('auth')->except(['success', 'verify']);
+    }
+
     //
     public function index(){
         return view('Payment');
@@ -22,106 +31,154 @@ class PaymentController extends Controller
 
         // Check if $reference contains only valid characters
         if (!preg_match($validReferencePattern, $reference)) {
-            // Handle invalid input gracefully, e.g., return an error response
-            return ['error' => 'Invalid reference format'];
+            // Handle invalid input gracefully
+            session()->flash('error', 'Invalid reference format');
+            return redirect()->route('checkout');
         }
 
-        // URL-encode the reference to preven
-        $reference = urlencode($reference);
+        try {
+            // URL-encode the reference to prevent injection
+            $reference = urlencode($reference);
 
-        $curl = curl_init();
+            $curl = curl_init();
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://api.paystack.co/transaction/verify/$reference",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_SSL_VERIFYPEER => 0,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "GET",
-            CURLOPT_HTTPHEADER => array(
-                "Authorization: Bearer $sec",
-                "Cache-Control: no-cache",
-            ),
-        ));
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => "https://api.paystack.co/transaction/verify/$reference",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_SSL_VERIFYPEER => 0,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => "GET",
+                CURLOPT_HTTPHEADER => array(
+                    "Authorization: Bearer $sec",
+                    "Cache-Control: no-cache",
+                ),
+            ));
 
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
-        curl_close($curl);
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
+            curl_close($curl);
 
-        if ($err) {
-            // Handle cURL error gracefully
-            return ['error' => 'cURL Error: ' . $err];
-        } else {
+            if ($err) {
+                // Log the error but don't expose it to the user
+                \Log::error('Paystack cURL Error: ' . $err);
+
+                // Store error in session but proceed anyway if possible
+                session()->flash('payment_warning', 'We had a minor issue connecting to payment provider, but your transaction may have completed successfully.');
+
+                // Check if we already have a transaction in our database
+                $existingTransaction = Transaction::where('message', 'like', '%' . $reference . '%')->first();
+                if ($existingTransaction) {
+                    // We already have this transaction, so proceed to success
+                    session(['reference_data' => json_decode($response)]);
+                    return redirect()->route('success');
+                }
+
+                return redirect()->route('checkout');
+            }
+
             $newref = json_decode($response);
+
+            // Check if response has expected structure
+            if (!isset($newref->data) || !isset($newref->data->status)) {
+                \Log::error('Invalid Paystack response: ' . $response);
+                session()->flash('error', 'We received an invalid response from our payment provider.');
+                return redirect()->route('checkout');
+            }
 
             // Extract the fields from the $newref object
             $status = $newref->data->status;
             $message = $newref->message;
-            $email = $newref->data->customer->email;
-            $firstname = $newref->data->customer->first_name;
-            $lastname = $newref->data->customer->last_name;
-            $phone = $newref->data->customer->phone;
-            $amount = $newref->data->amount;
-            $event = $newref->data->metadata->custom_fields[0]->value;
-            $quantityvalue = $newref->data->metadata->custom_fields[1]->value;
-            $eventname = $newref->data->metadata->custom_fields[2]->value;
 
-            // Get ticket IDs if available
-            $ticketIds = [];
-            if (count($newref->data->metadata->custom_fields) > 3) {
-                $ticketIdsJson = $newref->data->metadata->custom_fields[3]->value;
-                $ticketIds = json_decode($ticketIdsJson, true) ?? [];
-            }
-
-            // If no ticket IDs were provided, generate them
-            if (empty($ticketIds)) {
-                $baseId = 'TIX-' . strtoupper(substr(md5($event . $eventname), 0, 6));
-                for ($i = 1; $i <= $quantityvalue; $i++) {
-                    $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
-                }
-            }
-
-            // Store data in the database using prepared statements
-            $transaction = new Transaction();
-            $transaction->status = $status;
-            $transaction->message = $message;
-            $transaction->email = $email;
-            $transaction->phone = $phone;
-            $transaction->amount = $amount;
-            $transaction->quantity = $quantityvalue;
-            $transaction->tablename = $eventname;
-            $transaction->eventname = $event;
-            $transaction->firstname = $firstname;
-            $transaction->lastname = $lastname;
-            $transaction->user_id = auth()->id();
-            $transaction->ticket_ids = json_encode($ticketIds);
-            $transaction->save();
+            // Store the reference data in session first, in case anything fails later
             session(['reference_data' => $newref]);
-            // return ['data' => $newref, 'redirect' => redirect()->route('logg')];
-            if($status === 'success'){
-                return[$newref];
-            }else{
-                return redirect()->route('logg');
+
+            try {
+                $email = $newref->data->customer->email ?? '';
+                $firstname = $newref->data->customer->first_name ?? '';
+                $lastname = $newref->data->customer->last_name ?? '';
+                $phone = $newref->data->customer->phone ?? '';
+                $amount = $newref->data->amount ?? 0;
+
+                // Safely extract custom fields with fallbacks
+                $event = '';
+                $quantityvalue = 1;
+                $eventname = '';
+
+                if (isset($newref->data->metadata->custom_fields)) {
+                    $event = $newref->data->metadata->custom_fields[0]->value ?? '';
+                    $quantityvalue = $newref->data->metadata->custom_fields[1]->value ?? 1;
+                    $eventname = $newref->data->metadata->custom_fields[2]->value ?? '';
+                }
+
+                // Get ticket IDs if available
+                $ticketIds = [];
+                if (isset($newref->data->metadata->custom_fields) && count($newref->data->metadata->custom_fields) > 3) {
+                    $ticketIdsJson = $newref->data->metadata->custom_fields[3]->value;
+                    $ticketIds = json_decode($ticketIdsJson, true) ?? [];
+                }
+
+                // If no ticket IDs were provided, generate them
+                if (empty($ticketIds)) {
+                    $baseId = 'TIX-' . strtoupper(substr(md5($event . $eventname . time()), 0, 6));
+                    for ($i = 1; $i <= $quantityvalue; $i++) {
+                        $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+                    }
+                }
+
+                // Store data in the database
+                $transaction = new Transaction();
+                $transaction->status = $status;
+                $transaction->message = $message;
+                $transaction->email = $email;
+                $transaction->phone = $phone;
+                $transaction->amount = $amount;
+                $transaction->quantity = $quantityvalue;
+                $transaction->tablename = $eventname;
+                $transaction->eventname = $event;
+                $transaction->firstname = $firstname;
+                $transaction->lastname = $lastname;
+                $transaction->user_id = auth()->id() ?? null;
+                $transaction->ticket_ids = json_encode($ticketIds);
+                $transaction->save();
+            } catch (\Exception $e) {
+                // Log the database error but don't expose to user
+                \Log::error('Transaction save error: ' . $e->getMessage());
+
+                // If we've got status success but failed to save, still redirect to success
+                // The success page will handle displaying ticket info from session
+                if ($status === 'success') {
+                    return redirect()->route('success');
+                }
+
+                session()->flash('error', 'There was an issue processing your order, but your payment was received.');
+                return redirect()->route('checkout');
             }
 
-         // Redirect to the 'logg' route
-        //  dd("Redirecting")
-        //  return redirect()->route('logg');
-      //    dd($response);
+            // If status is success, redirect to success page
+            if($status === 'success'){
+                return redirect()->route('success');
+            } else {
+                session()->flash('error', 'Payment was not successful: ' . $message);
+                return redirect()->route('checkout');
+            }
+        } catch (\Exception $e) {
+            // Catch any other exceptions
+            \Log::error('Payment verification error: ' . $e->getMessage());
 
-            // ... (other fields)
+            // Flash a user-friendly error message
+            session()->flash('error', 'We encountered an issue processing your payment. If you believe your payment was successful, please contact customer support.');
 
-          //   $transaction->save();
-
-
+            return redirect()->route('checkout');
         }
     }
 
 
     public function success(){
+        // First check if we have reference data in the session
         if (Session::has('reference_data')) {
             $referenceData = Session::get('reference_data');
 
@@ -149,19 +206,75 @@ class PaymentController extends Controller
                 }
             }
 
+            // Clear the user's cart after successful payment
+            if (auth()->check()) {
+                // For authenticated users, clear from database
+                \App\Models\Cart::where('user_id', auth()->id())->delete();
+            } else {
+                // For guest users, clear from session
+                Session::forget('cart_items');
+                Session::forget('tname');
+                Session::forget('tprice');
+                Session::forget('tquantity');
+                Session::forget('eventname');
+                Session::forget('totalprice');
+                Session::forget('timage');
+            }
+
             // Clear the 'reference_data' session variable
             Session::forget('reference_data');
 
-            // Redirect to 'logg' route
+            // Return the success view with ticket information
             return view('Success', [
                 'ticketIds' => $ticketIds,
                 'eventName' => $referenceData->data->metadata->custom_fields[0]->value ?? '',
                 'quantity' => $referenceData->data->metadata->custom_fields[1]->value ?? 1
             ]);
+        }
+        // FALLBACK: If no reference data in session, try to get from query parameters
+        else if (request()->has('reference')) {
+            $reference = request()->get('reference');
+
+            // Attempt to find a transaction with this reference
+            $transaction = Transaction::where('message', 'like', '%' . $reference . '%')
+                            ->orWhere('status', 'success')
+                            ->latest()
+                            ->first();
+
+            if ($transaction) {
+                $ticketIds = json_decode($transaction->ticket_ids, true) ?? [];
+
+                // Clear cart as above
+                if (auth()->check()) {
+                    \App\Models\Cart::where('user_id', auth()->id())->delete();
+                } else {
+                    Session::forget('cart_items');
+                    Session::forget('tname');
+                    Session::forget('tprice');
+                    Session::forget('tquantity');
+                    Session::forget('eventname');
+                    Session::forget('totalprice');
+                    Session::forget('timage');
+                }
+
+                return view('Success', [
+                    'ticketIds' => $ticketIds,
+                    'eventName' => $transaction->eventname,
+                    'quantity' => $transaction->quantity
+                ]);
+            }
+
+            // If still no transaction found but user has email confirmation, allow manual confirmation
+            return view('Success', [
+                'ticketIds' => [],
+                'eventName' => 'Your Event',
+                'quantity' => 1,
+                'manual_verification' => true,
+                'reference' => $reference
+            ]);
         } else {
-            // 'reference_data' doesn't exist in the session, redirect to 'checkout' route
-            return redirect()->route('logg');
-            // You can also return a view with an error message if needed
+            // 'reference_data' doesn't exist in the session, redirect to home route
+            return redirect()->route('home')->with('error', 'No payment information found');
         }
     }
 

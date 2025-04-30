@@ -504,33 +504,73 @@ function updateCartItemQuantity(cartItem, newQuantity) {
 }
 
 /**
- * Remove an item from the cart
+ * Remove cart item from storage and UI
  */
 function removeCartItem(eventIndex, ticketIndex) {
-    // Get cart from storage
-    let cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
+    const cartItem = document.querySelector(`.cart-item[data-event-index="${eventIndex}"][data-ticket-index="${ticketIndex}"]`);
 
-    if (cart[eventIndex]) {
-        // Remove the ticket
-        cart[eventIndex].tickets.splice(ticketIndex, 1);
-
-        // If no tickets left for this event, remove the event too
-        if (cart[eventIndex].tickets.length === 0) {
-            cart.splice(eventIndex, 1);
-        }
+    if (!cart[eventIndex] || !cart[eventIndex].tickets[ticketIndex]) {
+        console.error('Item not found in cart');
+        return;
     }
 
-    // Save back to storage
+    // Remove ticket from event
+    cart[eventIndex].tickets.splice(ticketIndex, 1);
+
+    // If no more tickets for this event, remove the event too
+    if (cart[eventIndex].tickets.length === 0) {
+        cart.splice(eventIndex, 1);
+    }
+
+    // Update storage
     localStorage.setItem('ticketCart', JSON.stringify(cart));
 
-    // Update cart count
-    updateCartCount();
+    // Update cart count in header
+    if (window.updateGlobalCartCount) {
+        window.updateGlobalCartCount(cart.length);
+    } else {
+        updateCartCount(); // Fallback to local function
+    }
 
-    // Reload cart items
-    loadCartItems();
+    // Remove item from UI with animation
+    if (cartItem) {
+        cartItem.style.opacity = '0';
+        cartItem.style.height = cartItem.offsetHeight + 'px';
 
-    // Reinitialize controls
-    initCartControls();
+        setTimeout(() => {
+            cartItem.style.height = '0';
+            cartItem.style.padding = '0';
+            cartItem.style.margin = '0';
+            cartItem.style.overflow = 'hidden';
+
+            setTimeout(() => {
+                cartItem.remove();
+
+                // Check if cart is empty after removal
+                const remainingItems = document.querySelectorAll('.cart-item');
+                if (remainingItems.length === 0) {
+                    const emptyCartContainer = document.querySelector('.empty-cart');
+                    const cartContent = document.querySelector('.cart-content');
+
+                    if (emptyCartContainer) emptyCartContainer.style.display = 'block';
+                    if (cartContent) cartContent.style.display = 'none';
+                } else {
+                    // Recalculate totals
+                    const cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
+                    let totalAmount = 0;
+
+                    cart.forEach(event => {
+                        event.tickets.forEach(ticket => {
+                            totalAmount += ticket.price * ticket.quantity;
+                        });
+                    });
+
+                    updateCartSummary(totalAmount);
+                }
+            }, 300);
+        }, 300);
+    }
 }
 
 /**

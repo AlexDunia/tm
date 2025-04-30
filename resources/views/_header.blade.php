@@ -56,7 +56,7 @@
                             <circle cx="20" cy="21" r="1"></circle>
                             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                         </svg>
-                        <span class="cart-count {{ $cartCount > 0 ? 'active' : '' }}">
+                        <span class="cart-count {{ $cartCount > 0 ? 'active' : '' }}" id="global-cart-count">
                             {{ $cartCount }}
                         </span>
                     </div>
@@ -135,7 +135,7 @@
             <li class="mobile-nav-item {{ Request::is('cart*') ? 'active' : '' }}">
                 <a href="/cart" class="mobile-nav-link">
                     <i class="fa-solid fa-cart-shopping"></i> Cart
-                    <span class="mobile-cart-count {{ $cartCount > 0 ? 'active' : '' }}">{{ $cartCount }}</span>
+                    <span class="mobile-cart-count {{ $cartCount > 0 ? 'active' : '' }}" id="global-mobile-cart-count">{{ $cartCount }}</span>
                 </a>
             </li>
             @guest
@@ -334,7 +334,38 @@
 </style>
 
 <script>
+// Custom event-based cart system for real-time updates
 document.addEventListener('DOMContentLoaded', function() {
+    // Create a custom event for cart updates
+    const cartUpdateEvent = new CustomEvent('cart:updated');
+
+    // Function to update cart count display
+    window.updateGlobalCartCount = function(count) {
+        const cartCountElements = document.querySelectorAll('#global-cart-count, #global-mobile-cart-count');
+
+        cartCountElements.forEach(element => {
+            if (element) {
+                // Update the text content
+                element.textContent = count;
+
+                // Toggle the 'active' class based on count
+                if (count > 0) {
+                    element.classList.add('active');
+                } else {
+                    element.classList.remove('active');
+                }
+            }
+        });
+
+        // Dispatch the custom event
+        document.dispatchEvent(cartUpdateEvent);
+    };
+
+    // Custom event listener for other scripts to hook into
+    document.addEventListener('cart:updated', function(e) {
+        console.log('Cart updated event triggered');
+    });
+
     // User dropdown toggle
     const userProfile = document.getElementById('usericonid');
     const userDropdown = document.getElementById('userDropdown');

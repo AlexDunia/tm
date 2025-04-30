@@ -8,8 +8,9 @@
             @foreach($welcome->take(3)->reverse() as $index => $onewelcome)
             <div class="newslideshow fade">
                 <div class="slide-image" style="background-image: url('{{ str_starts_with($onewelcome->heroimage, 'http') ? $onewelcome->heroimage : asset('storage/' . $onewelcome->heroimage) }}')">
-                    <a href="/events/{{$onewelcome->name}}" class="slide-content">{{$onewelcome->herolink}}</a>
+                    <div class="image-overlay"></div>
                 </div>
+                <a href="/events/{{$onewelcome->name}}" class="slide-content">{{$onewelcome->herolink}}</a>
             </div>
             @endforeach
         </div>
@@ -80,12 +81,57 @@ function showSlides() {
     }
     for (var i = 0; i < slides.length; i++) {
         slides[i].style.opacity = 0;
-        contents[i].style.display = "none";
     }
     slides[slideIndex - 1].style.opacity = 1;
-    contents[slideIndex - 1].style.display = "block";
+
+    // Make sure the slide-content is visible in the active slide only
+    document.querySelectorAll('.slide-content').forEach(function(content) {
+        content.style.opacity = "0";
+    });
+
+    if (contents.length > 0 && slideIndex <= contents.length) {
+        contents[slideIndex - 1].style.opacity = "1";
+    }
+
     setTimeout(showSlides, 5000);
 }
 </script>
+
+<style>
+/* Inline styles to ensure they take effect immediately */
+.hero-section {
+    position: relative;
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1;
+}
+
+.slide-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ffffff !important;
+    text-align: center;
+    font-size: 4rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-shadow: none !important;
+    z-index: 100;
+    width: 80%;
+}
+
+.search-section {
+    z-index: 100;
+    position: relative;
+}
+</style>
 @endsection
 
