@@ -52,7 +52,7 @@
             flex-direction: column;
         }
         .checkout-sidebar {
-            width: 100%;
+                width: 100%;
             order: -1;
         }
     }
@@ -82,15 +82,15 @@
 
     .summary-title {
         font-size: 18px;
-        font-weight: 600;
-        color: white;
+                font-weight: 600;
+                color: white;
         margin-bottom: 20px;
         padding-bottom: 10px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
+            }
 
     .ticket-item {
-        display: flex;
+                display: flex;
         justify-content: space-between;
         padding: 12px 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -112,12 +112,12 @@
 
     .event-name {
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
+                color: rgba(255, 255, 255, 0.6);
     }
 
     .ticket-quantity {
         font-size: 14px;
-        color: #C04888;
+                color: #C04888;
         background: rgba(192, 72, 136, 0.1);
         padding: 3px 8px;
         border-radius: 4px;
@@ -127,14 +127,14 @@
 
     .ticket-price {
         text-align: right;
-        font-weight: 600;
-        color: white;
+                font-weight: 600;
+                color: white;
         padding-left: 15px;
-    }
+            }
 
     .subtotal-row, .fee-row, .total-row {
-        display: flex;
-        justify-content: space-between;
+                display: flex;
+                justify-content: space-between;
         padding: 12px 0;
     }
 
@@ -149,28 +149,28 @@
 
     .subtotal-label, .fee-label {
         color: rgba(255, 255, 255, 0.7);
-    }
+            }
 
-    .total-label {
-        font-weight: 600;
-        color: white;
+            .total-label {
+                font-weight: 600;
+                color: white;
         font-size: 16px;
     }
 
     .subtotal-value, .fee-value {
         font-weight: 500;
         color: white;
-    }
+            }
 
-    .total-value {
-        font-weight: 700;
-        color: #C04888;
+            .total-value {
+                font-weight: 700;
+                color: #C04888;
         font-size: 18px;
     }
 
     .form-section {
         background: rgba(30, 30, 40, 0.5);
-        border-radius: 12px;
+                border-radius: 12px;
         padding: 25px;
         border: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -201,7 +201,7 @@
         background: rgba(20, 20, 30, 0.4);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 8px;
-        color: white;
+                color: white;
         font-size: 14px;
         transition: all 0.3s;
     }
@@ -219,14 +219,14 @@
         color: white;
         border: none;
         border-radius: 8px;
-        font-size: 16px;
+                font-size: 16px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s;
-        display: flex;
+                display: flex;
         justify-content: center;
-        align-items: center;
-        gap: 10px;
+                align-items: center;
+                gap: 10px;
     }
 
     .payment-button:hover {
@@ -239,17 +239,17 @@
     }
 
     .ticket-id-title {
-        font-size: 14px;
+                font-size: 14px;
         font-weight: 500;
         color: white;
         margin-bottom: 8px;
-    }
+                }
 
-    .ticket-id-list {
+                .ticket-id-list {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
-    }
+                    gap: 8px;
+                }
 
     .ticket-id-pill {
         background: rgba(192, 72, 136, 0.1);
@@ -315,8 +315,8 @@
     .payment-button:disabled {
         opacity: 0.8;
         cursor: not-allowed;
-    }
-</style>
+            }
+        </style>
 
 <div class="checkout-container">
     <a href="{{ route('cart') }}" class="back-to-cart">
@@ -329,31 +329,31 @@
         <div class="checkout-details">
             <div class="form-section">
                 <h2 class="form-title">Customer Information</h2>
-                <form id="paymentForm">
-                    <div class="form-group">
+    <form id="paymentForm">
+        <div class="form-group">
                         <label for="email-address">Email Address</label>
-                        <input type="email" id="email-address" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="first-name">First Name</label>
+          <input type="email" id="email-address" required />
+        </div>
+        <div class="form-group">
+          <label for="first-name">First Name</label>
                         <input type="text" id="first-name" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="last-name">Last Name</label>
+        </div>
+        <div class="form-group">
+          <label for="last-name">Last Name</label>
                         <input type="text" id="last-name" required />
-                    </div>
+        </div>
                     <div class="form-group">
                         <label for="phone">Phone Number</label>
                         <input type="tel" id="phone" required />
-                    </div>
+        </div>
 
                     <!-- Hidden input fields for data -->
                     <input type="hidden" id="ticket_data" value="{{ json_encode($ticketIds ?? []) }}">
 
                     <!-- Submit button container at the bottom of sidebar -->
                 </form>
-            </div>
-        </div>
+     </div>
+     </div>
 
         <div class="checkout-sidebar">
             <div class="order-summary">
@@ -457,25 +457,25 @@
                             <div class="ticket-name">{{ getCartItemName($item) }}</div>
                             <div class="event-name">{{ getCartItemEventName($item) }}</div>
                             <div class="ticket-quantity">Qty: {{ $itemQuantity }}</div>
-                        </div>
+     </div>
                         <div class="ticket-price">₦{{ number_format($itemTotal) }}</div>
-                    </div>
+          </div>
                 @endforeach
 
                 <div class="subtotal-row">
                     <div class="subtotal-label">Subtotal</div>
                     <div class="subtotal-value">₦{{ number_format($totalAmount) }}</div>
-                </div>
+          </div>
 
                 <div class="fee-row">
                     <div class="fee-label">Service Fee (5%)</div>
                     <div class="fee-value">₦{{ number_format($totalAmount * 0.05) }}</div>
-                </div>
+                    </div>
 
                 <div class="total-row">
                     <div class="total-label">Total</div>
                     <div class="total-value">₦{{ number_format($totalAmount * 1.05) }}</div>
-                </div>
+                    </div>
 
                 <button type="button" onclick="payWithPaystack(event)" class="payment-button">
                     <i class="fa-solid fa-lock"></i> Pay Now
@@ -484,8 +484,8 @@
                 <div class="secure-checkout">
                     <i class="fa-solid fa-shield-alt"></i>
                     <span>Secure checkout with Paystack</span>
-                </div>
-            </div>
+      </div>
+  </div>
 
             <div class="ticket-ids">
                 <h3 class="ticket-id-title">Your Ticket IDs:</h3>
@@ -495,9 +495,9 @@
                             <span class="ticket-id-pill">{{ $ticketId }}</span>
                         @endforeach
                     @endforeach
-                </div>
-            </div>
-        </div>
+  </div>
+ </div>
+  </div>
     </div>
 </div>
 
@@ -538,8 +538,8 @@
         // Don't proceed if button is already in processing state
         if (buttonState === 'processing') {
             console.log('Payment already in progress');
-            return;
-        }
+        return;
+    }
 
         // Store original button text and set state
         const originalButtonText = payButton.innerHTML;
@@ -594,26 +594,26 @@
         console.log('Payment reference:', randomRef);
 
         try {
-            let handler = PaystackPop.setup({
-                key: 'pk_test_a23671022344a4de4ca87e5b42f68b3f5d84bfd9',
+        let handler = PaystackPop.setup({
+            key: 'pk_test_a23671022344a4de4ca87e5b42f68b3f5d84bfd9',
                 email: email,
                 amount: Math.round(totalAmount * 100), // Convert to kobo and ensure it's an integer
                 currency: 'NGN',
-                metadata: {
-                    custom_fields: [
+            metadata: {
+                custom_fields: [
                         {
                             display_name: "Order Reference",
                             variable_name: "order_ref",
                             value: randomRef
                         },
-                        {
-                            display_name: "Customer Name",
-                            variable_name: "customer_name",
+                    {
+                        display_name: "Customer Name",
+                        variable_name: "customer_name",
                             value: firstName + " " + lastName
-                        },
-                        {
-                            display_name: "Phone Number",
-                            variable_name: "phone",
+                    },
+                    {
+                        display_name: "Phone Number",
+                        variable_name: "phone",
                             value: phone
                         },
                         {
@@ -658,20 +658,20 @@
                             value: "{{ $idsText }}"
                         },
                         @endforeach
-                    ]
-                },
-                ref: randomRef,
-                onClose: function() {
+                ]
+            },
+            ref: randomRef,
+            onClose: function() {
                     console.log('Payment modal closed');
                     // Reset button on close
                     payButton.innerHTML = originalButtonText;
                     payButton.disabled = false;
                     $(payButton).data('state', 'ready');
                     showNotification('Payment window closed.', 'warning');
-                },
-                callback: function(response) {
+            },
+            callback: function(response) {
                     console.log('Payment callback received:', response);
-                    let reference = response.reference;
+                let reference = response.reference;
 
                     // Update button state to verifying
                     $(payButton).data('state', 'verifying');
@@ -709,14 +709,14 @@
                             showNotification('There was an error verifying your payment. Please contact support.', 'error');
                         }
                     });
-                }
-            });
+            }
+        });
 
             console.log('Opening Paystack iframe...');
 
             // Open Paystack iframe with a slight delay
             setTimeout(function() {
-                handler.openIframe();
+        handler.openIframe();
             }, 100);
 
         } catch (error) {

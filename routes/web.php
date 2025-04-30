@@ -147,7 +147,10 @@ Route::get('/trypayment', [ListingController::class, 'trypayment'] );
 Route::post('/tryverify/{reference}', [ListingController::class, 'tryverify'] );
 
 // Cart view.
-Route::get('/success', [PaymentController::class, 'success'])->name('success')->withoutMiddleware(['auth']);
+Route::get('/success', [PaymentController::class, 'success'])
+    ->name('success')
+    ->withoutMiddleware(['auth'])
+    ->middleware('payment.verified');
 
 Route::get('/notfound', [ListingController::class, 'notfound'] );
 Route::get('/forgotpassword', [ListingController::class, 'forgotpassword'])->name('fp');

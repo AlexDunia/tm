@@ -11,8 +11,8 @@ class Authenticate extends Middleware
      * Public routes that should bypass authentication
      */
     protected $publicRoutes = [
-        'success',
         'verifypayment/*',
+        'process.payment',
     ];
 
     /**

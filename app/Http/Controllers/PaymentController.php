@@ -6,6 +6,7 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class PaymentController extends Controller
 {
@@ -160,7 +161,12 @@ class PaymentController extends Controller
 
             // If status is success, redirect to success page
             if($status === 'success'){
-                return redirect()->route('success');
+                // Generate a temporary success token
+                $successToken = hash('sha256', $reference . time() . Str::random(40));
+                session(['success_token' => $successToken]);
+                session(['success_token_expires' => now()->addMinutes(10)->timestamp]);
+
+                return redirect()->route('success', ['token' => $successToken]);
             } else {
                 session()->flash('error', 'Payment was not successful: ' . $message);
                 return redirect()->route('checkout');
@@ -178,6 +184,23 @@ class PaymentController extends Controller
 
 
     public function success(){
+        // Security check at controller level as well
+        if (request()->has('token')) {
+            $token = request()->get('token');
+            $storedToken = session('success_token');
+            $expiryTime = session('success_token_expires', 0);
+
+            if ($storedToken && $token === $storedToken && time() < $expiryTime) {
+                // Clear tokens after use for security
+                session()->forget(['success_token', 'success_token_expires']);
+            } else if ($storedToken && $token !== $storedToken) {
+                // Invalid token provided
+                return redirect()->route('home')->with('error', 'Invalid payment session.');
+            }
+        } else if (!Session::has('reference_data') && !request()->has('reference')) {
+            return redirect()->route('home')->with('error', 'Invalid access to payment success page.');
+        }
+
         // First check if we have reference data in the session
         if (Session::has('reference_data')) {
             $referenceData = Session::get('reference_data');
@@ -237,7 +260,7 @@ class PaymentController extends Controller
 
             // Attempt to find a transaction with this reference
             $transaction = Transaction::where('message', 'like', '%' . $reference . '%')
-                            ->orWhere('status', 'success')
+                            ->where('status', 'success') // Ensure it's a successful transaction
                             ->latest()
                             ->first();
 
@@ -263,6 +286,9 @@ class PaymentController extends Controller
                     'quantity' => $transaction->quantity
                 ]);
             }
+
+            // Log suspicious access attempts for security monitoring
+            \Log::warning('Suspicious success page access attempt with reference: ' . $reference);
 
             // If still no transaction found but user has email confirmation, allow manual confirmation
             return view('Success', [

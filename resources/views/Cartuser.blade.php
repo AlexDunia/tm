@@ -611,45 +611,23 @@
             }
 
             function getCartItemImage($item) {
-                // Debug information - Check what properties are available
-                $debug = [];
-
                 if(is_object($item)) {
-                    // Collect object properties for debugging
-                    if(isset($item->image)) $debug['image'] = $item->image;
-                    if(isset($item->event_image)) $debug['event_image'] = $item->event_image;
-                    if(isset($item->cdescription)) $debug['cdescription'] = $item->cdescription;
-                    if(isset($item->thumbnail)) $debug['thumbnail'] = $item->thumbnail;
-
-                    // Check if image property exists
                     if(isset($item->image) && !empty($item->image)) {
-                        return $item->image; // Use the image path directly
+                        return $item->image;
                     }
-                    // Check for event_image property
                     else if(isset($item->event_image) && !empty($item->event_image)) {
                         return $item->event_image;
                     }
-                    // Check for cdescription as image
                     else if(isset($item->cdescription) && !empty($item->cdescription)) {
-                        // If it's a URL, return it directly
                         if(strpos($item->cdescription, 'http') === 0) {
                             return $item->cdescription;
                         }
-                        // Otherwise treat as a storage path
                         return '/storage/' . $item->cdescription;
                     }
-                    // Check any other potential image properties
                     else if(isset($item->thumbnail) && !empty($item->thumbnail)) {
                         return $item->thumbnail;
                     }
                 } else {
-                    // Collect array properties for debugging
-                    if(isset($item['image'])) $debug['image'] = $item['image'];
-                    if(isset($item['event_image'])) $debug['event_image'] = $item['event_image'];
-                    if(isset($item['cdescription'])) $debug['cdescription'] = $item['cdescription'];
-                    if(isset($item['thumbnail'])) $debug['thumbnail'] = $item['thumbnail'];
-
-                    // Array version
                     if(isset($item['image']) && !empty($item['image'])) {
                         return $item['image'];
                     }
@@ -667,7 +645,6 @@
                     }
                 }
 
-                // Fallback to placeholder
                 return '/images/placeholder.jpg';
             }
 
@@ -693,31 +670,8 @@
                     </div>
 
                     <div class="item-image">
-                        <!-- Debug: Print available image properties -->
-                        @if(is_object($item))
-                            <!-- Show debug info for object properties -->
-                            <div style="position:absolute; top:0; left:0; background:rgba(0,0,0,0.7); color:white; padding:5px; font-size:10px; z-index:100;">
-                                ID: {{ isset($item->id) ? $item->id : 'none' }}<br>
-                                @foreach(get_object_vars($item) as $prop => $val)
-                                    @if(in_array($prop, ['image', 'event_image', 'cdescription', 'thumbnail']))
-                                        {{ $prop }}: {{ substr($val, 0, 30) }}{{ strlen($val) > 30 ? '...' : '' }}<br>
-                                    @endif
-                                @endforeach
-                            </div>
-                        @elseif(is_array($item))
-                            <!-- Show debug info for array keys -->
-                            <div style="position:absolute; top:0; left:0; background:rgba(0,0,0,0.7); color:white; padding:5px; font-size:10px; z-index:100;">
-                                ID: {{ isset($item['id']) ? $item['id'] : 'none' }}<br>
-                                @foreach($item as $key => $val)
-                                    @if(in_array($key, ['image', 'event_image', 'cdescription', 'thumbnail']))
-                                        {{ $key }}: {{ substr($val, 0, 30) }}{{ strlen($val) > 30 ? '...' : '' }}<br>
-                                    @endif
-                                @endforeach
-                            </div>
-                        @endif
-
                         <img src="{{ getCartItemImage($item) }}" alt="{{ getCartItemEventName($item) }}"
-                            onerror="this.src='/images/placeholder.jpg'; console.log('Image failed to load:' + this.src);">
+                            onerror="this.src='/images/placeholder.jpg'">
                     </div>
 
                     <div class="item-details">
@@ -735,7 +689,7 @@
                             </div>
 
                             <div class="item-actions">
-                                <button class="remove-btn cart-item-remove">
+                                <button class="remove-btn cart-item-remove" data-id="{{ getCartItemId($item, $index) }}">
                                     <i class="fa-solid fa-trash"></i> Remove
                                 </button>
                             </div>
@@ -786,4 +740,91 @@
         </div>
     @endif
 </div>
+
+<!-- Cart notification container -->
+<div id="cart-notification-container"></div>
+
+<!-- Add this script at the end of the file -->
+<script>
+    $(document).ready(function() {
+        // Handle item removal with AJAX
+        $(document).on('click', '.cart-item-remove', function(e) {
+            e.preventDefault();
+
+            const cartItem = $(this).closest('.cart-item');
+            const itemId = cartItem.data('item-id');
+
+            if (!itemId) return;
+
+            // Fade out item
+            cartItem.css('opacity', '0.5');
+
+            // Send AJAX request to remove item
+            $.ajax({
+                url: '/cart/remove/' + itemId,
+                type: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Remove item with animation
+                        cartItem.slideUp(300, function() {
+                            $(this).remove();
+
+                            // Check if cart is empty
+                            if ($('.cart-item').length === 0) {
+                                // Reload page to show empty cart
+                                window.location.reload();
+                            } else {
+                                // Update displayed count
+                                const itemCount = $('.cart-item').length;
+                                $('.items-count').text(itemCount + (itemCount === 1 ? ' item' : ' items') + ' in cart');
+
+                                // Recalculate total
+                                let newTotal = 0;
+                                $('.cart-item').each(function() {
+                                    const price = parseFloat($(this).find('.item-price').text().replace('₦', '').replace(',', ''));
+                                    const quantity = parseInt($(this).find('.ticket-quantity-display').text());
+                                    newTotal += price * quantity;
+                                });
+
+                                // Update total display
+                                $('.total-value, #fixedBuyTotal').text('₦' + newTotal.toLocaleString());
+                            }
+                        });
+
+                        // Show notification
+                        showNotification('Item removed from cart', 'success');
+                    }
+                },
+                error: function() {
+                    // Restore opacity and show error
+                    cartItem.css('opacity', '1');
+                    showNotification('Failed to remove item', 'error');
+                }
+            });
+        });
+
+        // Helper function to show notifications
+        function showNotification(message, type = 'success') {
+            const notification = $('<div class="cart-notification ' + type + '">' + message + '</div>');
+            $('#cart-notification-container').append(notification);
+
+            // Show with animation
+            setTimeout(function() {
+                notification.addClass('show');
+
+                // Hide after delay
+                setTimeout(function() {
+                    notification.removeClass('show');
+                    setTimeout(function() {
+                        notification.remove();
+                    }, 300);
+                }, 3000);
+            }, 10);
+        }
+    });
+</script>
 @endsection
