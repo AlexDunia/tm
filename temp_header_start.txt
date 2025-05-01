@@ -9,7 +9,7 @@
     // Calculate cart count for authenticated users
     $cartCount = 0;
     if (Auth::check()) {
-        $cartCount = Auth::user()->relatewithcart()->sum(DB::raw('CAST(cquantity AS INTEGER)'));
+        $cartCount = Auth::user()->relatewithcart()->sum(DB::raw('CAST(cquantity AS SIGNED)'));
     } else {
         // For guests, get from session
         if (session()->has('cart_items')) {

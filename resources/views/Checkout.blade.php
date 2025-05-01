@@ -694,9 +694,17 @@
 
                             showNotification('Payment successful! Redirecting to success page...', 'success');
 
-                            // Redirect to success page
+                            // Redirect to success page with token if provided in response
                             setTimeout(function() {
-                                window.location.href = "{{ URL::to('success') }}";
+                                // Check if we got a response with redirect URL
+                                if (data && data.redirect_url) {
+                                    window.location.href = data.redirect_url;
+                                } else if (data && data.token) {
+                                    window.location.href = "{{ URL::to('success') }}?token=" + data.token;
+                                } else {
+                                    // Fallback to basic success page
+                                    window.location.href = "{{ URL::to('success') }}?reference=" + reference;
+                                }
                             }, 1500);
                         },
                         error: function(error) {

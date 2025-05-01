@@ -12,7 +12,7 @@
             <!-- Logo -->
             <div class="header-logo">
                 <a href="/" class="logo-link">
-                    <img src="/images/tdlogo.png" alt="Tixdemand Logo" class="logo-image">
+                    <img src="https://res.cloudinary.com/dnuhjsckk/image/upload/v1746062122/tdlogo_bmlpd8.png" alt="Kaka Logo" class="logo-image">
                 </a>
             </div>
 
@@ -90,8 +90,8 @@
                 @else
                 <!-- Guest User -->
                 <div class="auth-buttons">
-                    <a href="/login" class="auth-btn login-btn">Login</a>
-                    <a href="/signup" class="auth-btn signup-btn">Sign Up</a>
+                    <a href="/login" class="login-btn">Login</a>
+                    <a href="/signup" class="signup-btn">Sign Up</a>
                 </div>
                 @endauth
 
@@ -165,10 +165,92 @@
 </header>
 
 <style>
+.site-header {
+    background-color: #1c1c28;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+    border-bottom: 1px solid #2d2d42;
+}
+
+.header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 80px;
+}
+
+.header-logo {
+    flex: 0 0 auto;
+    margin-right: 30px;
+}
+
+.logo-link {
+    display: block;
+}
+
+.logo-image {
+    width: auto;
+    height: 40px;
+    transform: scale(1.1);
+}
+
+.main-nav {
+    flex: 1 1 auto;
+}
+
+.nav-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-item {
+    margin: 0 10px;
+}
+
+.nav-link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 10px 0;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover, .nav-item.active .nav-link {
+    color: #C04888;
+}
+
+.nav-item.active .nav-link:after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #C04888;
+}
+
+.user-section {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
 /* Cart Icon Styles */
 .cart-icon-wrapper {
     position: relative;
-    margin-right: 15px;
+    margin-right: 25px;
     display: inline-block;
 }
 
@@ -213,7 +295,7 @@
     gap: 10px;
 }
 
-.auth-btn {
+.login-btn, .signup-btn {
     font-weight: 600;
     text-decoration: none;
     padding: 8px 16px;
@@ -226,7 +308,8 @@
 
 .login-btn {
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .login-btn:hover {
@@ -236,6 +319,7 @@
 .signup-btn {
     background-color: #C04888;
     color: white;
+    border: none;
 }
 
 .signup-btn:hover {
@@ -316,19 +400,149 @@
     background-color: #333240;
 }
 
-/* Mobile styles */
+/* Mobile menu toggle */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 20px;
+    position: relative;
+    margin-left: 20px;
+}
+
+.bar {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: white;
+    position: absolute;
+    left: 0;
+    transition: all 0.3s ease;
+}
+
+.bar:nth-child(1) {
+    top: 0;
+}
+
+.bar:nth-child(2) {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.bar:nth-child(3) {
+    bottom: 0;
+}
+
+.mobile-menu-toggle.active .bar:nth-child(1) {
+    transform: rotate(45deg);
+    top: 9px;
+}
+
+.mobile-menu-toggle.active .bar:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-menu-toggle.active .bar:nth-child(3) {
+    transform: rotate(-45deg);
+    bottom: 9px;
+}
+
+/* Mobile nav */
+.mobile-nav {
+    display: none;
+    position: fixed;
+    top: 80px;
+    left: 0;
+    width: 100%;
+    height: calc(100vh - 80px);
+    background-color: #1c1c28;
+    z-index: 999;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.mobile-nav.active {
+    transform: translateX(0);
+}
+
+.mobile-nav-list {
+    list-style: none;
+    padding: 20px;
+    margin: 0;
+}
+
+.mobile-nav-item {
+    margin-bottom: 15px;
+}
+
+.mobile-nav-link, .logout-link {
+    display: block;
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background: none;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+
+.mobile-nav-link:hover {
+    color: #C04888;
+}
+
+.auth-item {
+    margin-top: 15px;
+}
+
+.mobile-logout-form {
+    margin: 0;
+    padding: 0;
+}
+
+/* Media queries */
+@media (max-width: 991px) {
+    .nav-list {
+        display: none;
+    }
+
+    .mobile-menu-toggle {
+        display: block;
+    }
+
+    .mobile-nav {
+        display: block;
+    }
+}
+
 @media (max-width: 768px) {
+    .header-content {
+        height: 70px;
+    }
+
+    .logo-image {
+        height: 35px;
+    }
+
     .cart-icon-wrapper {
         margin-right: 10px;
     }
 
-    .auth-btn {
-        padding: 6px 10px;
-        font-size: 13px;
+    .auth-buttons {
+        display: none;
     }
 
-    .auth-buttons {
-        gap: 6px;
+    .mobile-nav {
+        top: 70px;
+        height: calc(100vh - 70px);
     }
 }
 </style>

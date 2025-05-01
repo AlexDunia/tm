@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-use auth;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\mctlists;
 use Illuminate\Http\Request;
@@ -28,35 +28,41 @@ class AdminController extends Controller
     public function store(Request $request)
     {
         if (Auth::check()) {
-            $status = Auth::user()->isadmin;
-            if ($status == 1) {
-                $Addevent = $request->validate([
-                    'name' => 'required',
-                    'description' => 'required',
-                    'location' => 'required',
-                    'date' => 'required',
-                    'herolink' => 'required',
-                ]);
+            // Allow any authenticated user to create an event
+            $Addevent = $request->validate([
+                'name' => 'required',
+                'description' => 'required',
+                'location' => 'required',
+                'date' => 'required',
+                'herolink' => 'required',
+                'image' => 'required|url',
+                'heroimage' => 'required|url',
+            ]);
 
-                // Now for the file image upload, quite staright forward.
-                if($request->hasFile('image')){
-                    $Addevent['image'] = $request->file('image')->store('uploadedimage', 'public');
-                };
+            // No need to process file uploads as we're now using direct URLs
+            // Just directly use the provided image URLs
+            $Addevent['id'] = auth()->id();
 
-                if($request->hasFile('heroimage')){
-                    $Addevent['heroimage'] = $request->file('heroimage')->store('herouploadedimage', 'public');
-                };
-
-                $Addevent['id'] = auth()->id();
-                mctlists::create($Addevent);
-
-                return redirect('/');
+            // Additional admin-only fields or features can be added here
+            if (Auth::user()->isadmin == 1) {
+                // Add any admin-only fields or special features here
+                // For example:
+                // $Addevent['is_featured'] = $request->is_featured ?? 0;
+                // $Addevent['admin_approved'] = true;
+            } else {
+                // For non-admin users, set default values or restrictions
+                // For example:
+                // $Addevent['admin_approved'] = false;
+                // $Addevent['is_featured'] = 0;
             }
-        } else {
-            // return redirect()->route('Adminedit');
-            return view('Adminpanel');
-        }
 
+            mctlists::create($Addevent);
+
+            return redirect('/')->with('message', 'Event created successfully!');
+        } else {
+            // Redirect to login if user is not authenticated
+            return redirect('/login')->with('message', 'Please login to create an event');
+        }
     }
 
     public function storeuser(Request $request)
@@ -106,7 +112,7 @@ class AdminController extends Controller
             try {
                 Mail::send('userwelcome', ['firstname' => $adminUser], function ($message) use ($request, $adminUser) {
                     $message->to($request->email);
-                    $message->subject("Welcome to Tixdemand, " . $adminUser);
+                    $message->subject("Welcome to Kaka, " . $adminUser);
                 });
             } catch (\Exception $e) {
                 // Log the error but continue with the registration process
@@ -116,9 +122,9 @@ class AdminController extends Controller
         }
 
         // Log the user in
-        Auth()->login($adminuserr);
+        Auth::login($adminuserr);
 
-        return redirect('/')->with('message', 'Account created successfully! Welcome to Tixdemand.');
+        return redirect('/')->with('message', 'Account created successfully! Welcome to Kaka.');
     }
 
     public function authenticate(Request $request)
@@ -163,12 +169,12 @@ class AdminController extends Controller
             if ($nonExistentAttempts >= 2) {
                 $request->session()->forget('non_existent_attempts');
                 return redirect()->route('signup')
-                    ->with('message', 'We couldn\'t find an account with that email. We\'ve redirected you to our signup page.')
+                    ->with('message', 'Invalid login credentials.')
                     ->withInput(['email' => $formFields['email']]);
             }
 
             throw ValidationException::withMessages([
-                'email' => 'Account not found. Please check your email or create a new account.',
+                'email' => 'Invalid login credentials.',
             ]);
         }
 
@@ -234,7 +240,7 @@ class AdminController extends Controller
                         'deviceInfo' => $deviceInfo
                     ], function ($message) use ($request, $user) {
                         $message->to($user->email);
-                        $message->subject('Security Alert: New Login Detected on Your Tixdemand Account');
+                        $message->subject('Security Alert: New Login Detected on Your Kaka Account');
                     });
 
                     // Update user's IP address
@@ -253,7 +259,7 @@ class AdminController extends Controller
 
         // Return with error message
         throw ValidationException::withMessages([
-            'email' => 'The provided credentials do not match our records.',
+            'email' => 'Invalid login credentials.',
         ]);
     }
 

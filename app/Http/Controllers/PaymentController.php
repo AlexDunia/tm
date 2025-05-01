@@ -166,8 +166,26 @@ class PaymentController extends Controller
                 session(['success_token' => $successToken]);
                 session(['success_token_expires' => now()->addMinutes(10)->timestamp]);
 
+                // For AJAX requests, return the token
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Payment verified successfully',
+                        'token' => $successToken,
+                        'redirect_url' => route('success', ['token' => $successToken])
+                    ]);
+                }
+
                 return redirect()->route('success', ['token' => $successToken]);
             } else {
+                // For AJAX requests
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment was not successful: ' . $message
+                    ]);
+                }
+
                 session()->flash('error', 'Payment was not successful: ' . $message);
                 return redirect()->route('checkout');
             }
@@ -183,10 +201,24 @@ class PaymentController extends Controller
     }
 
 
-    public function success(){
+    public function success(Request $request){
+        // Log all request and session data for debugging
+        \Log::info('Success page accessed', [
+            'auth' => auth()->check() ? 'yes' : 'no',
+            'user_id' => auth()->check() ? auth()->id() : 'guest',
+            'request_params' => $request->all(),
+            'has_token' => $request->has('token') ? 'yes' : 'no',
+            'has_reference' => $request->has('reference') ? 'yes' : 'no',
+            'session_data' => [
+                'has_reference_data' => session()->has('reference_data') ? 'yes' : 'no',
+                'has_success_token' => session()->has('success_token') ? 'yes' : 'no',
+                'has_completed_order' => session()->has('completed_order') ? 'yes' : 'no',
+            ]
+        ]);
+
         // Security check at controller level as well
-        if (request()->has('token')) {
-            $token = request()->get('token');
+        if ($request->has('token')) {
+            $token = $request->get('token');
             $storedToken = session('success_token');
             $expiryTime = session('success_token_expires', 0);
 
@@ -195,14 +227,73 @@ class PaymentController extends Controller
                 session()->forget(['success_token', 'success_token_expires']);
             } else if ($storedToken && $token !== $storedToken) {
                 // Invalid token provided
-                return redirect()->route('home')->with('error', 'Invalid payment session.');
+                return redirect('/')->with('error', 'Invalid payment session.');
             }
-        } else if (!Session::has('reference_data') && !request()->has('reference')) {
-            return redirect()->route('home')->with('error', 'Invalid access to payment success page.');
+        } else if (!Session::has('reference_data') && !Session::has('completed_order') && !$request->has('reference')) {
+            if (auth()->check()) {
+                // Log suspicious activity
+                \Log::warning('Unauthenticated access to success page', [
+                    'user_id' => auth()->id(),
+                    'ip' => $request->ip()
+                ]);
+            }
+
+            return redirect('/')->with('error', 'Invalid access to payment success page.');
         }
 
-        // First check if we have reference data in the session
-        if (Session::has('reference_data')) {
+        // Check for completed order data first (from our own processing)
+        if (Session::has('completed_order')) {
+            $completedOrder = Session::get('completed_order');
+
+            // Log success
+            \Log::info('Showing success page from completed_order', [
+                'reference' => $completedOrder['ref'] ?? 'unknown',
+                'user_id' => auth()->check() ? auth()->id() : 'guest'
+            ]);
+
+            // Extract ticket data
+            $ticketData = $completedOrder['ticket_data'] ?? [];
+            $ticketIds = [];
+
+            // Generate ticket IDs if not already provided
+            if (empty($ticketIds) && !empty($ticketData)) {
+                $baseId = 'TIX-' . strtoupper(substr(md5(time() . uniqid()), 0, 6));
+                $counter = 1;
+
+                foreach ($ticketData as $ticket) {
+                    $quantity = $ticket['quantity'] ?? 1;
+                    for ($i = 0; $i < $quantity; $i++) {
+                        $ticketIds[] = $baseId . '-' . str_pad($counter++, 3, '0', STR_PAD_LEFT);
+                    }
+                }
+            }
+
+            // Clear the user's cart after successful payment if not already cleared
+            if (auth()->check()) {
+                // For authenticated users, clear from database
+                \App\Models\Cart::where('user_id', auth()->id())->delete();
+            } else {
+                // For guest users, clear from session
+                Session::forget('cart_items');
+            }
+
+            // Clear the session data
+            Session::forget('completed_order');
+
+            // Return the success view with ticket information
+            return view('Success', [
+                'ticketIds' => $ticketIds,
+                'orderRef' => $completedOrder['ref'] ?? '',
+                'paymentRef' => $completedOrder['paymentRef'] ?? '',
+                'amount' => $completedOrder['amount'] ?? 0,
+                'email' => $completedOrder['email'] ?? '',
+                'name' => ($completedOrder['first_name'] ?? '') . ' ' . ($completedOrder['last_name'] ?? ''),
+                'tickets' => $ticketData ?? []
+            ]);
+        }
+
+        // First check if we have reference data in the session (from Paystack callback)
+        else if (Session::has('reference_data')) {
             $referenceData = Session::get('reference_data');
 
             // Get ticket IDs from the transaction
@@ -251,12 +342,13 @@ class PaymentController extends Controller
             return view('Success', [
                 'ticketIds' => $ticketIds,
                 'eventName' => $referenceData->data->metadata->custom_fields[0]->value ?? '',
-                'quantity' => $referenceData->data->metadata->custom_fields[1]->value ?? 1
+                'quantity' => $referenceData->data->metadata->custom_fields[1]->value ?? 1,
+                'amount' => $referenceData->data->amount / 100 // Convert amount to naira
             ]);
         }
         // FALLBACK: If no reference data in session, try to get from query parameters
-        else if (request()->has('reference')) {
-            $reference = request()->get('reference');
+        else if ($request->has('reference')) {
+            $reference = $request->get('reference');
 
             // Attempt to find a transaction with this reference
             $transaction = Transaction::where('message', 'like', '%' . $reference . '%')
@@ -283,27 +375,47 @@ class PaymentController extends Controller
                 return view('Success', [
                     'ticketIds' => $ticketIds,
                     'eventName' => $transaction->eventname,
-                    'quantity' => $transaction->quantity
+                    'quantity' => $transaction->quantity,
+                    'amount' => $transaction->amount / 100 // Convert amount to naira
                 ]);
             }
 
-            // Log suspicious access attempts for security monitoring
-            \Log::warning('Suspicious success page access attempt with reference: ' . $reference);
-
-            // If still no transaction found but user has email confirmation, allow manual confirmation
+            // If we still don't have transaction details but we have the reference,
+            // Show a generic success page
             return view('Success', [
                 'ticketIds' => [],
                 'eventName' => 'Your Event',
                 'quantity' => 1,
+                'amount' => 0,
                 'manual_verification' => true,
                 'reference' => $reference
             ]);
         } else {
-            // 'reference_data' doesn't exist in the session, redirect to home route
-            return redirect()->route('home')->with('error', 'No payment information found');
+            // Nothing valid found, redirect home with error
+            return redirect('/')->with('error', 'No payment information found');
         }
     }
 
+    /**
+     * Manually verify a payment reference
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function verifyReference(Request $request)
+    {
+        $request->validate([
+            'reference' => 'required|string|max:100'
+        ]);
+
+        $reference = $request->input('reference');
+
+        // Use PaymentVerificationService to verify the reference
+        $verificationService = app()->make(\App\Services\PaymentVerificationService::class);
+        $verificationResult = $verificationService->manuallyVerifyReference($reference);
+
+        return response()->json($verificationResult);
+    }
 
 //     if (Session::has('reference_data')) {
 //         // Reference data exists, load the page

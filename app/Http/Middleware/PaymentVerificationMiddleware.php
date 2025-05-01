@@ -36,7 +36,7 @@ class PaymentVerificationMiddleware
                 // No session data, check if request has reference parameter
                 if (!$request->has('reference')) {
                     // No reference provided, redirect to home with error
-                    return redirect()->route('home')
+                    return redirect('/')
                         ->with('error', 'Access denied. Valid payment verification is required.');
                 }
 
@@ -48,7 +48,7 @@ class PaymentVerificationMiddleware
 
                 if (!$transaction) {
                     // No transaction found with this reference
-                    return redirect()->route('home')
+                    return redirect('/')
                         ->with('error', 'Invalid payment reference.');
                 }
 

@@ -49,7 +49,7 @@ Route::get('/payment', [PaymentController::class, 'index'] );
 Route::get('/contact', [ListingController::class, 'contact'] );
 Route::get('/search', [ListingController::class, 'search'] );
 Route::get('/searchnotfound', [ListingController::class, 'searchnotfound'] );
-Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'] );
+Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'])->name('payment.verify');
 Route::get('/tryverifypayment/{reference}', [PaymentController::class, 'tryverify'] );
 
 // View Admin Panel
@@ -117,10 +117,10 @@ Route::post('/reset-password', function (Request $request) {
 // With this, auth and non auth users can send emails
 Route::post('/formsent', [ListingController::class, 'contactsend']);
 
-// This is the form that gives admin ability to make posts.
-Route::get('/createpost', [AdminController::class, 'adminform']);
+// This is the form that gives ability to make posts.
+Route::get('/createpost', [AdminController::class, 'adminform'])->middleware('auth');
 
-// This gives the admin the ability to edit posts.
+// This gives the ability to create events (for both admins and regular users)
 Route::post('/creationsuccess', [AdminController::class, 'store']);
 
 // Users can now Login
@@ -138,10 +138,15 @@ Route::match(['get', 'post'], '/logout', [AdminController::class, 'disauthentica
 // Cart routes (optimized)
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
-Route::post('/addtocart', [CartController::class, 'addToCart'])->name('addtocart');
-Route::patch('/cart/update/{id}', [CartController::class, 'updateItem'])->name('cart.update');
-Route::delete('/cart/remove/{id}', [CartController::class, 'removeItem'])->name('cart.remove');
-Route::get('/cart/totals', [CartController::class, 'getCartTotals'])->name('cart.totals');
+Route::post('/addtocart', [CartController::class, 'addToCart'])
+    ->name('addtocart')
+    ->middleware(['throttle:20,1']); // Limit add to cart attempts to 20 per minute
+
+Route::middleware(['throttle:60,1'])->group(function () {
+    Route::patch('/cart/update/{id}', [CartController::class, 'updateItem'])->name('cart.update');
+    Route::delete('/cart/remove/{id}', [CartController::class, 'removeItem'])->name('cart.remove');
+    Route::get('/cart/totals', [CartController::class, 'getCartTotals'])->name('cart.totals');
+});
 
 Route::get('/trypayment', [ListingController::class, 'trypayment'] );
 Route::post('/tryverify/{reference}', [ListingController::class, 'tryverify'] );
@@ -149,8 +154,9 @@ Route::post('/tryverify/{reference}', [ListingController::class, 'tryverify'] );
 // Cart view.
 Route::get('/success', [PaymentController::class, 'success'])
     ->name('success')
-    ->withoutMiddleware(['auth'])
     ->middleware('payment.verified');
+
+Route::post('/verify-reference', [PaymentController::class, 'verifyReference'])->name('verify.reference');
 
 Route::get('/notfound', [ListingController::class, 'notfound'] );
 Route::get('/forgotpassword', [ListingController::class, 'forgotpassword'])->name('fp');
@@ -233,7 +239,8 @@ Route::get('/events/{name}', [ListingController::class, 'show'] );
 //
 // Auth::routes();
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+// Remove home route - use root route instead
+// Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 // Clear cart for non-authenticated users
 Route::get('/clear-cart', function() {
@@ -255,3 +262,8 @@ Route::get('/clear-cart', function() {
 // Add new cart payment processing routes
 Route::post('/prepare-payment', [CartController::class, 'preparePayment'])->name('prepare.payment');
 Route::get('/process-payment/{reference}', [CartController::class, 'processSuccessfulPayment'])->name('process.payment');
+
+// Test cart routes for debugging
+Route::get('/test-add-to-cart', [App\Http\Controllers\TestCartController::class, 'testAddToCart']);
+Route::get('/test-view-cart', [App\Http\Controllers\TestCartController::class, 'testViewCart']);
+Route::get('/debug-cart-creation', [App\Http\Controllers\TestCartController::class, 'debugCartCreation']);

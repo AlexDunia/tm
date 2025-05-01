@@ -1,41 +1,94 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    use Illuminate\Support\Facades\Auth;
+    use App\Http\Controllers\CartController;
+
+    // Get cart count using the method from CartController
+    $cartCount = CartController::getCartCount();
+@endphp
+
 <style>
-/* Fix header positioning */
+/* Remove the app.blade.php header for this page only */
 #app > .site-header {
+    display: none !important;
+}
+
+/* Add padding to body to account for our custom header */
+body {
+    padding-top: 80px !important;
+}
+
+/* Custom header styling specific to this page */
+.custom-page-header {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
     z-index: 9999 !important;
+    background-color: #1c1c28 !important;
+    border-bottom: 1px solid #2d2d42 !important;
 }
 
-/* Add padding to body to account for fixed header */
-body {
-    padding-top: 80px !important;
+.custom-header-content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    height: 80px !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 20px !important;
 }
 
-/* Fix for mobile - ensure content starts after header */
+/* Reuse cart styling from the main header */
+.cart-icon-wrapper {
+    position: relative;
+}
+
+.cart-icon {
+    position: relative;
+    cursor: pointer;
+    margin-right: 15px;
+}
+
+.cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #C04888;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.3s ease;
+}
+
+.cart-count.active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Mobile responsiveness for custom header */
 @media (max-width: 768px) {
-    body {
-        padding-top: 70px !important;
+    .custom-nav-list {
+        display: none !important;
     }
-}
 
-/* Custom header styling specific to this page */
-.custom-page-header,
-.custom-header-content,
-.custom-header-logo,
-.custom-nav-list,
-.custom-nav-item,
-.custom-nav-link,
-.custom-cart-icon-wrapper,
-.custom-cart-icon,
-.custom-auth-buttons,
-.custom-login-btn,
-.custom-signup-btn {
-    display: none !important;
+    body {
+        padding-top: 60px !important;
+    }
+
+    .custom-header-content {
+        height: 60px !important;
+    }
 }
 
 /* Global fixes for proper layout and navigation */
@@ -54,6 +107,13 @@ body {
     height: 80px !important;
     margin-top: 0 !important;
     padding-top: 0 !important;
+}
+
+/* Fix for mobile - ensure content starts after header */
+@media (max-width: 768px) {
+    body {
+        padding-top: 60px !important;
+    }
 }
 
 /* Ensure the main content container positions properly */
@@ -3283,44 +3343,66 @@ document.body.classList.remove('body-loading');
 // ... existing code ...
 </script>
 
-<script>
-// Fix for cart functionality integration
-document.addEventListener('DOMContentLoaded', function() {
-    // Connect ticket updates to the global cart counter
-    if (typeof window.updateGlobalCartCount === 'function') {
-        // Initial sync with cart system
-        window.syncCartCount = function() {
-            // This function will check cart items and update the count
-            // in the global header by calling updateGlobalCartCount
-            let totalItems = 0;
+<!-- Custom Header -->
+<header class="custom-page-header">
+    <div class="custom-header-content">
+        <!-- Logo -->
+        <div class="custom-header-logo">
+            <a href="/" class="logo-link">
+                <img src="https://res.cloudinary.com/dnuhjsckk/image/upload/v1746062122/tdlogo_bmlpd8.png" alt="Kaka Logo" style="width: auto; height: 40px;">
+            </a>
+        </div>
 
-            // Count items from direct ticket inputs
-            document.querySelectorAll('.direct-quantity-input').forEach(input => {
-                const qty = parseInt(input.value) || 0;
-                if (qty > 0) totalItems += qty;
-            });
+        <!-- Navigation -->
+        <nav class="custom-main-nav">
+            <ul class="custom-nav-list">
+                <li class="custom-nav-item {{ Request::is('/') ? 'active' : '' }}">
+                    <a href="/" class="custom-nav-link">All</a>
+                </li>
+                <li class="custom-nav-item {{ Request::is('category/music*') ? 'active' : '' }}">
+                    <a href="/category/music" class="custom-nav-link">Music</a>
+                </li>
+                <li class="custom-nav-item {{ Request::is('category/movies*') ? 'active' : '' }}">
+                    <a href="/category/movies" class="custom-nav-link">Movies</a>
+                </li>
+                <li class="custom-nav-item {{ Request::is('category/theatreandcomedy*') ? 'active' : '' }}">
+                    <a href="/category/theatreandcomedy" class="custom-nav-link">Theatre/Comedy</a>
+                </li>
+                <li class="custom-nav-item {{ Request::is('category/sports*') ? 'active' : '' }}">
+                    <a href="/category/sports" class="custom-nav-link">Sports</a>
+                </li>
+                <li class="custom-nav-item {{ Request::is('category/festivals*') ? 'active' : '' }}">
+                    <a href="/category/festivals" class="custom-nav-link">Festivals</a>
+                </li>
+                <li class="custom-nav-item {{ Request::is('category/others*') ? 'active' : '' }}">
+                    <a href="/category/others" class="custom-nav-link">Others</a>
+                </li>
+                <li class="custom-nav-item {{ Request::is('contact*') ? 'active' : '' }}">
+                    <a href="/contact" class="custom-nav-link">Contact us</a>
+                </li>
+            </ul>
+        </nav>
 
-            // Update global cart UI
-            if (window.updateGlobalCartCount) {
-                window.updateGlobalCartCount(totalItems);
-            }
-        };
+        <!-- Right side items -->
+        <div class="custom-user-section">
+            <!-- Cart Icon -->
+            <a href="/cart" class="custom-cart-icon-wrapper">
+                <div class="custom-cart-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: white;">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                </div>
+            </a>
 
-        // Hook into the existing ticket update functions
-        const originalUpdateCartSummary = window.updateCartSummary;
-        window.updateCartSummary = function() {
-            // Call the original function first
-            if (originalUpdateCartSummary) originalUpdateCartSummary();
+            <!-- Auth Buttons -->
+            <div class="custom-auth-buttons">
+                <a href="/login" class="custom-login-btn">Login</a>
+                <a href="/signup" class="custom-signup-btn">Sign Up</a>
+            </div>
+        </div>
+    </div>
+</header>
 
-            // Then sync with global cart
-            window.syncCartCount();
-        };
-
-        // Run initial sync
-        setTimeout(window.syncCartCount, 500);
-    }
-});
-
-// Remove all loading code and make tickets display immediately
-document.body.classList.remove('body-loading');
-</script>
+<!-- Rest of the page content -->

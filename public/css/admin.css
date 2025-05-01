@@ -151,12 +151,13 @@ body {
 .user-section {
   display: flex;
   align-items: center;
+  gap: 15px;
 }
 
 /* Cart Icon */
 .cart-icon-wrapper {
   position: relative;
-  margin-right: 20px;
+  margin-right: 0;
   text-decoration: none;
 }
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Forgot Password | Tixdemand</title>
+<title>Forgot Password | Kaka</title>
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/admin.css">
 <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -17,6 +17,145 @@
         margin: 0;
         color: white;
         background: #13121a;
+    }
+
+    .site-header {
+        background-color: #1c1c28;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        width: 100%;
+        border-bottom: 1px solid #2d2d42;
+    }
+
+    .header-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 80px;
+    }
+
+    .header-logo {
+        flex: 0 0 auto;
+        margin-right: 30px;
+    }
+
+    .logo-link {
+        display: block;
+    }
+
+    .logo-image {
+        width: auto;
+        height: 40px;
+        transform: scale(1.1);
+    }
+
+    .main-nav {
+        flex: 1 1 auto;
+    }
+
+    .nav-list {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .nav-item {
+        margin: 0 10px;
+    }
+
+    .nav-link {
+        color: #fff;
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: 500;
+        padding: 10px 0;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .nav-link:hover, .nav-item.active .nav-link {
+        color: #C04888;
+    }
+
+    .auth-buttons {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .login-btn, .signup-btn {
+        font-weight: 600;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        display: inline-block;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .login-btn {
+        color: white;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .login-btn:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .signup-btn {
+        background-color: #C04888;
+        color: white;
+        border: none;
+    }
+
+    .signup-btn:hover {
+        background-color: #a73672;
+    }
+
+    /* Mobile menu toggle */
+    .mobile-menu-toggle {
+        display: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        width: 24px;
+        height: 20px;
+        position: relative;
+        margin-left: 20px;
+    }
+
+    .menu-bar {
+        display: block;
+        width: 100%;
+        height: 2px;
+        background-color: white;
+        position: absolute;
+        left: 0;
+        transition: all 0.3s ease;
+    }
+
+    .menu-bar:nth-child(1) {
+        top: 0;
+    }
+
+    .menu-bar:nth-child(2) {
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .menu-bar:nth-child(3) {
+        bottom: 0;
     }
 
     .tyaround {
@@ -127,6 +266,16 @@
         font-size: 14px;
     }
 
+    @media (max-width: 991px) {
+        .nav-list {
+            display: none;
+        }
+
+        .mobile-menu-toggle {
+            display: block;
+        }
+    }
+
     @media (max-width: 700px) {
         .tyaround h1 {
             font-size: 30px;
@@ -138,6 +287,14 @@
             font-size: 14px;
             max-width: 90%;
         }
+
+        .header-content {
+            height: 70px;
+        }
+
+        .logo-image {
+            height: 35px;
+        }
     }
 </style>
 <body>
@@ -147,7 +304,7 @@
                 <!-- Logo -->
                 <div class="header-logo">
                     <a href="/" class="logo-link">
-                        <img src="/images/tdlogo.png" alt="Tixdemand Logo" class="logo-image">
+                        <img src="https://res.cloudinary.com/dnuhjsckk/image/upload/v1746062122/tdlogo_bmlpd8.png" alt="Kaka Logo" class="logo-image">
                     </a>
                 </div>
 
@@ -172,6 +329,9 @@
                         <li class="nav-item {{ Request::is('category/festivals*') ? 'active' : '' }}">
                             <a href="/category/festivals" class="nav-link">Festivals</a>
                         </li>
+                        <li class="nav-item {{ Request::is('category/others*') ? 'active' : '' }}">
+                            <a href="/category/others" class="nav-link">Others</a>
+                        </li>
                         <li class="nav-item {{ Request::is('contact*') ? 'active' : '' }}">
                             <a href="/contact" class="nav-link">Contact us</a>
                         </li>
@@ -181,8 +341,8 @@
                 <!-- User Section -->
                 <div class="user-section">
                     <div class="auth-buttons">
-                        <a href="/login" class="auth-link">Log in</a>
-                        <a href="/signup" class="auth-link">Sign up</a>
+                        <a href="/login" class="login-btn">Login</a>
+                        <a href="/signup" class="signup-btn">Sign Up</a>
                     </div>
                 </div>
 
@@ -236,7 +396,7 @@
     <script>
         // Mobile menu functionality
         document.getElementById('mobileMenuToggle').addEventListener('click', function() {
-            document.getElementById('mobileNav').classList.toggle('active');
+            document.querySelector('.nav-list').classList.toggle('active');
             document.body.classList.toggle('menu-open');
             this.setAttribute('aria-expanded',
                 this.getAttribute('aria-expanded') === 'false' ? 'true' : 'false'

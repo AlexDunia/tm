@@ -561,7 +561,7 @@
             <div class="items-count">{{ count($mycart) }} {{ count($mycart) == 1 ? 'item' : 'items' }} in cart</div>
         </div>
         <div>
-            <a href="{{ route('home') }}" class="continue-shopping">
+            <a href="/" class="continue-shopping">
                 <i class="fa-solid fa-arrow-left"></i> Continue Shopping
             </a>
             @if(count($mycart) > 0 && !Auth::check())
@@ -706,7 +706,7 @@
             </div>
 
             <div class="cart-buttons">
-                <a href="{{ route('home') }}" class="continue-shopping">
+                <a href="/" class="continue-shopping">
                     <i class="fa-solid fa-arrow-left"></i> Continue Shopping
                 </a>
                 <a href="{{ route('checkout') }}" class="checkout-btn">
@@ -734,8 +734,8 @@
             </div>
             <h2 class="empty-cart-title">Your cart is empty</h2>
             <p class="empty-cart-text">Looks like you haven't added any tickets to your cart yet.</p>
-            <a href="{{ route('home') }}" class="browse-events-btn">
-                <i class="fa-solid fa-calendar-alt"></i> Browse Events
+            <a href="/" class="browse-events-btn">
+                <i class="fa-solid fa-ticket"></i> Browse Events
             </a>
         </div>
     @endif
@@ -775,8 +775,12 @@
 
                             // Check if cart is empty
                             if ($('.cart-item').length === 0) {
-                                // Reload page to show empty cart
-                                window.location.reload();
+                                // Show empty cart view instead of reloading
+                                $('.cart-content').hide();
+                                $('.cart-header').hide();
+                                $('.cart-footer').hide();
+                                $('#fixedBuyFooter').hide();
+                                $('.empty-cart').fadeIn();
                             } else {
                                 // Update displayed count
                                 const itemCount = $('.cart-item').length;
@@ -784,14 +788,21 @@
 
                                 // Recalculate total
                                 let newTotal = 0;
+                                let totalTickets = 0;
                                 $('.cart-item').each(function() {
-                                    const price = parseFloat($(this).find('.item-price').text().replace('₦', '').replace(',', ''));
-                                    const quantity = parseInt($(this).find('.ticket-quantity-display').text());
-                                    newTotal += price * quantity;
+                                    const price = parseFloat($(this).find('.item-price').text().replace('₦', '').replace(/,/g, ''));
+                                    const quantityText = $(this).find('.ticket-quantity-display').text();
+                                    const quantity = parseInt(quantityText);
+                                    if (!isNaN(price) && !isNaN(quantity)) {
+                                        newTotal += price * quantity;
+                                        totalTickets += quantity;
+                                    }
                                 });
 
                                 // Update total display
-                                $('.total-value, #fixedBuyTotal').text('₦' + newTotal.toLocaleString());
+                                $('.total-value').text('₦' + newTotal.toLocaleString());
+                                $('#fixedBuyTotal').text('₦' + newTotal.toLocaleString());
+                                $('#fixedBuyCount').text(totalTickets + ' ' + (totalTickets === 1 ? 'ticket' : 'tickets') + ' selected');
                             }
                         });
 
@@ -807,23 +818,21 @@
             });
         });
 
-        // Helper function to show notifications
-        function showNotification(message, type = 'success') {
+        // Simple notification function
+        function showNotification(message, type) {
             const notification = $('<div class="cart-notification ' + type + '">' + message + '</div>');
             $('#cart-notification-container').append(notification);
 
-            // Show with animation
             setTimeout(function() {
                 notification.addClass('show');
 
-                // Hide after delay
                 setTimeout(function() {
                     notification.removeClass('show');
                     setTimeout(function() {
                         notification.remove();
                     }, 300);
                 }, 3000);
-            }, 10);
+            }, 100);
         }
     });
 </script>

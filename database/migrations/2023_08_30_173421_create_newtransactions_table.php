@@ -24,7 +24,8 @@ return new class extends Migration
             $table->string('quantity');
             $table->string('eventname');
             $table->string('tablename');
-            $table->decimal('amount', 10, 2); // Numeric with 10 digits and 2 decimal places
+            $table->decimal('amount', 10, 2); // Decimal type works the same in MySQL
+            $table->text('ticket_ids')->nullable(); // JSON data stored as text in MySQL
             $table->timestamps();
             // $table->id();
             // $table->string('status');

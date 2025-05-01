@@ -215,10 +215,9 @@ class ListingController extends Controller
             // Use Laravel's query builder to construct a secure query
             $products = mctlists::where('name', 'like', '%' . $si . '%')
                 ->orWhere('description', 'like', '%' . $si . '%')
-                ->latest()->simplePaginate(5);
+                ->latest()->paginate(9);
 
             // Check if the query result is empty
-
             if ($products->isEmpty()) {
                 $si = trim($request->input('name'));
                 // Return a different view for no results found
@@ -518,15 +517,23 @@ class ListingController extends Controller
 
                 // Convert to collection of objects
                 $carts = collect();
-                foreach ($cartItems as $item) {
-                    $cartObj = (object)$item;
+                foreach ($cartItems as $id => $item) {
+                    $cartObj = new \stdClass();
+                    $cartObj->id = $id;
+                    $cartObj->cname = $item['product_name'] ?? '';
+                    $cartObj->eventname = $item['item_name'] ?? '';
+                    $cartObj->cprice = (float)($item['price'] ?? 0);
+                    $cartObj->cquantity = (int)($item['quantity'] ?? 0);
+                    $cartObj->ctotalprice = (float)($item['total'] ?? ($cartObj->cprice * $cartObj->cquantity));
                     $carts->push($cartObj);
                 }
 
                 // Enhanced logging for session cart items
                 \Illuminate\Support\Facades\Log::info('CART DEBUG - Session Cart Items:', [
                     'count' => count($cartItems),
-                    'total_quantity' => collect($cartItems)->sum('cquantity'),
+                    'total_quantity' => collect($cartItems)->sum(function($item) {
+                        return isset($item['quantity']) ? (int)$item['quantity'] : 0;
+                    }),
                     'items' => $cartItems
                 ]);
             } else if (session()->has('tname')) {

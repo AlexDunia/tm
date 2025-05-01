@@ -38,8 +38,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         // Check if cart is empty
                         if ($('.cart-item').length === 0) {
+                            // Show empty cart message
                             $('.empty-cart').show();
                             $('.cart-content').hide();
+                            // Hide cart footer and fixed footer as well
+                            $('.cart-footer').hide();
+                            $('#fixedBuyFooter').hide();
+                            // Update cart count to 0
+                            if (window.updateGlobalCartCount) {
+                                window.updateGlobalCartCount(0);
+                            }
                         } else {
                             // Recalculate totals on server response
                             updateCartTotals();
@@ -125,6 +133,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update subtotal and total in summary
                     $('.summary-row:nth-child(1) .summary-value').text('₦' + parseFloat(response.subtotal).toLocaleString());
                     $('.summary-total-value').text('₦' + parseFloat(response.total).toLocaleString());
+
+                    // Also update the fixed footer totals
+                    $('#fixedBuyTotal').text('₦' + parseFloat(response.total).toLocaleString());
+
+                    // If the server indicates cart is empty, show empty cart state
+                    if (response.cart_empty) {
+                        // Show empty cart message and hide cart content
+                        $('.empty-cart').show();
+                        $('.cart-content').hide();
+                        $('.cart-footer').hide();
+                        $('#fixedBuyFooter').hide();
+                        // Update cart count to 0
+                        if (window.updateGlobalCartCount) {
+                            window.updateGlobalCartCount(0);
+                        }
+                        return;
+                    }
+
+                    // Update item count in the fixed footer
+                    const totalItems = response.total_items || 0;
+                    $('#fixedBuyCount').text(totalItems + ' ' + (totalItems === 1 ? 'ticket' : 'tickets') + ' selected');
+
+                    // If total is zero but cart isn't empty (shouldn't happen), hide the footer
+                    if (response.total === 0 && !response.cart_empty) {
+                        $('.cart-footer').hide();
+                        $('#fixedBuyFooter').hide();
+                    } else {
+                        // Otherwise ensure footers are visible
+                        $('.cart-footer').show();
+                        $('#fixedBuyFooter').show();
+                    }
                 }
             }
         });

@@ -13,6 +13,8 @@ class Authenticate extends Middleware
     protected $publicRoutes = [
         'verifypayment/*',
         'process.payment',
+        'admin.login',
+        'events.index',
     ];
 
     /**

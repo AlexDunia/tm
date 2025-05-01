@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('newtransactions', function (Blueprint $table) {
-            $table->longText('ticket_ids')->nullable()->after('tablename');
-        });
+        // Check if the ticket_ids column already exists
+        if (!Schema::hasColumn('newtransactions', 'ticket_ids')) {
+            Schema::table('newtransactions', function (Blueprint $table) {
+                $table->longText('ticket_ids')->nullable()->after('tablename');
+            });
+        }
     }
 
     /**
@@ -21,8 +24,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('newtransactions', function (Blueprint $table) {
-            $table->dropColumn('ticket_ids');
-        });
+        if (Schema::hasColumn('newtransactions', 'ticket_ids')) {
+            Schema::table('newtransactions', function (Blueprint $table) {
+                $table->dropColumn('ticket_ids');
+            });
+        }
     }
 };
