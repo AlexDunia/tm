@@ -56,7 +56,34 @@ class AdminController extends Controller
                 // $Addevent['is_featured'] = 0;
             }
 
-            mctlists::create($Addevent);
+            // Create the event
+            $event = mctlists::create($Addevent);
+
+            // Check if we should create ticket types
+            if ($request->has('create_ticket_types') && $request->has('ticket_name')) {
+                $ticketNames = $request->ticket_name;
+                $ticketPrices = $request->ticket_price;
+                $ticketDescriptions = $request->ticket_description;
+                $ticketCapacities = $request->ticket_capacity;
+                $ticketSalesStarts = $request->ticket_sales_start;
+                $ticketSalesEnds = $request->ticket_sales_end;
+
+                foreach ($ticketNames as $index => $name) {
+                    if (!empty($name) && isset($ticketPrices[$index])) {
+                        \App\Models\TicketType::create([
+                            'mctlists_id' => $event->id,
+                            'name' => $name,
+                            'price' => $ticketPrices[$index],
+                            'description' => $ticketDescriptions[$index] ?? '',
+                            'capacity' => !empty($ticketCapacities[$index]) ? $ticketCapacities[$index] : null,
+                            'sales_start' => !empty($ticketSalesStarts[$index]) ? $ticketSalesStarts[$index] : now(),
+                            'sales_end' => !empty($ticketSalesEnds[$index]) ? $ticketSalesEnds[$index] : now()->addMonths(2),
+                            'is_active' => true,
+                            'sold' => 0
+                        ]);
+                    }
+                }
+            }
 
             return redirect('/')->with('message', 'Event created successfully!');
         } else {
@@ -136,9 +163,15 @@ class AdminController extends Controller
 
         if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
             $seconds = RateLimiter::availableIn($key);
-            throw ValidationException::withMessages([
-                'email' => "Too many login attempts. Please try again in {$seconds} seconds.",
-            ])->status(429);
+
+            // Use session for consistent error handling with security-conscious messaging
+            return redirect()->back()
+                ->withInput($request->only('email'))
+                ->with('auth_error', [
+                    'type' => 'rate_limit',
+                    'message' => "Too many sign-in attempts. Please try again later.",
+                    'resolution' => 'Please wait or reset your password.'
+                ]);
         }
 
         // Validate form input
@@ -154,7 +187,7 @@ class AdminController extends Controller
             // Increment the rate limiter on failed login
             RateLimiter::hit($key, $decayMinutes * 60);
 
-            // Log the failed attempt for security monitoring
+            // Log the failed attempt for security monitoring with detailed info for admins only
             \Log::warning('Login attempt with non-existent email', [
                 'email' => $formFields['email'],
                 'ip' => $request->ip(),
@@ -165,17 +198,27 @@ class AdminController extends Controller
             $nonExistentAttempts = $request->session()->get('non_existent_attempts', 0) + 1;
             $request->session()->put('non_existent_attempts', $nonExistentAttempts);
 
-            // After 2 attempts with non-existent accounts, redirect to signup
+            // After multiple attempts with non-existent accounts, redirect to signup
+            // but use a generic message that doesn't reveal the email doesn't exist
             if ($nonExistentAttempts >= 2) {
                 $request->session()->forget('non_existent_attempts');
                 return redirect()->route('signup')
-                    ->with('message', 'Invalid login credentials.')
-                    ->withInput(['email' => $formFields['email']]);
+                    ->withInput(['email' => $formFields['email']])
+                    ->with('auth_error', [
+                        'type' => 'invalid_credentials',
+                        'message' => 'Sign-in unsuccessful. Please verify your information.',
+                        'resolution' => 'You may need to create an account or recover access.'
+                    ]);
             }
 
-            throw ValidationException::withMessages([
-                'email' => 'Invalid login credentials.',
-            ]);
+            // Generic error that doesn't reveal if the email exists or not
+            return redirect()->back()
+                ->withInput($request->only('email'))
+                ->with('auth_error', [
+                    'type' => 'invalid_credentials',
+                    'message' => 'Sign-in unsuccessful. Please verify your information.',
+                    'resolution' => 'Please check your email and password and try again.'
+                ]);
         }
 
         // Clear the non-existent account counter if user exists
@@ -240,7 +283,7 @@ class AdminController extends Controller
                         'deviceInfo' => $deviceInfo
                     ], function ($message) use ($request, $user) {
                         $message->to($user->email);
-                        $message->subject('Security Alert: New Login Detected on Your Kaka Account');
+                        $message->subject('Security Alert: New Sign-in Detected on Your Kaka Account');
                     });
 
                     // Update user's IP address
@@ -257,10 +300,14 @@ class AdminController extends Controller
         // Increment the rate limiter on failed login
         RateLimiter::hit($key, $decayMinutes * 60);
 
-        // Return with error message
-        throw ValidationException::withMessages([
-            'email' => 'Invalid login credentials.',
-        ]);
+        // Use consistent generic error message that doesn't give away if email exists
+        return redirect()->back()
+            ->withInput($request->only('email'))
+            ->with('auth_error', [
+                'type' => 'invalid_credentials',
+                'message' => 'Sign-in unsuccessful. Please verify your information.',
+                'resolution' => 'Please check your email and password and try again.'
+            ]);
     }
 
     /**

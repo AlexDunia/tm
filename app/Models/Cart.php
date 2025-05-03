@@ -20,7 +20,7 @@ class Cart extends Model
     ];
 
     protected $fillable = [
-        'user_id', 'cname', 'cprice', 'cquantity', 'ctotalprice', 'eventname', 'clocation', 'cdescription'
+        'user_id', 'cname', 'cprice', 'cquantity', 'ctotalprice', 'eventname', 'clocation', 'cdescription', 'image', 'event_image', 'thumbnail', 'event_id'
     ];
 
     /**
@@ -28,6 +28,13 @@ class Cart extends Model
      */
     public function relate(){
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Get the event associated with this cart item
+     */
+    public function event(){
+        return $this->belongsTo(mctlists::class, 'event_id');
     }
 
     /**

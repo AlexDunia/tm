@@ -166,7 +166,7 @@
 
 <style>
 .site-header {
-    background-color: #1c1c28;
+    background-color: #0d0c11;
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -458,7 +458,7 @@
     left: 0;
     width: 100%;
     height: calc(100vh - 80px);
-    background-color: #1c1c28;
+    background-color: #0d0c11;
     z-index: 999;
     overflow-y: auto;
     transform: translateX(100%);

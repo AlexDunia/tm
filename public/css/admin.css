@@ -46,7 +46,7 @@ body {
   left: 0;
   width: 100%;
   z-index: 1000;
-  background-color: rgba(24, 23, 31, 0.9);
+  background-color: #0d0c11;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
   transition: all 0.4s cubic-bezier(0.215, 0.610, 0.355, 1.000);
   backdrop-filter: blur(10px);
@@ -54,7 +54,7 @@ body {
 }
 
 .site-header.scrolled {
-  background-color: rgba(24, 23, 31, 0.98);
+  background-color: rgba(13, 12, 17, 0.98);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }
 
@@ -395,7 +395,7 @@ body {
   left: 0;
   width: 100%;
   height: 0;
-  background-color: #18171f;
+  background-color: #0d0c11;
   overflow: hidden;
   transition: height 0.3s ease;
   z-index: 999;
@@ -1164,7 +1164,7 @@ form.example input[type=text]:focus + .search-icon {
 
 .one_e {
   padding: 18px;
-  background: linear-gradient(145deg, rgba(60, 59, 77, 0.3), rgba(50, 49, 67, 0.3));
+  background: linear-gradient(145deg, rgba(60, 59, 77, 0.1), rgba(50, 49, 67, 0.3));
   border-radius: 15px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   transition: all 0.4s ease;

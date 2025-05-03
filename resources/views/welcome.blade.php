@@ -10,7 +10,7 @@
                 <div class="slide-image" style="background-image: url('{{ str_starts_with($onewelcome->heroimage, 'http') ? $onewelcome->heroimage : asset('storage/' . $onewelcome->heroimage) }}')">
                     <div class="image-overlay"></div>
                 </div>
-                <a href="/events/{{$onewelcome->name}}" class="slide-content">{{$onewelcome->herolink}}</a>
+                <a href="/events/{{$onewelcome->name}}" class="slide-content">{{$onewelcome->name}}</a>
             </div>
             @endforeach
         </div>
@@ -58,9 +58,11 @@
 
         <!-- Pagination Section -->
         <section class="pagination-section">
-            <div class="pag">
-                @include('_paginate')
-                {{ $welcome->links() }}
+            <div class="pagination-container">
+                <div class="pagination-wrapper">
+                    @include('_paginate')
+                    {{ $welcome->links() }}
+                </div>
             </div>
         </section>
     </div>
@@ -115,12 +117,11 @@ function showSlides() {
 
 .slide-content {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    left: 8%;
+    transform: none;
     color: #ffffff !important;
-    text-align: center;
-    font-size: 4rem;
+    text-align: left;
+    font-size: 3rem;
     font-weight: 700;
     text-decoration: none;
     text-shadow: none !important;
@@ -131,6 +132,75 @@ function showSlides() {
 .search-section {
     z-index: 100;
     position: relative;
+}
+
+/* Enhanced pagination styles */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin: 40px auto;
+    width: 100%;
+}
+
+.pagination-wrapper {
+    width: 90%;
+    max-width: 720px;
+    background: rgba(37, 36, 50, 0.7);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    justify-content: center;
+    gap: 8px;
+}
+
+.pagination .page-item .page-link {
+    background-color: #252432;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.pagination .page-item .page-link:hover {
+    background-color: rgba(192, 72, 136, 0.3);
+    border-color: rgba(192, 72, 136, 0.5);
+    transform: translateY(-2px);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #c04888;
+    border-color: #c04888;
+    color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+    background-color: rgba(37, 36, 50, 0.5);
+    color: rgba(255, 255, 255, 0.4);
+    border-color: transparent;
+    cursor: not-allowed;
+}
+
+/* Small screen responsiveness */
+@media (max-width: 640px) {
+    .pagination-wrapper {
+        width: 95%;
+        padding: 10px;
+    }
+
+    .pagination .page-item .page-link {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
 }
 </style>
 @endsection

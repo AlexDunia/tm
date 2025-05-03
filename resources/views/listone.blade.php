@@ -62,6 +62,35 @@ body {
     z-index: 1 !important;
 }
 
+/* Event hero section styling */
+.event-hero-section {
+    position: relative;
+    background-image: url('{{ str_starts_with($listonee->image, 'http') ? $listonee->image : asset('storage/' . $listonee->image) }}');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.event-hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-title {
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 0, 0, 0.6);
+}
+
 /* Premium Animated Loader */
 .premium-loader-overlay {
     position: fixed;
@@ -877,6 +906,7 @@ body > [class*="admission-card"],
 .pricing-header {
     text-align: center;
     margin-bottom: 40px;
+    margin-top: 60px;
 }
 
 .section-title {
@@ -2517,7 +2547,7 @@ var selectedTickets = {};
     @endif
 
         <!-- Hero Section - Pixel Perfect Replica -->
-        <section class="event-hero-section" style="background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), url('{{ str_starts_with($listonee->image, 'http') ? $listonee->image : asset('storage/' . $listonee->image) }}') center/cover no-repeat;">
+        <section class="event-hero-section">
             <div class="container">
                 <div class="hero-content">
                     <h1 class="hero-title">INTERNATIONAL FILM FESTIVAL</h1>
@@ -2526,7 +2556,7 @@ var selectedTickets = {};
                         <div class="ticket-btn-container">
                             <button class="book-tickets-btn" onclick="document.querySelector('.pricing-section').scrollIntoView({behavior: 'smooth'})">
                                 <i class="fas fa-ticket-alt" aria-hidden="true"></i>
-                                Book Tickets
+                                BOOK TICKETS
                             </button>
                         </div>
 
@@ -2534,37 +2564,34 @@ var selectedTickets = {};
                             <button class="share-btn" onclick="shareEvent()">
                                 <i class="fas fa-share-alt" aria-hidden="true"></i>
                             </button>
-                            <button class="bookmark-btn" onclick="bookmarkEvent()">
-                                <i class="far fa-bookmark" aria-hidden="true"></i>
-                            </button>
                         </div>
                     </div>
 
                     <div class="event-details">
-                        <div class="event-detail">
-                            <div class="detail-icon">
+                        <div class="event-info-box">
+                            <div class="event-info-icon">
                                 <i class="far fa-calendar-alt" aria-hidden="true"></i>
                             </div>
-                            <div class="detail-text">Saturday, August 10, 2024</div>
+                            <div class="event-info-text">Saturday, August 10, 2024</div>
                         </div>
-                        <div class="event-detail">
-                            <div class="detail-icon">
+                        <div class="event-info-box">
+                            <div class="event-info-icon">
                                 <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
                             </div>
-                            <div class="detail-text">Cinema Plaza, Los Angeles</div>
+                            <div class="event-info-text">Cinema Plaza, Los Angeles</div>
                         </div>
-                        <div class="event-detail">
-                            <div class="detail-icon">
+                        <div class="event-info-box">
+                            <div class="event-info-icon">
                                 <i class="far fa-clock" aria-hidden="true"></i>
                             </div>
-                            <div class="detail-text">3 hours</div>
+                            <div class="event-info-text">3 hours</div>
                         </div>
                     </div>
 
                     <div class="event-tags">
-                        <span class="event-tag">Live performance</span>
-                        <span class="event-tag">Food & drinks</span>
-                        <span class="event-tag">Indoor event</span>
+                        <span class="event-tag">Live Performance</span>
+                        <span class="event-tag">Food & Drinks</span>
+                        <span class="event-tag">Indoor Event</span>
                     </div>
                 </div>
             </div>
@@ -2738,37 +2765,9 @@ var selectedTickets = {};
 <script>
     // Share event function
     function shareEvent() {
-        if (navigator.share) {
-            // Use Web Share API if available
-            navigator.share({
-                title: 'International Film Festival',
-                text: 'Join me at the International Film Festival on August 10, 2024',
-                url: window.location.href
-            })
-            .then(() => console.log('Share successful'))
-            .catch((error) => console.log('Error sharing:', error));
-        } else {
-            // Fallback for browsers that don't support Web Share API
-            // Create a temporary input to copy the URL
-            const tempInput = document.createElement('input');
-            tempInput.value = window.location.href;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-
-            // Show a small notification
-            const shareBtn = document.querySelector('.share-btn');
-            const originalHTML = shareBtn.innerHTML;
-            shareBtn.innerHTML = '<i class="fas fa-check"></i>';
-            shareBtn.style.backgroundColor = '#4CAF50';
-
-            setTimeout(() => {
-                shareBtn.innerHTML = originalHTML;
-                shareBtn.style.backgroundColor = '';
-                alert('Link copied to clipboard!');
-            }, 1000);
-        }
+        const shareModal = document.getElementById('shareModal');
+        shareModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 
     // Bookmark event function
@@ -3323,4 +3322,823 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Remove all loading code and make tickets display immediately
 document.body.classList.remove('body-loading');
+</script>
+
+<!-- Share Modal -->
+<div id="shareModal" class="share-modal-overlay">
+    <div class="share-modal">
+        <div class="modal-header">
+            <h3>Share Event</h3>
+            <button class="close-modal" onclick="closeShareModal()">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="share-preview">
+                <div class="preview-image">
+                    <img src="{{ str_starts_with($listonee->image, 'http') ? $listonee->image : asset('storage/' . $listonee->image) }}" alt="{{ $listonee->name }}">
+                </div>
+                <div class="preview-content">
+                    <h4>{{ $listonee->name }}</h4>
+                    <p class="preview-date">
+                        <i class="fa-regular fa-calendar"></i>
+                        {{ $listonee->date }} {{ isset($listonee->time) ? ' at ' . $listonee->time : '' }}
+                    </p>
+                    <p class="preview-location">
+                        <i class="fa-solid fa-location-dot"></i>
+                        {{ $listonee->location ?? 'Cinema Plaza, Los Angeles' }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="share-options">
+                <button class="share-option facebook" onclick="shareVia('facebook')">
+                    <i class="fab fa-facebook-f"></i>
+                    <span>Facebook</span>
+                </button>
+                <button class="share-option twitter" onclick="shareVia('twitter')">
+                    <i class="fab fa-twitter"></i>
+                    <span>Twitter</span>
+                </button>
+                <button class="share-option whatsapp" onclick="shareVia('whatsapp')">
+                    <i class="fab fa-whatsapp"></i>
+                    <span>WhatsApp</span>
+                </button>
+                <button class="share-option telegram" onclick="shareVia('telegram')">
+                    <i class="fab fa-telegram-plane"></i>
+                    <span>Telegram</span>
+                </button>
+                <button class="share-option linkedin" onclick="shareVia('linkedin')">
+                    <i class="fab fa-linkedin-in"></i>
+                    <span>LinkedIn</span>
+                </button>
+                <button class="share-option pinterest" onclick="shareVia('pinterest')">
+                    <i class="fab fa-pinterest-p"></i>
+                    <span>Pinterest</span>
+                </button>
+                <button class="share-option email" onclick="shareVia('email')">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>Email</span>
+                </button>
+                <button class="share-option copy" onclick="copyShareLink()">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copy Link</span>
+                </button>
+            </div>
+
+            <div class="share-link">
+                <p><i class="fa-solid fa-link"></i> Or copy direct link</p>
+                <div class="copy-link-container">
+                    <input type="text" id="shareLink" value="{{ url()->current() }}" readonly>
+                    <button onclick="copyShareLink()">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>Copy</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="copy-success" id="copySuccess">
+                <i class="fa-solid fa-check-circle"></i> Link copied to clipboard!
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add styles for the share modal -->
+<style>
+    /* Share Modal Styles */
+    .share-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .share-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .share-modal {
+        background: linear-gradient(145deg, rgba(40, 40, 55, 0.95), rgba(30, 30, 45, 0.98));
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+        transform: translateY(30px);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .share-modal-overlay.active .share-modal {
+        transform: translateY(0);
+    }
+
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 24px;
+        cursor: pointer;
+        transition: color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+    }
+
+    .close-modal:hover {
+        color: white;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .share-preview {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 25px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s;
+    }
+
+    .share-preview:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .preview-image {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+        flex-shrink: 0;
+        border: 2px solid rgba(192, 72, 136, 0.4);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+        transform: rotate(-2deg);
+    }
+
+    .preview-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s;
+    }
+
+    .share-preview:hover .preview-image img {
+        transform: scale(1.1);
+    }
+
+    .preview-content {
+        flex: 1;
+    }
+
+    .preview-content h4 {
+        margin: 0 0 8px;
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .preview-date, .preview-location {
+        margin: 3px 0;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .preview-date i, .preview-location i {
+        font-size: 12px;
+        color: #C04888;
+    }
+
+    .share-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 12px;
+        margin-bottom: 25px;
+    }
+
+    .share-option {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 14px 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s;
+        cursor: pointer;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .share-option:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, rgba(192, 72, 136, 0.1), rgba(255, 255, 255, 0), rgba(192, 72, 136, 0.1));
+        transform: translateX(-100%);
+        transition: transform 0.6s ease;
+    }
+
+    .share-option:hover:before {
+        transform: translateX(100%);
+    }
+
+    .share-option:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        border-color: #C04888;
+    }
+
+    .share-option i {
+        font-size: 24px;
+        color: #C04888;
+        transition: transform 0.3s;
+    }
+
+    .share-option:hover i {
+        transform: scale(1.2);
+    }
+
+    .share-option span {
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    /* Specific colors for different social platforms */
+    .share-option.facebook i { color: #1877F2; }
+    .share-option.twitter i { color: #1DA1F2; }
+    .share-option.whatsapp i { color: #25D366; }
+    .share-option.telegram i { color: #0088cc; }
+    .share-option.linkedin i { color: #0A66C2; }
+    .share-option.pinterest i { color: #E60023; }
+    .share-option.email i { color: #C04888; }
+    .share-option.copy i { color: #FECC01; }
+
+    .share-link {
+        margin-top: 20px;
+    }
+
+    .share-link p {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .share-link p i {
+        color: #C04888;
+    }
+
+    .copy-link-container {
+        display: flex;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 2px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .copy-link-container input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 12px 15px;
+        color: white;
+        font-size: 14px;
+        border-radius: 8px 0 0 8px;
+    }
+
+    .copy-link-container input:focus {
+        outline: none;
+    }
+
+    .copy-link-container button {
+        background: #C04888;
+        border: none;
+        color: white;
+        padding: 12px 18px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+    }
+
+    .copy-link-container button:hover {
+        background: #d65c9e;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(192, 72, 136, 0.3);
+    }
+
+    .copy-link-container button i {
+        font-size: 16px;
+    }
+
+    .copy-success {
+        position: absolute;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: rgba(40, 167, 69, 0.9);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        opacity: 0;
+        transition: all 0.3s;
+        pointer-events: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .copy-success.active {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+
+    @media (max-width: 576px) {
+        .share-options {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .preview-image {
+            width: 60px;
+            height: 60px;
+        }
+
+        .preview-content h4 {
+            font-size: 16px;
+        }
+
+        .copy-link-container button span {
+            display: none;
+        }
+    }
+
+    /* Event details section styling */
+    .event-details {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .event-info-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background-color: rgba(18, 18, 18, 0.7);
+        padding: 10px 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .event-info-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        border-color: rgba(192, 72, 136, 0.4);
+    }
+
+    .event-info-icon {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #C04888;
+        font-size: 16px;
+    }
+
+    .event-info-text {
+        font-size: 14px;
+        font-weight: 500;
+        color: white;
+    }
+
+    .event-tags {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+    }
+
+    .event-tag {
+        background-color: rgba(192, 72, 136, 0.2);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        text-transform: capitalize;
+        border: 1px solid rgba(192, 72, 136, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .event-tag:hover {
+        background-color: rgba(192, 72, 136, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Share and bookmark buttons */
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .share-button, .bookmark-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: rgba(18, 18, 18, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .share-button:hover, .bookmark-button:hover {
+        background-color: rgba(192, 72, 136, 0.3);
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Ticket Button Styling */
+    .book-tickets-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px 24px;
+        background-color: #C04888;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .book-tickets-btn:hover {
+        background-color: #d55a9a;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .book-tickets-btn i {
+        font-size: 18px;
+    }
+
+    /* Share and Bookmark Buttons */
+    .hero-action-buttons {
+        display: flex;
+        gap: 12px;
+    }
+
+    .share-btn, .bookmark-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .share-btn:hover, .bookmark-btn:hover {
+        background-color: rgba(192, 72, 136, 0.7);
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    /* Event details section styling */
+    .event-details {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .event-info-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background-color: rgba(18, 18, 18, 0.7);
+        padding: 10px 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .event-info-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        border-color: rgba(192, 72, 136, 0.4);
+    }
+
+    .event-info-icon {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #C04888;
+        font-size: 16px;
+    }
+
+    .event-info-text {
+        font-size: 14px;
+        font-weight: 500;
+        color: white;
+    }
+
+    .event-tags {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+    }
+
+    .event-tag {
+        background-color: rgba(192, 72, 136, 0.2);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        text-transform: capitalize;
+        border: 1px solid rgba(192, 72, 136, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .event-tag:hover {
+        background-color: rgba(192, 72, 136, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Share and bookmark buttons */
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .share-button, .bookmark-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: rgba(18, 18, 18, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .share-button:hover, .bookmark-button:hover {
+        background-color: rgba(192, 72, 136, 0.3);
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Hide bookmark button */
+    .bookmark-btn {
+        display: none !important;
+    }
+
+    /* Update hero action buttons to center the share button */
+    .hero-action-buttons {
+        display: flex;
+        justify-content: center;
+    }
+</style>
+
+<!-- Script for share functionality -->
+<script>
+    // Share event function - updated to use the modal
+    function shareEvent() {
+        const shareModal = document.getElementById('shareModal');
+        shareModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Close the share modal
+    function closeShareModal() {
+        const shareModal = document.getElementById('shareModal');
+        shareModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Copy share link to clipboard
+    function copyShareLink() {
+        const shareLink = document.getElementById('shareLink');
+        shareLink.select();
+
+        try {
+            // Modern approach using Clipboard API
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareLink.value)
+                    .then(showCopySuccess)
+                    .catch(err => {
+                        console.error('Clipboard write failed:', err);
+                        // Fallback to document.execCommand
+                        document.execCommand('copy');
+                        showCopySuccess();
+                    });
+            } else {
+                // Fallback for older browsers
+                document.execCommand('copy');
+                showCopySuccess();
+            }
+        } catch (err) {
+            console.error('Copy failed:', err);
+            // Final fallback - show prompt with link
+            alert('Copy this link: ' + shareLink.value);
+        }
+    }
+
+    // Show copy success notification
+    function showCopySuccess() {
+        // Show the success notification
+        const copySuccess = document.getElementById('copySuccess');
+        copySuccess.classList.add('active');
+
+        // Hide after 2 seconds
+        setTimeout(() => {
+            copySuccess.classList.remove('active');
+        }, 2000);
+
+        // Also update the copy button
+        const copyButtons = document.querySelectorAll('.copy-link-container button, .share-option.copy');
+        copyButtons.forEach(button => {
+            const originalHTML = button.innerHTML;
+            button.innerHTML = button.classList.contains('share-option')
+                ? '<i class="fa-solid fa-check"></i><span>Copied!</span>'
+                : '<i class="fa-solid fa-check"></i><span>Copied!</span>';
+
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+            }, 2000);
+        });
+    }
+
+    // Share via different platforms
+    function shareVia(platform) {
+        const url = encodeURIComponent(window.location.href);
+        const title = encodeURIComponent('{{ $listonee->name }}');
+        const description = encodeURIComponent('Join me at {{ $listonee->name }} on {{ $listonee->date }} {{ isset($listonee->time) ? ' at ' . $listonee->time : '' }}');
+        const image = encodeURIComponent('{{ str_starts_with($listonee->image, 'http') ? $listonee->image : asset('storage/' . $listonee->image) }}');
+
+        let shareUrl = '';
+
+        switch(platform) {
+            case 'facebook':
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+                break;
+            case 'twitter':
+                shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${description}`;
+                break;
+            case 'whatsapp':
+                shareUrl = `https://api.whatsapp.com/send?text=${description}%20${url}`;
+                break;
+            case 'telegram':
+                shareUrl = `https://t.me/share/url?url=${url}&text=${description}`;
+                break;
+            case 'linkedin':
+                shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+                break;
+            case 'pinterest':
+                shareUrl = `https://pinterest.com/pin/create/button/?url=${url}&media=${image}&description=${description}`;
+                break;
+            case 'email':
+                shareUrl = `mailto:?subject=${title}&body=${description}%0A%0A${url}`;
+                break;
+            default:
+                break;
+        }
+
+        if (shareUrl) {
+            // First try to use the Web Share API for mobile devices
+            if (platform !== 'email' && navigator.share && (platform === 'whatsapp' || platform === 'telegram')) {
+                navigator.share({
+                    title: decodeURIComponent(title),
+                    text: decodeURIComponent(description),
+                    url: decodeURIComponent(url)
+                }).catch(err => {
+                    // Fallback to opening a new window
+                    window.open(shareUrl, '_blank');
+                });
+            } else {
+                // Open in a new window for desktop or if Web Share API is not available
+                window.open(shareUrl, '_blank', 'width=600,height=600,toolbar=0,menubar=0,location=0');
+            }
+        }
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        const shareModal = document.getElementById('shareModal');
+        if (event.target === shareModal) {
+            closeShareModal();
+        }
+    });
+
+    // Prevent propagation from modal content
+    document.querySelector('.share-modal').addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+
+    // Handle Escape key to close modal
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeShareModal();
+        }
+    });
 </script>

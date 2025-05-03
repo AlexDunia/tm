@@ -7,7 +7,22 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ isset($metaTitle) ? $metaTitle : config('app.name', 'Laravel') }}</title>
+    <meta name="description" content="{{ isset($metaDescription) ? $metaDescription : 'Find and book tickets for events, concerts, theater, and more.' }}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="{{ isset($metaType) ? $metaType : 'website' }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="{{ isset($metaTitle) ? $metaTitle : config('app.name', 'Laravel') }}">
+    <meta property="og:description" content="{{ isset($metaDescription) ? $metaDescription : 'Find and book tickets for events, concerts, theater, and more.' }}">
+    <meta property="og:image" content="{{ isset($metaImage) ? $metaImage : asset('images/default-share.jpg') }}">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ url()->current() }}">
+    <meta name="twitter:title" content="{{ isset($metaTitle) ? $metaTitle : config('app.name', 'Laravel') }}">
+    <meta name="twitter:description" content="{{ isset($metaDescription) ? $metaDescription : 'Find and book tickets for events, concerts, theater, and more.' }}">
+    <meta name="twitter:image" content="{{ isset($metaImage) ? $metaImage : asset('images/default-share.jpg') }}">
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">

@@ -22,7 +22,7 @@
     }
 
     .site-header {
-        background-color: #1c1c28;
+        background-color: #0d0c11;
         position: sticky;
         top: 0;
         z-index: 1000;
@@ -333,74 +333,6 @@
         color: #a73672;
     }
 
-    .social-login {
-        margin-top: 25px;
-        position: relative;
-        text-align: center;
-    }
-
-    .social-login::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 0;
-        width: 100%;
-        height: 1px;
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    .social-login-text {
-        position: relative;
-        display: inline-block;
-        padding: 0 15px;
-        background: #262536;
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.9rem;
-        z-index: 1;
-    }
-
-    .social-buttons {
-        display: flex;
-        justify-content: center;
-        margin-top: 15px;
-        gap: 12px;
-    }
-
-    .social-button {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(37, 36, 50, 0.7);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        font-size: 1.2rem;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-    .social-button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .social-button.google:hover {
-        background: #DB4437;
-        border-color: #DB4437;
-    }
-
-    .social-button.facebook:hover {
-        background: #4267B2;
-        border-color: #4267B2;
-    }
-
-    .social-button.twitter:hover {
-        background: #1DA1F2;
-        border-color: #1DA1F2;
-    }
-
     .fstyle .inputerror {
         color: #ff6b6b;
         font-weight: 500;
@@ -455,63 +387,142 @@
         }
     }
 
-    .account-not-found-alert {
-        margin-top: 12px;
-        padding: 15px;
-        background: rgba(255, 107, 107, 0.1);
-        border: 1px solid rgba(255, 107, 107, 0.3);
-        border-left: 4px solid #ff6b6b;
-        border-radius: 6px;
-        display: flex;
-        align-items: flex-start;
-        animation: fadeIn 0.5s ease;
+    /* Authentication Error Notification */
+    .auth-error-toast {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        z-index: 1000;
+        width: 360px;
+        max-width: calc(100% - 40px);
+        background: rgba(26, 26, 33, 0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 87, 87, 0.2);
+        transform: translateX(0);
+        opacity: 1;
+        animation: slideInToast 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: opacity 0.3s ease, transform 0.3s ease;
     }
 
-    .account-not-found-alert .alert-icon {
-        margin-right: 12px;
-        color: #ff6b6b;
-        font-size: 1.2rem;
+    /* Animation for showing the toast */
+    @keyframes slideInToast {
+        0% {
+            transform: translateX(420px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
 
-    .account-not-found-alert .alert-content {
-        flex: 1;
+    /* Animation for hiding the toast */
+    .auth-error-toast[x-show="false"] {
+        opacity: 0 !important;
+        transform: translateX(50px) !important;
+        transition: opacity 0.3s ease, transform 0.3s ease;
     }
 
-    .account-not-found-alert .alert-content p {
-        margin: 0 0 10px 0;
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 0.9rem;
-        line-height: 1.4;
-    }
-
-    .account-not-found-alert .alert-actions {
+    .auth-error-toast .toast-header {
+        padding: 12px 16px;
+        background: rgba(255, 87, 87, 0.1);
+        border-bottom: 1px solid rgba(255, 87, 87, 0.15);
         display: flex;
         align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 8px;
+        justify-content: space-between;
     }
 
-    .account-not-found-alert .alert-actions a {
-        display: inline-block;
-        padding: 8px 12px;
-        background-color: rgba(192, 72, 136, 0.2);
-        color: #C04888;
-        font-size: 0.85rem;
+    .auth-error-toast .toast-title-area {
+        display: flex;
+        align-items: center;
+    }
+
+    .auth-error-toast .toast-icon {
+        margin-right: 12px;
+        color: #ff5757;
+        font-size: 1.05rem;
+    }
+
+    .auth-error-toast .toast-title {
+        margin: 0;
+        color: #ffffff;
+        font-size: 0.95rem;
         font-weight: 600;
-        text-decoration: none;
-        border-radius: 4px;
-        transition: all 0.2s ease;
-        border: 1px solid rgba(192, 72, 136, 0.3);
     }
 
-    .account-not-found-alert .alert-actions a:hover {
-        background-color: rgba(192, 72, 136, 0.3);
-    }
-
-    .account-not-found-alert .alert-or {
-        margin: 0 5px;
+    .auth-error-toast .toast-close {
+        background: none;
+        border: none;
         color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        font-size: 1rem;
+        padding: 0;
+        transition: color 0.2s;
+    }
+
+    .auth-error-toast .toast-close:hover {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .auth-error-toast .toast-body {
+        padding: 16px;
+    }
+
+    .auth-error-toast .toast-message {
+        margin: 0 0 16px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .auth-error-toast .toast-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .auth-error-toast .toast-action {
+        flex: 1;
+        padding: 10px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border-radius: 8px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .auth-error-toast .toast-action.primary {
+        background: rgba(192, 72, 136, 0.2);
+        border: 1px solid rgba(192, 72, 136, 0.3);
+        color: #ff9dc7;
+    }
+
+    .auth-error-toast .toast-action.secondary {
+        background: rgba(60, 60, 70, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .auth-error-toast .toast-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .auth-error-toast .toast-action.primary:hover {
+        background: rgba(192, 72, 136, 0.3);
+    }
+
+    .auth-error-toast .toast-action.secondary:hover {
+        background: rgba(70, 70, 80, 0.5);
+    }
+
+    .auth-error-toast .toast-action i {
+        margin-right: 8px;
         font-size: 0.85rem;
     }
 
@@ -628,16 +639,22 @@
             top: 80px;
         }
 
+        .auth-error-toast {
+            width: 90%;
+            right: 5%;
+            top: 90px;
+        }
+
+        .auth-error-toast .toast-actions {
+            flex-direction: column;
+        }
+
         .header-content {
             height: 70px;
         }
 
         .logo-image {
             height: 35px;
-        }
-
-        .social-buttons {
-            flex-wrap: wrap;
         }
     }
 </style>
@@ -707,6 +724,54 @@
             </div>
         @endif
 
+        @if(session()->has('auth_error'))
+            <div class="auth-error-toast" x-data="{show: true}" x-init="setTimeout(() => show = false, 6000)" x-show="show">
+                <div class="toast-header">
+                    <div class="toast-title-area">
+                        <div class="toast-icon">
+                            @if(session('auth_error')['type'] === 'rate_limit')
+                                <i class="fas fa-clock"></i>
+                            @elseif(session('auth_error')['type'] === 'account_not_found')
+                                <i class="fas fa-exclamation-triangle"></i>
+                            @else
+                                <i class="fas fa-exclamation-triangle"></i>
+                            @endif
+                        </div>
+                        <h4 class="toast-title">
+                            @if(session('auth_error')['type'] === 'rate_limit')
+                                Sign-in Limit Reached
+                            @else
+                                Sign-in Unsuccessful
+                            @endif
+                        </h4>
+                    </div>
+                    <button class="toast-close" @click="show = false">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="toast-body">
+                    <p class="toast-message">{{ session('auth_error')['message'] }}</p>
+                    <div class="toast-actions">
+                        @if(session('auth_error')['type'] === 'rate_limit')
+                            <a href="{{ route('password.request') }}" class="toast-action primary">
+                                <i class="fas fa-key"></i>Reset Password
+                            </a>
+                            <button class="toast-action secondary" @click="show = false">
+                                <i class="fas fa-clock"></i>Try Again Later
+                            </button>
+                        @else
+                            <a href="{{ route('password.request') }}" class="toast-action primary">
+                                <i class="fas fa-key"></i>Recover Account
+                            </a>
+                            <a href="{{ route('register') }}" class="toast-action secondary">
+                                <i class="fas fa-user-plus"></i>Create Account
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="tyaround">
             <h1>Login to your account</h1>
             <p>Enter your login details to access your account</p>
@@ -718,31 +783,20 @@
                     <input type="email" id="email" name="email" value="{{ old('email') }}" class="form-input" placeholder="Enter your email">
                     <span class="input-icon"><i class="fas fa-envelope"></i></span>
                     @error('email')
-                        <div class="inputerror">{{ $message }}</div>
-                        @if ($errors->has('email') && Str::contains($errors->first('email'), 'Invalid login'))
-                            <div class="account-not-found-alert">
-                                <div class="alert-icon">
-                                    <i class="fas fa-exclamation-circle"></i>
-                                </div>
-                                <div class="alert-content">
-                                    <p>Invalid login credentials.</p>
-                                    <div class="alert-actions">
-                                        <a href="{{ route('register') }}">Create new account</a>
-                                        <span class="alert-or">or</span>
-                                        <a href="{{ route('password.request') }}">Recover your account</a>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
+                        @unless(session()->has('auth_error'))
+                            <div class="inputerror">{{ $message }}</div>
+                        @endunless
                     @enderror
                 </div>
 
                 <div class="form-group">
                     <label for="password" class="form-label">Password</label>
-                    <input id="password" type="password" name="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+                    <input id="password" type="password" name="password" class="form-input"
+                        placeholder="Enter your password" required autocomplete="current-password"
+                        {{ session()->has('auth_error') && old('email') ? 'autofocus' : '' }}>
                     <span class="input-icon password-toggle" onclick="togglePasswordVisibility()"><i class="fas fa-eye"></i></span>
                     @error('password')
-                    <div class="inputerror">{{ $message }}</div>
+                        <div class="inputerror">{{ $message }}</div>
                     @enderror
                 </div>
 
@@ -755,21 +809,6 @@
 
                 <button class="login-button" type="submit">Log In</button>
             </form>
-
-            <div class="social-login">
-                <span class="social-login-text">or login with</span>
-                <div class="social-buttons">
-                    <a href="#" class="social-button google">
-                        <i class="fab fa-google"></i>
-                    </a>
-                    <a href="#" class="social-button facebook">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="#" class="social-button twitter">
-                        <i class="fab fa-twitter"></i>
-                    </a>
-                </div>
-            </div>
 
             <p class="create-account">Don't have an account?<a href="/signup">Sign up</a></p>
         </div>
@@ -801,7 +840,7 @@
             }
         }
 
-        // Input animation
+        // Input animation and focus handling
         const inputs = document.querySelectorAll('.form-input');
         inputs.forEach(input => {
             input.addEventListener('focus', () => {
@@ -817,6 +856,35 @@
             // Check on load if input has value
             if (input.value !== '') {
                 input.parentElement.classList.add('focused');
+            }
+        });
+
+        // Keyboard navigation enhancement
+        document.addEventListener('keydown', function(event) {
+            // Close toast notification on Escape key
+            if (event.key === 'Escape') {
+                const toast = document.querySelector('.auth-error-toast[x-show="true"]');
+                if (toast) {
+                    // Find Alpine.js instance
+                    const alpineComponent = Alpine.getComponent(toast);
+                    if (alpineComponent) {
+                        alpineComponent.$data.show = false;
+                    }
+                }
+            }
+        });
+
+        // Handle autofocus when page loads with an authentication error
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if there's an email value and an auth error
+            const hasAuthError = {{ session()->has('auth_error') ? 'true' : 'false' }};
+            const passwordField = document.getElementById('password');
+
+            if (hasAuthError && passwordField) {
+                // Give a small delay to ensure the browser has finished its own processing
+                setTimeout(() => {
+                    passwordField.focus();
+                }, 100);
             }
         });
     </script>

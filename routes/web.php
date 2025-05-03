@@ -18,6 +18,10 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\Models\Myorders;
+use App\Models\User;
+use App\Models\Transaction;
+use App\Models\TicketType;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -200,16 +204,14 @@ Route::post('/delete/{id}', [ListingController::class, 'delete'])->middleware('w
 
 // View create
 Route::POST('/createticket', function (Request $request) {
-    // dd($request->all());
-
-       // Three basic things you must proritize in this space.
-    // Request a validation.
-    // Create directly with the model.
-    // Return a redirect
-    // return view('Admin');
-
-    // in my laravel appliction, I want to click on a button that will add aleady existing products that is
-    // already in my seeder into a new database.
+    // Log the entire request for debugging
+    \Illuminate\Support\Facades\Log::info('Create Ticket Request', [
+        'all' => $request->all(),
+        'has_ticket_names' => $request->has('ticket_name'),
+        'ticket_names' => $request->input('ticket_name'),
+        'ticket_prices' => $request->input('ticket_price'),
+        'form_data' => $request->except('_token')
+    ]);
 
     // name description location date
     $clientevent = $request->validate([
@@ -217,12 +219,93 @@ Route::POST('/createticket', function (Request $request) {
         'description'=>'required',
         'location'=>'required',
         'date'=>'required',
+        'image' => 'nullable|url',
+        'heroimage' => 'nullable|url',
+        'herolink' => 'nullable',
+        'category' => 'nullable',
     ]);
 
-    mctlists::create($clientevent);
+    try {
+        // Create the event
+        $event = mctlists::create($clientevent);
 
-    return redirect('/');
+        \Illuminate\Support\Facades\Log::info('Created event with ID: ' . $event->id);
 
+        // Check if we should create ticket types
+        if ($request->has('ticket_name') && is_array($request->ticket_name)) {
+            $ticketNames = $request->ticket_name;
+            $ticketPrices = $request->ticket_price;
+            $ticketDescriptions = $request->ticket_description;
+            $ticketCapacities = $request->ticket_capacity;
+
+            \Illuminate\Support\Facades\Log::info('Creating ' . count($ticketNames) . ' ticket types', [
+                'names' => $ticketNames,
+                'prices' => $ticketPrices,
+                'descriptions' => $ticketDescriptions,
+                'capacities' => $ticketCapacities
+            ]);
+
+            foreach ($ticketNames as $index => $name) {
+                if (!empty($name) && isset($ticketPrices[$index])) {
+                    try {
+                        $ticket = TicketType::create([
+                            'mctlists_id' => $event->id,
+                            'name' => $name,
+                            'price' => $ticketPrices[$index],
+                            'description' => $ticketDescriptions[$index] ?? '',
+                            'capacity' => !empty($ticketCapacities[$index]) ? $ticketCapacities[$index] : null,
+                            'sales_start' => now(),
+                            'sales_end' => now()->addMonths(2),
+                            'is_active' => true,
+                            'sold' => 0
+                        ]);
+
+                        \Illuminate\Support\Facades\Log::info("Created ticket type: {$name} with ID: {$ticket->id}");
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error("Error creating ticket type: {$name}", [
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                    }
+                }
+            }
+        } else {
+            // Still create at least one default ticket if no ticket types were specified
+            try {
+                $ticket = TicketType::create([
+                    'mctlists_id' => $event->id,
+                    'name' => 'Regular Ticket',
+                    'price' => 5000,
+                    'description' => 'Standard event access',
+                    'capacity' => null,
+                    'sales_start' => now(),
+                    'sales_end' => now()->addMonths(2),
+                    'is_active' => true,
+                    'sold' => 0
+                ]);
+
+                \Illuminate\Support\Facades\Log::info("Created default ticket type with ID: {$ticket->id}");
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Error creating default ticket type", [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
+        }
+
+        // Load the event with ticket types to verify they were created
+        $loadedEvent = mctlists::with('ticketTypes')->find($event->id);
+        \Illuminate\Support\Facades\Log::info("Ticket types created for event {$event->id}: " . $loadedEvent->ticketTypes->count());
+
+        return redirect('/event/' . $event->id . '/ticket');
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error("Error in createticket route", [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return redirect()->back()->with('error', 'There was an error creating your event: ' . $e->getMessage());
+    }
 });
 
 
@@ -267,3 +350,56 @@ Route::get('/process-payment/{reference}', [CartController::class, 'processSucce
 Route::get('/test-add-to-cart', [App\Http\Controllers\TestCartController::class, 'testAddToCart']);
 Route::get('/test-view-cart', [App\Http\Controllers\TestCartController::class, 'testViewCart']);
 Route::get('/debug-cart-creation', [App\Http\Controllers\TestCartController::class, 'debugCartCreation']);
+
+// Test route to create event with ticket types
+Route::get('/test-ticket-types', function() {
+    // Create a test event
+    $event = \App\Models\mctlists::create([
+        'name' => 'Test Event ' . time(),
+        'description' => 'This is a test event',
+        'location' => 'Test Location',
+        'date' => now()->addWeek(),
+        'image' => 'https://res.cloudinary.com/demo/image/upload/v1629401603/samples/landscapes/architecture-signs.jpg',
+        'heroimage' => 'https://res.cloudinary.com/demo/image/upload/v1629401603/samples/landscapes/nature-mountains.jpg',
+        'herolink' => 'https://example.com/event',
+        'category' => 'Music'
+    ]);
+
+    // Create ticket types
+    $regularTicket = \App\Models\TicketType::create([
+        'mctlists_id' => $event->id,
+        'name' => 'Regular Ticket',
+        'price' => 5000,
+        'description' => 'Standard event access',
+        'capacity' => 100,
+        'sales_start' => now(),
+        'sales_end' => now()->addMonths(1),
+        'is_active' => true,
+        'sold' => 0
+    ]);
+
+    $vipTicket = \App\Models\TicketType::create([
+        'mctlists_id' => $event->id,
+        'name' => 'VIP Ticket',
+        'price' => 15000,
+        'description' => 'Premium seating with complimentary drinks',
+        'capacity' => 50,
+        'sales_start' => now(),
+        'sales_end' => now()->addMonths(1),
+        'is_active' => true,
+        'sold' => 0
+    ]);
+
+    // Load the event with ticket types to verify they're connected
+    $loadedEvent = \App\Models\mctlists::with('ticketTypes')->find($event->id);
+
+    // Output debug information
+    return response()->json([
+        'event' => $event,
+        'ticket_types_count' => $loadedEvent->ticketTypes->count(),
+        'ticket_types' => $loadedEvent->ticketTypes,
+        'regular_ticket' => $regularTicket,
+        'vip_ticket' => $vipTicket,
+        'view_url' => url('/event/' . $event->id . '/ticket')
+    ]);
+});

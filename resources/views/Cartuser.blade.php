@@ -611,40 +611,85 @@
             }
 
             function getCartItemImage($item) {
+                // Debug: Log the available image fields for debugging
+                error_log('Image fields for item: ' . json_encode($item));
+
+                // Check if this is the object structure (from database)
                 if(is_object($item)) {
-                    if(isset($item->image) && !empty($item->image)) {
+                    // First priority: Cloudinary URLs
+                    if(isset($item->image) && !empty($item->image) && strpos($item->image, 'cloudinary.com') !== false) {
+                        error_log('Using item->image (Cloudinary): ' . $item->image);
+                        return $item->image;
+                    }
+                    else if(isset($item->event_image) && !empty($item->event_image) && strpos($item->event_image, 'cloudinary.com') !== false) {
+                        error_log('Using item->event_image (Cloudinary): ' . $item->event_image);
+                        return $item->event_image;
+                    }
+                    // Second priority: Any image URLs
+                    else if(isset($item->image) && !empty($item->image)) {
+                        error_log('Using item->image: ' . $item->image);
                         return $item->image;
                     }
                     else if(isset($item->event_image) && !empty($item->event_image)) {
+                        error_log('Using item->event_image: ' . $item->event_image);
                         return $item->event_image;
                     }
+                    // Third priority: Other potential fields
                     else if(isset($item->cdescription) && !empty($item->cdescription)) {
                         if(strpos($item->cdescription, 'http') === 0) {
+                            error_log('Using item->cdescription as URL: ' . $item->cdescription);
                             return $item->cdescription;
                         }
+                        error_log('Using item->cdescription as storage path: /storage/' . $item->cdescription);
                         return '/storage/' . $item->cdescription;
                     }
                     else if(isset($item->thumbnail) && !empty($item->thumbnail)) {
+                        error_log('Using item->thumbnail: ' . $item->thumbnail);
                         return $item->thumbnail;
                     }
-                } else {
-                    if(isset($item['image']) && !empty($item['image'])) {
+
+                    // Last priority: Log the failure
+                    error_log('No image found in object item');
+                }
+                // Check if this is the array structure (from session)
+                else {
+                    // First priority: Cloudinary URLs
+                    if(isset($item['image']) && !empty($item['image']) && strpos($item['image'], 'cloudinary.com') !== false) {
+                        error_log('Using item[image] (Cloudinary): ' . $item['image']);
+                        return $item['image'];
+                    }
+                    else if(isset($item['event_image']) && !empty($item['event_image']) && strpos($item['event_image'], 'cloudinary.com') !== false) {
+                        error_log('Using item[event_image] (Cloudinary): ' . $item['event_image']);
+                        return $item['event_image'];
+                    }
+                    // Second priority: Any image URLs
+                    else if(isset($item['image']) && !empty($item['image'])) {
+                        error_log('Using item[image]: ' . $item['image']);
                         return $item['image'];
                     }
                     else if(isset($item['event_image']) && !empty($item['event_image'])) {
+                        error_log('Using item[event_image]: ' . $item['event_image']);
                         return $item['event_image'];
                     }
+                    // Third priority: Other potential fields
                     else if(isset($item['cdescription']) && !empty($item['cdescription'])) {
                         if(strpos($item['cdescription'], 'http') === 0) {
+                            error_log('Using item[cdescription] as URL: ' . $item['cdescription']);
                             return $item['cdescription'];
                         }
+                        error_log('Using item[cdescription] as storage path: /storage/' . $item['cdescription']);
                         return '/storage/' . $item['cdescription'];
                     }
                     else if(isset($item['thumbnail']) && !empty($item['thumbnail'])) {
+                        error_log('Using item[thumbnail]: ' . $item['thumbnail']);
                         return $item['thumbnail'];
                     }
+
+                    // Last priority: Log the failure
+                    error_log('No image found in array item');
                 }
 
+                error_log('Using placeholder image');
                 return '/images/placeholder.jpg';
             }
 
@@ -670,8 +715,31 @@
                     </div>
 
                     <div class="item-image">
-                        <img src="{{ getCartItemImage($item) }}" alt="{{ getCartItemEventName($item) }}"
-                            onerror="this.src='/images/placeholder.jpg'">
+                        @php
+                            $imageUrl = getCartItemImage($item);
+                            $eventName = getCartItemEventName($item);
+                            error_log("Image URL for {$eventName}: {$imageUrl}");
+
+                            // Additional debug info
+                            if(is_object($item)) {
+                                error_log("Debug object item:");
+                                error_log("- id: " . ($item->id ?? 'null'));
+                                error_log("- event_id: " . ($item->event_id ?? 'null'));
+                                error_log("- image: " . ($item->image ?? 'null'));
+                                error_log("- event_image: " . ($item->event_image ?? 'null'));
+                                error_log("- cdescription: " . ($item->cdescription ?? 'null'));
+                            } else {
+                                error_log("Debug array item:");
+                                error_log("- id: " . ($item['id'] ?? 'null'));
+                                error_log("- event_id: " . ($item['event_id'] ?? 'null'));
+                                error_log("- image: " . ($item['image'] ?? 'null'));
+                                error_log("- event_image: " . ($item['event_image'] ?? 'null'));
+                                error_log("- cdescription: " . ($item['cdescription'] ?? 'null'));
+                            }
+                        @endphp
+                        <img src="{{ $imageUrl }}" alt="{{ $eventName }}"
+                            onerror="this.onerror=null; this.src='/images/placeholder.jpg'; console.error('Failed to load image: ' + this.getAttribute('data-original-src'));"
+                            data-original-src="{{ $imageUrl }}">
                     </div>
 
                     <div class="item-details">

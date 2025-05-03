@@ -60,26 +60,99 @@ class ListingController extends Controller
         return view("404");
     }
 
-    // public function viewone(mctlists $listonee){
-    //     return view('Editpost', [
-    //         'lexlist'=> $listonee
-    //     ]);
-    // }
+    public function viewone(mctlists $listonee){
+        // $listonee is automatically resolved by Laravel's route model binding
 
-    // public function contactsend(Request $request)
-    // {
-    //     $contactFields = $request->validate([
-    //         'name'=>'required',
-    //         'email' => ['required', 'email'],
-    //         'phone' => 'required',
-    //         'comment'=>'required',
-    //     ]);
+        // Process date for readability if needed
+        if ($listonee->date && strpos($listonee->date, '@') !== false) {
+            try {
+                $formattedDate = \Carbon\Carbon::parse(str_replace('@', ' ', $listonee->date))->format('Y-m-d H:i:s');
+                $listonee->date = $formattedDate;
+            } catch (\Exception $e) {
+                // If parsing fails, log the error but continue
+                \Illuminate\Support\Facades\Log::error('Date parsing error: ' . $e->getMessage());
+            }
+        }
 
-    //     Mail::send('Emailtemplate', ['token' => $token], function ($message) use ($request){
-    //         $message->to($request->email);
-    //         $message->subject('Reset password');
-    //     });
-    // }
+        // Log information for debugging
+        \Illuminate\Support\Facades\Log::info('Event ID: ' . $listonee->id);
+
+        // Force a fresh database query to ensure we get the latest data
+        $refreshedEvent = mctlists::with('ticketTypes')->find($listonee->id);
+
+        if ($refreshedEvent && $refreshedEvent->ticketTypes->count() > 0) {
+            // Use refreshed event with ticket types
+            $listonee = $refreshedEvent;
+
+            \Illuminate\Support\Facades\Log::info('Using refreshed event with ' . $listonee->ticketTypes->count() . ' ticket types');
+        } else {
+            // Still try to load ticket types on original object as fallback
+            $listonee->load('ticketTypes');
+
+            // Log how many ticket types were loaded
+            \Illuminate\Support\Facades\Log::info('Original event has ' . $listonee->ticketTypes->count() . ' ticket types');
+
+            // If still no ticket types, try direct database query
+            if ($listonee->ticketTypes->count() == 0) {
+                $manualTickets = \App\Models\TicketType::where('mctlists_id', $listonee->id)->get();
+                \Illuminate\Support\Facades\Log::info('Manual DB query found ' . $manualTickets->count() . ' ticket types');
+
+                if ($manualTickets->count() > 0) {
+                    // Manually associate tickets with event
+                    $tickets = $manualTickets;
+                    $listonee->setRelation('ticketTypes', $tickets);
+                    \Illuminate\Support\Facades\Log::info('Manually associated tickets with event');
+                }
+            }
+        }
+
+        // Debug event object
+        \Illuminate\Support\Facades\Log::info('Event object for view:', [
+            'id' => $listonee->id,
+            'name' => $listonee->name,
+            'has_ticket_types_relation' => $listonee->relationLoaded('ticketTypes'),
+            'ticket_types_count' => $listonee->ticketTypes ? $listonee->ticketTypes->count() : 'null'
+        ]);
+
+        // Log ticket type details for debugging
+        if ($listonee->ticketTypes && $listonee->ticketTypes->count() > 0) {
+            foreach ($listonee->ticketTypes as $index => $ticket) {
+                \Illuminate\Support\Facades\Log::info("Ticket #{$index}: id={$ticket->id}, name={$ticket->name}, price={$ticket->price}");
+            }
+        } else {
+            \Illuminate\Support\Facades\Log::warning("No ticket types found for event {$listonee->id}");
+        }
+
+        // Prepare meta data just like in the show method
+        $metaTitle = htmlspecialchars($listonee->name, ENT_QUOTES, 'UTF-8');
+        $description = $listonee->description ?? 'Join us at ' . $listonee->name . ' on ' . $listonee->date;
+        $metaDescription = htmlspecialchars($description, ENT_QUOTES, 'UTF-8');
+
+        if (strlen($metaDescription) > 160) {
+            $metaDescription = substr($metaDescription, 0, 157) . '...';
+        }
+
+        if (str_starts_with($listonee->image, 'http')) {
+            if (filter_var($listonee->image, FILTER_VALIDATE_URL)) {
+                $metaImage = $listonee->image;
+            } else {
+                $metaImage = asset('images/default-share.jpg');
+            }
+        } else {
+            $imagePath = preg_replace('/[^a-zA-Z0-9\/\._-]/', '', $listonee->image);
+            $metaImage = asset('storage/' . $imagePath);
+        }
+
+        $metaType = 'event';
+
+        return view('listone', [
+            'listonee' => $listonee,
+            'metaTitle' => $metaTitle,
+            'metaDescription' => $metaDescription,
+            'metaImage' => $metaImage,
+            'metaType' => $metaType
+        ]);
+    }
 
     public function contactsend(Request $request)
     {
@@ -455,18 +528,18 @@ class ListingController extends Controller
     // }
 
     public function show($name) {
-        $listonee = mctlists::where('name', $name)->first();
+        // Clean the URL parameter by replacing hyphens with spaces (if that's your URL format)
+        $cleanName = str_replace('-', ' ', $name);
 
-        if (!empty($listonee->status)) {
-            // If the 'description' field is not empty, return a different view.
-            return view('expiredlistone', [
-                'listonee' => $listonee
-            ]);
+        // Try to find the listing
+        $listonee = mctlists::where('name', 'like', '%'.$cleanName.'%')->first();
+
+        if (!$listonee) {
+            return redirect()->route('listing.notfound');
         } else {
-            // Check if the date contains @ symbol and format it properly
-            if (isset($listonee->date) && strpos($listonee->date, '@') !== false) {
+            // Process date for readability if it's not in a standard format
+            if ($listonee->date && strpos($listonee->date, '@') !== false) {
                 try {
-                    // Try to parse the date using Carbon
                     $formattedDate = \Carbon\Carbon::parse(str_replace('@', ' ', $listonee->date))->format('Y-m-d H:i:s');
                     $listonee->date = $formattedDate;
                 } catch (\Exception $e) {
@@ -475,9 +548,43 @@ class ListingController extends Controller
                 }
             }
 
-            // If the 'description' field is empty, return the original view.
+            // Prepare and sanitize meta data for social sharing
+            $metaTitle = htmlspecialchars($listonee->name, ENT_QUOTES, 'UTF-8');
+
+            // Get description and sanitize it
+            $description = $listonee->description ?? 'Join us at ' . $listonee->name . ' on ' . $listonee->date;
+            $metaDescription = htmlspecialchars($description, ENT_QUOTES, 'UTF-8');
+
+            // Ensure description doesn't exceed reasonable length for meta tags
+            if (strlen($metaDescription) > 160) {
+                $metaDescription = substr($metaDescription, 0, 157) . '...';
+            }
+
+            // Validate and sanitize image URL
+            if (str_starts_with($listonee->image, 'http')) {
+                // For external URLs, validate it's a proper URL
+                if (filter_var($listonee->image, FILTER_VALIDATE_URL)) {
+                    $metaImage = $listonee->image;
+                } else {
+                    // Fallback to a default image if URL is invalid
+                    $metaImage = asset('images/default-share.jpg');
+                    \Illuminate\Support\Facades\Log::warning('Invalid image URL for sharing: ' . $listonee->image);
+                }
+            } else {
+                // For local storage, ensure the path is properly sanitized
+                $imagePath = preg_replace('/[^a-zA-Z0-9\/\._-]/', '', $listonee->image);
+                $metaImage = asset('storage/' . $imagePath);
+            }
+
+            $metaType = 'event';
+
+            // Include meta data in the view
             return view('listone', [
-                'listonee' => $listonee
+                'listonee' => $listonee,
+                'metaTitle' => $metaTitle,
+                'metaDescription' => $metaDescription,
+                'metaImage' => $metaImage,
+                'metaType' => $metaType
             ]);
         }
     }

@@ -21,6 +21,18 @@ class CartController extends Controller
         if (auth()->check()) {
             // For authenticated users, get cart items from database
             $cartItems = Cart::where('user_id', auth()->id())->get();
+
+            // Fetch event details for cart items that have event_id
+            foreach($cartItems as $item) {
+                if (!empty($item->event_id)) {
+                    $event = mctlists::find($item->event_id);
+                    if ($event) {
+                        // Make sure images are available from the original event
+                        $item->image = !empty($item->image) ? $item->image : $event->image;
+                        $item->event_image = !empty($item->event_image) ? $item->event_image : $event->heroimage;
+                    }
+                }
+            }
         } else {
             // For non-authenticated users, get cart items from session
             $sessionCartItems = session()->get('cart_items', []);
@@ -35,6 +47,20 @@ class CartController extends Controller
                 $cartObj->cprice = (float)($item['price'] ?? 0);
                 $cartObj->cquantity = (int)($item['quantity'] ?? 0);
                 $cartObj->ctotalprice = (float)($item['total'] ?? ($cartObj->cprice * $cartObj->cquantity));
+
+                // Make sure images are available
+                $cartObj->image = $item['image'] ?? '';
+                $cartObj->event_image = $item['event_image'] ?? '';
+
+                // If we have event_id, try to fetch original images if missing
+                if (isset($item['event_id']) && empty($cartObj->image)) {
+                    $event = mctlists::find($item['event_id']);
+                    if ($event) {
+                        $cartObj->image = $event->image;
+                        $cartObj->event_image = $event->heroimage;
+                    }
+                }
+
                 $cartItems->push($cartObj);
             }
         }
@@ -51,6 +77,18 @@ class CartController extends Controller
         if (auth()->check()) {
             // For authenticated users, get cart items from database
             $cartItems = Cart::where('user_id', auth()->id())->get();
+
+            // Fetch event details for cart items that have event_id
+            foreach($cartItems as $item) {
+                if (!empty($item->event_id)) {
+                    $event = mctlists::find($item->event_id);
+                    if ($event) {
+                        // Make sure images are available from the original event
+                        $item->image = !empty($item->image) ? $item->image : $event->image;
+                        $item->event_image = !empty($item->event_image) ? $item->event_image : $event->heroimage;
+                    }
+                }
+            }
         } else {
             // For non-authenticated users, get cart items from session
             $sessionCartItems = session()->get('cart_items', []);
@@ -65,6 +103,20 @@ class CartController extends Controller
                 $cartObj->cprice = (float)($item['price'] ?? 0);
                 $cartObj->cquantity = (int)($item['quantity'] ?? 0);
                 $cartObj->ctotalprice = (float)($item['total'] ?? ($cartObj->cprice * $cartObj->cquantity));
+
+                // Make sure images are available
+                $cartObj->image = $item['image'] ?? '';
+                $cartObj->event_image = $item['event_image'] ?? '';
+
+                // If we have event_id, try to fetch original images if missing
+                if (isset($item['event_id']) && empty($cartObj->image)) {
+                    $event = mctlists::find($item['event_id']);
+                    if ($event) {
+                        $cartObj->image = $event->image;
+                        $cartObj->event_image = $event->heroimage;
+                    }
+                }
+
                 $cartItems->push($cartObj);
             }
         }
@@ -270,6 +322,18 @@ class CartController extends Controller
                     $safeEventName = htmlspecialchars(strip_tags($name), ENT_QUOTES, 'UTF-8');
                     $safeLocation = htmlspecialchars(strip_tags($product->location ?? 'Not specified'), ENT_QUOTES, 'UTF-8');
 
+                    // Get the image URL from the product
+                    $imageUrl = $product->image ?? '';
+                    $heroImage = $product->heroimage ?? '';
+
+                    // Add a log to debug image URLs
+                    Log::info('Adding cart item with images', [
+                        'product_id' => $product->id,
+                        'image_url' => $imageUrl,
+                        'hero_image' => $heroImage,
+                        'name' => $safeProductName
+                    ]);
+
                     $cartItem = Cart::create([
                         'user_id' => auth()->id(),
                         'cname' => $safeProductName,
@@ -277,14 +341,20 @@ class CartController extends Controller
                         'cprice' => (float)$price,
                         'cquantity' => (int)$quantity,
                         'ctotalprice' => (float)$price * (int)$quantity,
-                        'clocation' => $safeLocation
+                        'clocation' => $safeLocation,
+                        'image' => $imageUrl, // Add the image URL
+                        'event_image' => $heroImage, // Add the hero image as event_image
+                        'cdescription' => $imageUrl, // For backward compatibility
+                        'event_id' => $product->id // Add the event ID
                     ]);
 
                     Log::info('Created new cart item', [
                         'cart_id' => $cartItem->id,
                         'user_id' => $cartItem->user_id,
                         'cname' => $cartItem->cname,
-                        'eventname' => $cartItem->eventname
+                        'eventname' => $cartItem->eventname,
+                        'image' => $cartItem->image,
+                        'event_image' => $cartItem->event_image
                     ]);
 
                     $updatedItems[] = [
@@ -293,7 +363,9 @@ class CartController extends Controller
                         'name' => $name,
                         'quantity' => $quantity,
                         'price' => $price,
-                        'total' => $cartItem->ctotalprice
+                        'total' => $cartItem->ctotalprice,
+                        'image' => $imageUrl,
+                        'event_image' => $heroImage
                     ];
 
                     // Update global cart totals cache
@@ -320,20 +392,30 @@ class CartController extends Controller
             $safeProductName = htmlspecialchars(strip_tags($product->name), ENT_QUOTES, 'UTF-8');
             $safeItemName = htmlspecialchars(strip_tags($name), ENT_QUOTES, 'UTF-8');
 
+            // Get the image URLs from the product
+            $imageUrl = $product->image ?? '';
+            $heroImage = $product->heroimage ?? '';
+
             $cartItems[$cartItemKey] = [
                 'product_id' => $product->id,
                 'product_name' => $safeProductName,
                 'item_name' => $safeItemName,
                 'price' => (float)$price,
                 'quantity' => (int)$quantity,
-                'total' => (float)$price * (int)$quantity
+                'total' => (float)$price * (int)$quantity,
+                'image' => $imageUrl, // Add the image URL
+                'event_image' => $heroImage, // Add the hero image
+                'cdescription' => $imageUrl, // For backward compatibility
+                'event_id' => $product->id // Add the event ID
             ];
 
             session()->put('cart_items', $cartItems);
 
             Log::info('Session cart updated', [
                 'cart_key' => $cartItemKey,
-                'session_items_count' => count($cartItems)
+                'session_items_count' => count($cartItems),
+                'image' => $imageUrl,
+                'event_image' => $heroImage
             ]);
 
             $updatedItems[] = [
@@ -342,7 +424,9 @@ class CartController extends Controller
                 'name' => $name,
                 'quantity' => $quantity,
                 'price' => $price,
-                'total' => $price * $quantity
+                'total' => $price * $quantity,
+                'image' => $imageUrl,
+                'event_image' => $heroImage
             ];
         }
 

@@ -10,13 +10,15 @@ class TicketType extends Model
     use HasFactory;
 
     protected $fillable = [
-        'event_id',
+        'mctlists_id',
         'name',
         'description',
         'price',
-        'quantity',
+        'capacity',
+        'sales_start',
+        'sales_end',
         'is_active',
-        'max_per_order'
+        'sold'
     ];
 
     protected $casts = [
