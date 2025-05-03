@@ -234,33 +234,6 @@
         transform: translateY(-2px);
     }
 
-    .ticket-ids {
-        margin-top: 20px;
-    }
-
-    .ticket-id-title {
-                font-size: 14px;
-        font-weight: 500;
-        color: white;
-        margin-bottom: 8px;
-                }
-
-                .ticket-id-list {
-        display: flex;
-        flex-wrap: wrap;
-                    gap: 8px;
-                }
-
-    .ticket-id-pill {
-        background: rgba(192, 72, 136, 0.1);
-        border: 1px solid rgba(192, 72, 136, 0.2);
-        color: rgba(255, 255, 255, 0.8);
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-family: monospace;
-    }
-
     .back-to-cart {
         display: inline-flex;
         align-items: center;
@@ -486,18 +459,7 @@
                     <span>Secure checkout with Paystack</span>
       </div>
   </div>
-
-            <div class="ticket-ids">
-                <h3 class="ticket-id-title">Your Ticket IDs:</h3>
-                <div class="ticket-id-list">
-                    @foreach($allTicketIds as $itemId => $ids)
-                        @foreach($ids as $ticketId)
-                            <span class="ticket-id-pill">{{ $ticketId }}</span>
-                        @endforeach
-                    @endforeach
-  </div>
- </div>
-  </div>
+        </div>
     </div>
 </div>
 
