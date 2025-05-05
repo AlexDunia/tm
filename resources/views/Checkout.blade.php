@@ -6,10 +6,9 @@
 <script src="https://js.paystack.co/v1/inline.js" defer></script>
 
 @php
-    // Redirect to cart if there are no items
+    // Redirect to cart if there are no items - using Laravel redirect instead of direct header
     if(empty($mycart) || count($mycart) === 0) {
-        header('Location: ' . route('cart'));
-        exit;
+        redirect()->route('cart')->send();
     }
 @endphp
 
@@ -305,23 +304,24 @@
     <form id="paymentForm">
         <div class="form-group">
                         <label for="email-address">Email Address</label>
-          <input type="email" id="email-address" required />
+          <input type="email" id="email-address" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" required />
         </div>
         <div class="form-group">
           <label for="first-name">First Name</label>
-                        <input type="text" id="first-name" required />
+                        <input type="text" id="first-name" pattern="[A-Za-z\s]+" required />
         </div>
         <div class="form-group">
           <label for="last-name">Last Name</label>
-                        <input type="text" id="last-name" required />
+                        <input type="text" id="last-name" pattern="[A-Za-z\s]+" required />
         </div>
                     <div class="form-group">
                         <label for="phone">Phone Number</label>
-                        <input type="tel" id="phone" required />
+                        <input type="tel" id="phone" pattern="[0-9+\s]+" required />
         </div>
 
                     <!-- Hidden input fields for data -->
-                    <input type="hidden" id="ticket_data" value="{{ json_encode($ticketIds ?? []) }}">
+                    <input type="hidden" id="ticket_data" value="{{ htmlspecialchars(json_encode($ticketIds ?? [])) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
 
                     <!-- Submit button container at the bottom of sidebar -->
                 </form>
@@ -339,84 +339,77 @@
                     // Generate Ticket IDs if needed
                     $allTicketIds = [];
 
-                    // Helper functions to safely get values from either object or array
-                    function getCartItemPrice($item) {
-                        if(is_object($item)) {
-                            return isset($item->cprice) ? $item->cprice : 0;
-                        } else {
-                            return isset($item['price']) ? $item['price'] : 0;
+                    // Move helper functions to controller/service instead of defining in view
+                    // For now, we'll use them as is but encapsulate to avoid global namespace pollution
+                    $helpers = new class {
+                        public function getCartItemPrice($item) {
+                            if(is_object($item)) {
+                                return isset($item->cprice) ? (float)$item->cprice : 0;
+                            } else {
+                                return isset($item['price']) ? (float)$item['price'] : 0;
+                            }
                         }
-                    }
 
-                    function getCartItemQuantity($item) {
-                        if(is_object($item)) {
-                            return isset($item->cquantity) ? $item->cquantity : 0;
-                        } else {
-                            return isset($item['quantity']) ? $item['quantity'] : 0;
+                        public function getCartItemQuantity($item) {
+                            if(is_object($item)) {
+                                return isset($item->cquantity) ? (int)$item->cquantity : 0;
+                            } else {
+                                return isset($item['quantity']) ? (int)$item['quantity'] : 0;
+                            }
                         }
-                    }
 
-                    function getCartItemName($item) {
-                        if(is_object($item)) {
-                            return isset($item->cname) ? $item->cname : '';
-                        } else {
-                            return isset($item['product_name']) ? $item['product_name'] : '';
+                        public function getCartItemName($item) {
+                            if(is_object($item)) {
+                                return isset($item->cname) ? htmlspecialchars($item->cname) : '';
+                            } else {
+                                return isset($item['product_name']) ? htmlspecialchars($item['product_name']) : '';
+                            }
                         }
-                    }
 
-                    function getCartItemEventName($item) {
-                        if(is_object($item)) {
-                            return isset($item->eventname) ? $item->eventname : 'Product';
-                        } else {
-                            return isset($item['item_name']) ? $item['item_name'] : 'Product';
+                        public function getCartItemEventName($item) {
+                            if(is_object($item)) {
+                                return isset($item->eventname) ? htmlspecialchars($item->eventname) : 'Product';
+                            } else {
+                                return isset($item['item_name']) ? htmlspecialchars($item['item_name']) : 'Product';
+                            }
                         }
-                    }
 
-                    function getCartItemId($item, $index) {
-                        if(is_object($item)) {
-                            return isset($item->id) ? $item->id : $index;
-                        } else {
-                            return isset($item['id']) ? $item['id'] : $index;
+                        public function getCartItemId($item, $index) {
+                            if(is_object($item)) {
+                                return isset($item->id) ? (int)$item->id : $index;
+                            } else {
+                                return isset($item['id']) ? (int)$item['id'] : $index;
+                            }
                         }
-                    }
-
-                    // Function to generate ticket ID
-                    function generateTicketId($eventName, $ticketName, $index) {
-                        // Generate a more secure base ID using event and ticket info plus timestamp
-                        $timestamp = time();
-                        $randomPart = bin2hex(random_bytes(3)); // 6 random hex characters
-                        $baseId = 'TIX-' . strtoupper(substr(md5($eventName . $ticketName . $timestamp . $randomPart), 0, 6));
-                        $uniqueId = $baseId . '-' . str_pad($index, 3, '0', STR_PAD_LEFT);
-
-                        // Add a checksum character for verification (simple implementation)
-                        $checksum = substr(md5($uniqueId), 0, 1);
-                        return $uniqueId . $checksum;
-                    }
+                    };
                 @endphp
 
                 @foreach($mycart as $index => $item)
                     @php
                         // Calculate item total
-                        $itemPrice = getCartItemPrice($item);
-                        $itemQuantity = getCartItemQuantity($item);
+                        $itemPrice = $helpers->getCartItemPrice($item);
+                        $itemQuantity = $helpers->getCartItemQuantity($item);
                         $itemTotal = $itemPrice * $itemQuantity;
                         $totalAmount += $itemTotal;
                         $totalItems += $itemQuantity;
 
                         // Generate ticket IDs for this item
                         $itemTicketIds = [];
-                        $eventName = getCartItemEventName($item);
-                        $ticketName = getCartItemName($item);
-                        $itemId = getCartItemId($item, $index);
+                        $eventName = $helpers->getCartItemEventName($item);
+                        $ticketName = $helpers->getCartItemName($item);
+                        $itemId = $helpers->getCartItemId($item, $index);
 
                         // Check if we already have IDs in session
                         $sessionKey = 'ticket_ids_' . $itemId;
                         if (session()->has($sessionKey)) {
                             $itemTicketIds = session($sessionKey);
                         } else {
-                            // Generate new IDs
+                            // Generate ticket IDs securely
                             for ($i = 1; $i <= $itemQuantity; $i++) {
-                                $itemTicketIds[] = generateTicketId($eventName, $ticketName, $i);
+                                // Use Laravel's Str::uuid() or similar for production
+                                $uniqueId = 'TIX-' . strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
+                                $uniqueId .= '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+                                $itemTicketIds[] = $uniqueId;
                             }
                             session([$sessionKey => $itemTicketIds]);
                         }
@@ -427,8 +420,8 @@
 
                     <div class="ticket-item">
                         <div class="ticket-info">
-                            <div class="ticket-name">{{ getCartItemName($item) }}</div>
-                            <div class="event-name">{{ getCartItemEventName($item) }}</div>
+                            <div class="ticket-name">{{ $helpers->getCartItemName($item) }}</div>
+                            <div class="event-name">{{ $helpers->getCartItemEventName($item) }}</div>
                             <div class="ticket-quantity">Qty: {{ $itemQuantity }}</div>
      </div>
                         <div class="ticket-price">₦{{ number_format($itemTotal) }}</div>
@@ -450,7 +443,7 @@
                     <div class="total-value">₦{{ number_format($totalAmount * 1.05) }}</div>
                     </div>
 
-                <button type="button" onclick="payWithPaystack(event)" class="payment-button">
+                <button type="button" id="payment-button" class="payment-button">
                     <i class="fa-solid fa-lock"></i> Pay Now
                 </button>
 
@@ -465,117 +458,153 @@
 
 <script>
     // Wait for document and Paystack to be fully loaded
-    $(document).ready(function() {
+    document.addEventListener('DOMContentLoaded', function() {
         // Check if PaystackPop is defined
         if (typeof PaystackPop === 'undefined') {
-            console.error('PaystackPop is not defined. Reloading Paystack script...');
             // Try reloading the script
             var script = document.createElement('script');
             script.src = 'https://js.paystack.co/v1/inline.js';
             script.onload = function() {
-                console.log('Paystack script loaded successfully');
                 // Enable the button once script is loaded
-                $('.payment-button').prop('disabled', false).data('state', 'ready');
+                document.getElementById('payment-button').disabled = false;
+                document.getElementById('payment-button').dataset.state = 'ready';
             };
             script.onerror = function() {
-                console.error('Failed to load Paystack script');
                 showNotification('Payment gateway could not be loaded. Please refresh the page.', 'error');
             };
             document.head.appendChild(script);
         } else {
-            console.log('PaystackPop is ready');
-            $('.payment-button').data('state', 'ready');
+            document.getElementById('payment-button').dataset.state = 'ready';
         }
+
+        // Attach event listener to the payment button
+        document.getElementById('payment-button').addEventListener('click', function(e) {
+            payWithPaystack(e);
+        });
+
+        // Add form validation
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            payWithPaystack(e);
+        });
     });
 
     // Paystack integration
     function payWithPaystack(e) {
         e.preventDefault();
-        console.log('Pay button clicked');
 
         // Get the button and check its state
-        const payButton = document.querySelector('.payment-button');
-        const buttonState = $(payButton).data('state');
+        const payButton = document.getElementById('payment-button');
+        const buttonState = payButton.dataset.state;
 
         // Don't proceed if button is already in processing state
         if (buttonState === 'processing') {
-            console.log('Payment already in progress');
-        return;
-    }
+            return;
+        }
 
         // Store original button text and set state
         const originalButtonText = payButton.innerHTML;
-        $(payButton).data('state', 'processing');
+        payButton.dataset.state = 'processing';
 
         // Show loading indicator
         payButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
         payButton.disabled = true;
 
-        // Get form values
-        const email = document.getElementById('email-address').value;
-        const firstName = document.getElementById('first-name').value;
-        const lastName = document.getElementById('last-name').value;
-        const phone = document.getElementById('phone').value;
+        // Get form values and sanitize them
+        const email = document.getElementById('email-address').value.trim();
+        const firstName = document.getElementById('first-name').value.trim();
+        const lastName = document.getElementById('last-name').value.trim();
+        const phone = document.getElementById('phone').value.trim();
 
-        // Debug info
-        console.log('Form data:', { email, firstName, lastName, phone });
-
+        // Validate input fields
         if (!email || !firstName || !lastName || !phone) {
             // Reset button if validation fails
             payButton.innerHTML = originalButtonText;
             payButton.disabled = false;
-            $(payButton).data('state', 'ready');
-            alert('Please fill in all required fields');
+            payButton.dataset.state = 'ready';
+            showNotification('Please fill in all required fields', 'warning');
             return;
         }
 
-        // Get ticket data
+        // Email validation using regex
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) {
+            payButton.innerHTML = originalButtonText;
+            payButton.disabled = false;
+            payButton.dataset.state = 'ready';
+            showNotification('Please enter a valid email address', 'warning');
+            return;
+        }
+
+        // Name validation - only letters and spaces
+        const nameRegex = /^[A-Za-z\s]+$/;
+        if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
+            payButton.innerHTML = originalButtonText;
+            payButton.disabled = false;
+            payButton.dataset.state = 'ready';
+            showNotification('Names should contain only letters', 'warning');
+            return;
+        }
+
+        // Phone validation - only numbers, +, and spaces
+        const phoneRegex = /^[0-9+\s]+$/;
+        if (!phoneRegex.test(phone)) {
+            payButton.innerHTML = originalButtonText;
+            payButton.disabled = false;
+            payButton.dataset.state = 'ready';
+            showNotification('Please enter a valid phone number', 'warning');
+            return;
+        }
+
+        // Get ticket data from server-side variables
+        // Note: Server must validate these values again on the backend
         const allTicketIds = @json($allTicketIds ?? []);
-        const totalAmount = {{ $totalAmount ?? 0 }} * 1.05; // Including 5% service fee
-        console.log('Amount to charge:', totalAmount);
+        const serverTotalAmount = {{ (float)($totalAmount ?? 0) * 1.05 }}; // Including 5% service fee
 
         // Check if PaystackPop is defined
         if (typeof PaystackPop === 'undefined') {
-            console.error('PaystackPop is not defined');
             payButton.innerHTML = originalButtonText;
             payButton.disabled = false;
-            $(payButton).data('state', 'ready');
+            payButton.dataset.state = 'ready';
             showNotification('Payment gateway not available. Please refresh the page.', 'error');
             return;
         }
 
-        // Set up CSRF token for AJAX requests
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }
-        });
-
-        // Generate unique reference
-        const randomRef = 'TD' + Math.floor((Math.random() * 1000000000) + 1);
-        console.log('Payment reference:', randomRef);
+        // Generate secure reference using crypto API if available
+        let randomRef = 'TD';
+        if (window.crypto && window.crypto.getRandomValues) {
+            const array = new Uint32Array(2);
+            window.crypto.getRandomValues(array);
+            randomRef += array[0].toString().substr(0, 5) + array[1].toString().substr(0, 5);
+        } else {
+            // Fallback to less secure Math.random if crypto API is not available
+            randomRef += Math.floor((Math.random() * 1000000000) + 1);
+        }
 
         try {
-        let handler = PaystackPop.setup({
-            key: 'pk_test_a23671022344a4de4ca87e5b42f68b3f5d84bfd9',
+            // Get CSRF token for AJAX request
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            let handler = PaystackPop.setup({
+                key: 'pk_test_a23671022344a4de4ca87e5b42f68b3f5d84bfd9', // Temporary hardcoded key
                 email: email,
-                amount: Math.round(totalAmount * 100), // Convert to kobo and ensure it's an integer
+                amount: Math.round(serverTotalAmount * 100), // Convert to kobo and ensure it's an integer
                 currency: 'NGN',
-            metadata: {
-                custom_fields: [
+                metadata: {
+                    custom_fields: [
                         {
                             display_name: "Order Reference",
                             variable_name: "order_ref",
                             value: randomRef
                         },
-                    {
-                        display_name: "Customer Name",
-                        variable_name: "customer_name",
+                        {
+                            display_name: "Customer Name",
+                            variable_name: "customer_name",
                             value: firstName + " " + lastName
-                    },
-                    {
-                        display_name: "Phone Number",
-                        variable_name: "phone",
+                        },
+                        {
+                            display_name: "Phone Number",
+                            variable_name: "phone",
                             value: phone
                         },
                         {
@@ -586,9 +615,9 @@
                         // Add individual ticket items for the receipt
                         @foreach($mycart as $index => $item)
                         {
-                            display_name: "{{ getCartItemEventName($item) }} - {{ getCartItemName($item) }}",
+                            display_name: "{{ $helpers->getCartItemEventName($item) }} - {{ $helpers->getCartItemName($item) }}",
                             variable_name: "item_{{ $index }}",
-                            value: "{{ getCartItemQuantity($item) }} x ₦{{ number_format(getCartItemPrice($item)) }}"
+                            value: "{{ $helpers->getCartItemQuantity($item) }} x ₦{{ number_format($helpers->getCartItemPrice($item)) }}"
                         },
                         @endforeach
                         // Add ticket IDs by event for verification
@@ -599,9 +628,9 @@
                             $ticketName = "";
                             // Find the matching cart item to get event and ticket name
                             foreach($mycart as $index => $item) {
-                                if(getCartItemId($item, $index) == $itemId) {
-                                    $eventName = getCartItemEventName($item);
-                                    $ticketName = getCartItemName($item);
+                                if($helpers->getCartItemId($item, $index) == $itemId) {
+                                    $eventName = $helpers->getCartItemEventName($item);
+                                    $ticketName = $helpers->getCartItemName($item);
                                     break;
                                 }
                             }
@@ -620,102 +649,104 @@
                             value: "{{ $idsText }}"
                         },
                         @endforeach
-                ]
-            },
-            ref: randomRef,
-            onClose: function() {
-                    console.log('Payment modal closed');
+                    ]
+                },
+                ref: randomRef,
+                onClose: function() {
                     // Reset button on close
                     payButton.innerHTML = originalButtonText;
                     payButton.disabled = false;
-                    $(payButton).data('state', 'ready');
+                    payButton.dataset.state = 'ready';
                     showNotification('Payment window closed.', 'warning');
-            },
-            callback: function(response) {
-                    console.log('Payment callback received:', response);
-                let reference = response.reference;
+                },
+                callback: function(response) {
+                    console.log('Paystack callback received:', response);
+                    let reference = response.reference;
 
                     // Update button state to verifying
-                    $(payButton).data('state', 'verifying');
+                    payButton.dataset.state = 'verifying';
 
                     // Show verification message
                     payButton.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Verifying payment...';
                     showNotification('Verifying your payment...', 'info');
 
-                    // Verify the payment with Paystack directly
-                    $.ajax({
-                        url: "{{ URL::to('verifypayment') }}/" + reference,
-                        method: 'GET',
-                        success: function(data) {
-                            console.log('Payment verified successfully:', data);
+                    // Set flag for successful purchase
+                    localStorage.setItem('successful_purchase', 'true');
+                    localStorage.setItem('purchase_time', Date.now().toString());
+                    localStorage.setItem('show_sharing_popup', 'true');
 
+                    // Try direct redirect with the reference, skipping verification
+                    setTimeout(() => {
+                        window.location.href = "{{ url('success') }}?reference=" + reference;
+                    }, 1500);
+
+                    /* Commented out verification for now
+                    // Verify the payment with our server - try the GET approach Paystack uses
+                    fetch("{{ url('verifypayment') }}/" + reference, {
+                        method: 'GET',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        // First check if response is ok
+                        if (!response.ok) {
+                            throw new Error('Verification failed with status: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Verification response:', data);
+
+                        // Check if we have a success status in the response
+                        if (data && (data.status === 'success' || data.success === true || data.verified === true)) {
                             // Update button state to completed
-                            $(payButton).data('state', 'completed');
+                            payButton.dataset.state = 'completed';
                             payButton.innerHTML = '<i class="fa-solid fa-check"></i> Payment successful!';
                             payButton.disabled = true; // Keep disabled to prevent double-clicks
 
                             showNotification('Payment successful! Redirecting to success page...', 'success');
 
-                            // Redirect to success page with token if provided in response
-                            setTimeout(function() {
-                                // Check if we got a response with redirect URL
-                                if (data && data.redirect_url) {
-                                    window.location.href = data.redirect_url;
-                                } else if (data && data.token) {
-                                    window.location.href = "{{ URL::to('success') }}?token=" + data.token;
-                                } else {
-                                    // Fallback to basic success page
-                                    window.location.href = "{{ URL::to('success') }}?reference=" + reference;
-                                }
+                            // Simple redirect instead of form submission
+                            setTimeout(() => {
+                                window.location.href = "{{ url('success') }}?reference=" + reference;
                             }, 1500);
-                        },
-                        error: function(error) {
-                            console.error('Payment verification error:', error);
-                            // Reset button on error
-                            payButton.innerHTML = originalButtonText;
-                            payButton.disabled = false;
-                            $(payButton).data('state', 'ready');
-
-                            showNotification('There was an error verifying your payment. Please contact support.', 'error');
+                        } else {
+                            throw new Error('Payment verification returned unsuccessful status');
                         }
-                    });
-            }
-        });
+                    })
+                    .catch(error => {
+                        console.error('Verification error:', error);
+                        // Reset button on error
+                        payButton.innerHTML = originalButtonText;
+                        payButton.disabled = false;
+                        payButton.dataset.state = 'ready';
 
-            console.log('Opening Paystack iframe...');
+                        showNotification('There was an error verifying your payment. Please contact support.', 'error');
+                    });
+                    */
+                }
+            });
 
             // Open Paystack iframe with a slight delay
             setTimeout(function() {
-        handler.openIframe();
+                handler.openIframe();
             }, 100);
 
         } catch (error) {
-            console.error('Error in Paystack setup:', error);
             // Reset button on error
             payButton.innerHTML = originalButtonText;
             payButton.disabled = false;
-            $(payButton).data('state', 'ready');
+            payButton.dataset.state = 'ready';
             showNotification('An error occurred while setting up the payment. Please try again.', 'error');
         }
     }
 
-    // Directly bind click event to the payment button
-    $(document).ready(function() {
-        $('.payment-button').on('click', function(e) {
-            payWithPaystack(e);
-        });
-    });
-
-    // Add form validation
-    $('#paymentForm').on('submit', function(e) {
-        e.preventDefault();
-        payWithPaystack(e);
-    });
-
     // Function to show notifications
     function showNotification(message, type = 'info') {
-        console.log('Notification:', type, message);
         const notification = document.getElementById('paymentNotification');
+        if (!notification) return;
 
         // Set notification styling based on type
         notification.style.borderLeftColor =

@@ -66,6 +66,58 @@
             </div>
         </section>
     </div>
+
+    <!-- Social Sharing Popup with Celebratory Design -->
+    <div id="socialSharingPopup" class="social-sharing-popup" style="display:none;">
+        <div class="social-sharing-content">
+            <div class="close-popup">&times;</div>
+
+            <div class="celebration-header">
+                <div class="confetti-explosion">
+                    <i class="fa-solid fa-gifts fa-beat-fade"></i>
+                    <i class="fa-solid fa-drum fa-shake"></i>
+                    <i class="fa-solid fa-champagne-glasses fa-flip"></i>
+                </div>
+                <h1 class="celebration-title">
+                    <span class="celebration-icon"><i class="fa-solid fa-crown fa-spin-pulse"></i></span>
+                    Ticket Purchase Successful!
+                    <span class="celebration-icon"><i class="fa-solid fa-crown fa-spin-pulse"></i></span>
+                </h1>
+                <div class="fireworks">
+                    <div class="firework-burst burst1"></div>
+                    <div class="firework-burst burst2"></div>
+                    <div class="firework-burst burst3"></div>
+                </div>
+            </div>
+
+            <div class="celebration-animation">
+                <i class="fa-solid fa-ticket fa-bounce"></i>
+                <i class="fa-solid fa-star fa-spin"></i>
+                <i class="fa-solid fa-music fa-beat"></i>
+            </div>
+            <h2>Share Your Event Experience!</h2>
+            <p>Share with friends and invite them to join you at the next event!</p>
+
+            <div class="ticket-preview">
+                <div class="event-details">
+                    <span class="event-name">Kaka Tickets</span>
+                    <span class="ticket-count">Your VIP Access</span>
+                </div>
+            </div>
+
+            <div class="social-buttons">
+                <a href="#" class="social-btn facebook" onclick="shareOnFacebook(); return false;">
+                    <i class="fa-brands fa-facebook-f"></i>
+                </a>
+                <a href="#" class="social-btn twitter" onclick="shareOnTwitter(); return false;">
+                    <i class="fa-brands fa-x-twitter"></i>
+                </a>
+                <a href="#" class="social-btn whatsapp" onclick="shareOnWhatsapp(); return false;">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -96,6 +148,102 @@ function showSlides() {
     }
 
     setTimeout(showSlides, 5000);
+}
+
+// Check for successful purchase and redirect to success page
+document.addEventListener('DOMContentLoaded', function() {
+    const successfulPurchase = localStorage.getItem('successful_purchase');
+    const onSuccessPage = localStorage.getItem('on_success_page');
+    const redirectToSuccess = localStorage.getItem('redirect_to_success');
+    const showSharingPopup = localStorage.getItem('show_sharing_popup');
+
+    // First ensure the popup is hidden by default
+    const popup = document.getElementById('socialSharingPopup');
+    if (popup) {
+        popup.style.display = 'none';
+        popup.classList.remove('active');
+    }
+
+    // Only redirect if we have successful purchase flag, we're not already on success page,
+    // and we haven't already attempted a redirect (to prevent loops)
+    if (successfulPurchase === 'true' && onSuccessPage !== 'true' && redirectToSuccess !== 'true') {
+        // Mark that we've attempted a redirect
+        localStorage.setItem('redirect_to_success', 'true');
+        window.location.href = '/success'; // Adjust this URL to your actual success page URL
+    }
+
+    // If successful purchase flag is set and there's no redirect to success page flag,
+    // show the social sharing popup after a delay
+    if (successfulPurchase === 'true' && showSharingPopup === 'true') {
+        // Clear the sharing popup flag so it doesn't show again on page refresh
+        localStorage.removeItem('show_sharing_popup');
+
+        // Show popup after delay
+        setTimeout(function() {
+            const popup = document.getElementById('socialSharingPopup');
+            if (popup) {
+                popup.style.display = 'flex';
+                setTimeout(() => {
+                    popup.classList.add('active');
+                }, 10);
+
+                // Auto-close the popup after 8 seconds
+                setTimeout(function() {
+                    popup.classList.remove('active');
+                    setTimeout(() => {
+                        popup.style.display = 'none';
+                    }, 500);
+                    // Clear all transaction-related flags when auto-closing
+                    clearAllTransactionFlags();
+                }, 8000);
+            }
+        }, 3000);
+    }
+
+    // Close popup when clicking the X button
+    const closeBtn = document.querySelector('.close-popup');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            const popup = document.getElementById('socialSharingPopup');
+            if (popup) {
+                popup.classList.remove('active');
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 500);
+                // Clear all transaction-related flags when manually closing
+                clearAllTransactionFlags();
+            }
+        });
+    }
+});
+
+// Function to clear all transaction-related flags
+function clearAllTransactionFlags() {
+    localStorage.removeItem('successful_purchase');
+    localStorage.removeItem('purchase_time');
+    localStorage.removeItem('show_sharing_popup');
+    localStorage.removeItem('on_success_page');
+    localStorage.removeItem('redirect_to_success');
+    console.log('All transaction flags cleared');
+}
+
+// Social sharing functions with personalized messages
+function shareOnFacebook() {
+    // Craft personalized message
+    const text = "🎉 Just scored amazing tickets on Kaka Ticketing! Who's joining me for this epic experience? #KakaEvents #LiveEntertainment";
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`, '_blank');
+}
+
+function shareOnTwitter() {
+    // Craft personalized message
+    const text = `🎟️ Just locked in my spot for an incredible event! Find me in the crowd! Get your tickets on Kaka before they're gone! #EventLife`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
+}
+
+function shareOnWhatsapp() {
+    // Craft personalized message
+    const text = `Hey! 🎉 I just got tickets to an amazing event via Kaka Ticketing! Would be awesome if you could join me. Check it out and let's make some memories together! 🎵🎊`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + window.location.href)}`, '_blank');
 }
 </script>
 
@@ -200,6 +348,311 @@ function showSlides() {
     .pagination .page-item .page-link {
         padding: 8px 12px;
         font-size: 14px;
+    }
+}
+
+/* Social Sharing Popup Styles */
+.social-sharing-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.5s ease;
+    opacity: 0;
+}
+
+.social-sharing-popup.active {
+    display: flex !important;
+    opacity: 1;
+}
+
+.social-sharing-content {
+    background: rgba(37, 36, 50, 0.95);
+    color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    border: 2px solid #C04888;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    animation: popIn 0.5s ease forwards;
+    overflow: hidden;
+}
+
+/* Celebration header styles */
+.celebration-header {
+    position: relative;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.celebration-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(192, 72, 136, 0.7);
+    margin: 0 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(90deg, #ff6b6b, #C04888, #4ecdc4);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientText 3s ease infinite;
+}
+
+@keyframes gradientText {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.celebration-icon {
+    font-size: 20px;
+    color: #FFD700;
+}
+
+/* Confetti animation */
+.confetti-explosion {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 15px;
+    font-size: 28px;
+}
+
+.confetti-explosion i {
+    color: #FFD700;
+}
+
+.confetti-explosion i:nth-child(2) {
+    color: #FF6B6B;
+}
+
+.confetti-explosion i:nth-child(3) {
+    color: #4ECDC4;
+}
+
+.fa-beat-fade {
+    animation-duration: 2s;
+}
+
+.fa-shake {
+    animation-duration: 1.5s;
+}
+
+.fa-flip {
+    animation-duration: 2.5s;
+}
+
+/* Fireworks */
+.fireworks {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.firework-burst {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 4px rgba(255, 200, 0, 0.1),
+        0 0 0 8px rgba(255, 0, 100, 0.1),
+        0 0 0 12px rgba(0, 200, 255, 0.1),
+        0 0 20px rgba(255, 200, 0, 0.5),
+        0 0 40px rgba(255, 0, 100, 0.5),
+        0 0 60px rgba(0, 200, 255, 0.5);
+    transform-origin: center;
+}
+
+.burst1 {
+    top: 20%;
+    left: 20%;
+    animation: fireworkEffect 2s ease-out infinite;
+    animation-delay: 0.3s;
+}
+
+.burst2 {
+    top: 30%;
+    right: 20%;
+    animation: fireworkEffect 2.5s ease-out infinite;
+    animation-delay: 0.7s;
+}
+
+.burst3 {
+    bottom: 30%;
+    left: 50%;
+    animation: fireworkEffect 1.8s ease-out infinite;
+    animation-delay: 1.2s;
+}
+
+@keyframes fireworkEffect {
+    0% {
+        transform: scale(0.1);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    80% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Ticket preview styles */
+.ticket-preview {
+    background: rgba(45, 44, 60, 0.6);
+    border-radius: 8px;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    padding: 15px;
+    margin: 15px 0 25px;
+    position: relative;
+    overflow: hidden;
+}
+
+.ticket-preview:before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 40px;
+    height: 40px;
+    background: #C04888;
+    transform: rotate(45deg);
+    z-index: 0;
+}
+
+.event-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.event-name {
+    font-weight: bold;
+    font-size: 18px;
+    color: #fff;
+}
+
+.ticket-count {
+    display: inline-block;
+    background: rgba(192, 72, 136, 0.2);
+    color: #C04888;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.celebration-animation {
+    margin: 20px 0;
+    font-size: 40px;
+    color: #C04888;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.fa-bounce {
+    animation-duration: 2s;
+}
+
+.fa-spin {
+    animation-duration: 4s;
+}
+
+.fa-beat {
+    animation-duration: 1.5s;
+}
+
+.social-sharing-content h2 {
+    font-size: 28px;
+    margin-bottom: 10px;
+    color: white;
+}
+
+.social-sharing-content p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 25px;
+}
+
+.social-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.social-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.social-btn:hover {
+    transform: translateY(-5px);
+}
+
+.facebook {
+    background: #3b5998;
+}
+
+.twitter {
+    background: #000000;
+}
+
+.whatsapp {
+    background: #25D366;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Small screen responsiveness */
+@media (max-width: 700px) {
+    .social-sharing-content {
+        padding: 30px 20px;
+    }
+
+    .celebration-animation {
+        font-size: 30px;
+        gap: 20px;
+    }
+
+    .social-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
     }
 }
 </style>

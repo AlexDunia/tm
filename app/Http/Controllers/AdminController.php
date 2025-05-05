@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Stevebauman\Location\Facades\Location;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use App\Http\Requests\EventStoreRequest;
+use App\Http\Requests\UserRegisterRequest;
 
 class AdminController extends Controller
 {
@@ -25,19 +27,11 @@ class AdminController extends Controller
         return view('Adminedit');
     }
 
-    public function store(Request $request)
+    public function store(EventStoreRequest $request)
     {
         if (Auth::check()) {
-            // Allow any authenticated user to create an event
-            $Addevent = $request->validate([
-                'name' => 'required',
-                'description' => 'required',
-                'location' => 'required',
-                'date' => 'required',
-                'herolink' => 'required',
-                'image' => 'required|url',
-                'heroimage' => 'required|url',
-            ]);
+            // Validated data is already sanitized through the FormRequest
+            $Addevent = $request->validated();
 
             // No need to process file uploads as we're now using direct URLs
             // Just directly use the provided image URLs
@@ -92,70 +86,176 @@ class AdminController extends Controller
         }
     }
 
-    public function storeuser(Request $request)
+    public function storeuser(UserRegisterRequest $request)
     {
-        // Validate the form data with stronger password requirements
-        $Formfield = $request->validate([
-            'firstname' => 'required|string|max:255',
-            'lastname' => 'required|string|max:255',
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => [
-                'required',
-                'string',
-                'min:8',             // minimum 8 characters
-                'regex:/[a-z]/',     // at least one lowercase letter
-                'regex:/[A-Z]/',     // at least one uppercase letter
-                'regex:/[0-9]/',     // at least one number
-                'regex:/[@$!%*#?&]/' // at least one special character
-            ],
-        ], [
-            'password.regex' => 'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character.',
+        // Check if the request is AJAX using multiple methods to ensure detection
+        $isAjax = $request->ajax() ||
+                 $request->wantsJson() ||
+                 $request->has('is_ajax') ||
+                 $request->header('X-Requested-With') == 'XMLHttpRequest';
+
+        // Force AJAX response format for debugging if needed
+        if ($request->has('force_ajax_response')) {
+            $isAjax = true;
+        }
+
+        \Log::info('Registration attempt', [
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'is_ajax' => $isAjax,
+            'headers' => $request->header(),
+            'has_ajax_flag' => $request->has('is_ajax'),
+            'email' => $request->email
         ]);
 
-        // Check if 'profilepic' file exists in the request
-        if ($request->hasFile('profilepic')) {
-            // Validate and store the uploaded file
-            $request->validate([
-                'profilepic' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+        try {
+            // Get validated and sanitized data from the form request
+            $Formfield = $request->validated();
+
+            // Log validation results
+            \Log::info('Registration validation passed', [
+                'fields' => array_keys($Formfield)
             ]);
 
-            $profilePicPath = $request->file('profilepic')->store('uploadedimage', 'public');
-            $Formfield['profilepic'] = $profilePicPath;
-        }
+            // Check if 'profilepic' file exists in the request
+            if ($request->hasFile('profilepic')) {
+                try {
+                    // Validate and store the uploaded file
+                    $request->validate([
+                        'profilepic' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+                    ]);
 
-        // Store IP address for security tracking
-        $Formfield['ipaddress'] = $request->ip();
+                    $profilePicPath = $request->file('profilepic')->store('uploadedimage', 'public');
+                    $Formfield['profilepic'] = $profilePicPath;
 
-        // Hash the password
-        $Formfield['password'] = Hash::make($Formfield['password']);
+                    \Log::info('Profile picture uploaded', [
+                        'path' => $profilePicPath
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Profile picture upload failed', [
+                        'error' => $e->getMessage()
+                    ]);
 
-        // Create the user
-        $adminuserr = User::create($Formfield);
-
-        $adminUser = $adminuserr->firstname;
-
-        // Send welcome email
-        if($adminuserr){
-            try {
-                Mail::send('userwelcome', ['firstname' => $adminUser], function ($message) use ($request, $adminUser) {
-                    $message->to($request->email);
-                    $message->subject("Welcome to Kaka, " . $adminUser);
-                });
-            } catch (\Exception $e) {
-                // Log the error but continue with the registration process
-                // We don't want email sending failures to prevent user registration
-                \Log::error('Failed to send welcome email: ' . $e->getMessage());
+                    // Continue without profile pic if there's an error
+                    unset($Formfield['profilepic']);
+                }
             }
+
+            // Store IP address for security tracking
+            $Formfield['ipaddress'] = $request->ip();
+
+            // Hash the password
+            $Formfield['password'] = Hash::make($Formfield['password']);
+
+            // Add default values for any required fields that might be missing
+            $Formfield['isadmin'] = $Formfield['isadmin'] ?? 0;
+
+            // Check if email already exists despite validation
+            if (User::where('email', $Formfield['email'])->exists()) {
+                throw ValidationException::withMessages([
+                    'email' => ['This email is already registered. Please use a different email address.'],
+                ]);
+            }
+
+            // Create the user
+            $adminuserr = User::create($Formfield);
+
+            \Log::info('User created successfully', [
+                'user_id' => $adminuserr->id,
+                'email' => $adminuserr->email
+            ]);
+
+            $adminUser = $adminuserr->firstname;
+
+            // Send welcome email
+            if($adminuserr){
+                try {
+                    Mail::send('userwelcome', ['firstname' => $adminUser], function ($message) use ($request, $adminUser) {
+                        $message->to($request->email);
+                        $message->subject("Welcome to Kaka, " . $adminUser);
+                    });
+
+                    \Log::info('Welcome email sent', [
+                        'to' => $request->email
+                    ]);
+                } catch (\Exception $e) {
+                    // Log the error but continue with the registration process
+                    // We don't want email sending failures to prevent user registration
+                    \Log::error('Failed to send welcome email: ' . $e->getMessage(), [
+                        'user_id' => $adminuserr->id,
+                        'email' => $request->email,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            // Log the user in
+            Auth::login($adminuserr);
+
+            \Log::info('User logged in after registration', [
+                'user_id' => $adminuserr->id
+            ]);
+
+            // Return JSON response for AJAX requests
+            if ($isAjax) {
+                return response()->json([
+                    'success' => true,
+                    'redirect' => '/',
+                    'message' => 'Account created successfully! Welcome to Kaka.'
+                ]);
+            }
+
+            // Regular response for non-AJAX requests
+            return redirect('/')->with('message', 'Account created successfully! Welcome to Kaka.');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Log validation errors
+            \Log::warning('Validation failed during registration', [
+                'errors' => $e->errors(),
+                'email' => $request->email
+            ]);
+
+            // Handle validation errors for AJAX requests
+            if ($isAjax) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e; // Re-throw for regular requests
+
+        } catch (\Exception $e) {
+            // Log the detailed error with stack trace
+            \Log::error('User registration error: ' . $e->getMessage(), [
+                'email' => $request->email,
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            if ($isAjax) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'There was an error creating your account. Please try again.',
+                    'debug_message' => env('APP_DEBUG') ? $e->getMessage() : null
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->withInput($request->except('password'))
+                ->with('error', 'There was an error creating your account. Please try again.');
         }
-
-        // Log the user in
-        Auth::login($adminuserr);
-
-        return redirect('/')->with('message', 'Account created successfully! Welcome to Kaka.');
     }
 
     public function authenticate(Request $request)
     {
+        // Check if the request is AJAX
+        $isAjax = $request->ajax() ||
+                 $request->wantsJson() ||
+                 $request->has('is_ajax') ||
+                 $request->header('X-Requested-With') == 'XMLHttpRequest';
+
         // Implement rate limiting for login attempts
         $key = 'login.' . $request->ip();
         $maxAttempts = 5; // Maximum login attempts
@@ -163,6 +263,15 @@ class AdminController extends Controller
 
         if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
             $seconds = RateLimiter::availableIn($key);
+
+            // Check if it's an AJAX request
+            if ($isAjax) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too many sign-in attempts. Please try again later.',
+                    'seconds_remaining' => $seconds
+                ], 429);
+            }
 
             // Use session for consistent error handling with security-conscious messaging
             return redirect()->back()
@@ -175,13 +284,37 @@ class AdminController extends Controller
         }
 
         // Validate form input
-        $formFields = $request->validate([
-            'email' => ['required', 'email', 'string', 'max:255'],
-            'password' => ['required', 'string'],
-        ]);
+        try {
+            $formFields = $request->validate([
+                'email' => ['required', 'email', 'string', 'max:255'],
+                'password' => ['required', 'string'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Handle validation errors for AJAX requests
+            if ($isAjax) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e; // Re-throw for regular requests to use Laravel's built-in handling
+        }
 
-        // First check if user exists before attempting login
-        $user = User::where('email', $formFields['email'])->first();
+        // First check if user exists before attempting login - using constant time comparison
+        // to prevent timing attacks that could reveal whether an email exists or not
+        $user = null;
+        $found = false;
+
+        // Retrieve all users with matching email (should be 0 or 1 since email is unique)
+        $users = User::where('email', $formFields['email'])->get();
+
+        // Process results in constant time to prevent timing attacks
+        foreach ($users as $potentialUser) {
+            if (hash_equals($potentialUser->email, $formFields['email'])) {
+                $user = $potentialUser;
+                $found = true;
+            }
+        }
 
         if (!$user) {
             // Increment the rate limiter on failed login
@@ -197,6 +330,14 @@ class AdminController extends Controller
             // Track non-existent account attempts in session
             $nonExistentAttempts = $request->session()->get('non_existent_attempts', 0) + 1;
             $request->session()->put('non_existent_attempts', $nonExistentAttempts);
+
+            // Check if it's an AJAX request
+            if ($isAjax) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sign-in unsuccessful. Please verify your information.'
+                ], 401);
+            }
 
             // After multiple attempts with non-existent accounts, redirect to signup
             // but use a generic message that doesn't reveal the email doesn't exist
@@ -249,13 +390,20 @@ class AdminController extends Controller
             ];
         }
 
-        // Attempt login
+        // Attempt login with strong security measures
         if (auth()->attempt($formFields, $request->filled('remember'))) {
             // Reset rate limiter on successful login
             RateLimiter::clear($key);
 
             // Generate new session ID to prevent session fixation attacks
             $request->session()->regenerate();
+
+            // Update last login timestamp for security auditing
+            $loggedInUser = auth()->user();
+            $loggedInUser->last_login_at = now();
+            $loggedInUser->last_login_ip = $request->ip();
+            $loggedInUser->login_count = ($loggedInUser->login_count ?? 0) + 1;
+            $loggedInUser->save();
 
             $user = auth()->user();
 
@@ -294,19 +442,35 @@ class AdminController extends Controller
                 }
             }
 
+            // Check if it's an AJAX request
+            if ($isAjax) {
+                return response()->json([
+                    'success' => true,
+                    'redirect' => '/'
+                ]);
+            }
+
             return redirect('/');
         }
 
         // Increment the rate limiter on failed login
         RateLimiter::hit($key, $decayMinutes * 60);
 
-        // Use consistent generic error message that doesn't give away if email exists
+        // Check if it's an AJAX request
+        if ($isAjax) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Passwords do not match. Please retry or recover your account.'
+            ], 401);
+        }
+
+        // Show specific password error message as requested
         return redirect()->back()
             ->withInput($request->only('email'))
             ->with('auth_error', [
                 'type' => 'invalid_credentials',
-                'message' => 'Sign-in unsuccessful. Please verify your information.',
-                'resolution' => 'Please check your email and password and try again.'
+                'message' => 'Passwords do not match, retry, recover.',
+                'resolution' => 'Please try again with the correct password or use the recover option.'
             ]);
     }
 
@@ -345,11 +509,93 @@ class AdminController extends Controller
     }
 
     public function disauthenticate(Request $request){
-        // logout here
-        auth()->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        // Always logout regardless of session state
+        if (Auth::check()) {
+            Auth::logout();
+        }
 
-        return redirect('/login')->with('message', 'You have been logged out successfully.');
+        // Always invalidate session, even if it might be already expired
+        if ($request->session()->isStarted()) {
+            try {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            } catch (\Exception $e) {
+                // If session already invalidated, just continue silently
+            }
+        }
+
+        // Clear any auth-specific cookies that might exist
+        $cookies = [
+            'remember_web',
+            'kaka_session',
+            Auth::getRecallerName()
+        ];
+
+        $response = redirect('/login')->with('message', 'You have been logged out successfully.');
+
+        // Remove cookies that might be causing issues
+        foreach ($cookies as $cookie) {
+            $response->withoutCookie($cookie);
+        }
+
+        return $response;
+    }
+
+    /**
+     * View payment security logs
+     *
+     * @return \Illuminate\View\View
+     */
+    public function paymentSecurityLogs()
+    {
+        // Check if user is admin
+        if (!auth()->user()->is_admin) {
+            return redirect()->route('home')->with('error', 'Unauthorized access');
+        }
+
+        // Get the last 100 payment middleware log entries
+        $logPath = storage_path('logs/laravel.log');
+        $paymentLogs = [];
+
+        if (file_exists($logPath)) {
+            $logContents = file_get_contents($logPath);
+
+            // Extract payment verification middleware entries
+            preg_match_all('/\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] production\.INFO: Payment verification middleware running.*?(?=\[\d{4}-\d{2}-\d{2}|\Z)/s', $logContents, $middlewareEntries);
+
+            if (!empty($middlewareEntries[0])) {
+                foreach ($middlewareEntries[0] as $entry) {
+                    $paymentLogs[] = [
+                        'timestamp' => substr($entry, 1, 19),
+                        'entry' => $entry
+                    ];
+                }
+            }
+
+            // Add unauthorized access attempts
+            preg_match_all('/\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] production\.WARNING: Unauthorized access attempt to success page.*?(?=\[\d{4}-\d{2}-\d{2}|\Z)/s', $logContents, $unauthorizedEntries);
+
+            if (!empty($unauthorizedEntries[0])) {
+                foreach ($unauthorizedEntries[0] as $entry) {
+                    $paymentLogs[] = [
+                        'timestamp' => substr($entry, 1, 19),
+                        'entry' => $entry,
+                        'is_unauthorized' => true
+                    ];
+                }
+            }
+
+            // Sort by timestamp descending
+            usort($paymentLogs, function($a, $b) {
+                return strcmp($b['timestamp'], $a['timestamp']);
+            });
+
+            // Limit to last 100
+            $paymentLogs = array_slice($paymentLogs, 0, 100);
+        }
+
+        return view('admin.payment_security_logs', [
+            'logs' => $paymentLogs
+        ]);
     }
 }

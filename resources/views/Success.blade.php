@@ -1,39 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="main-container">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<div class="main-container" data-reference="{{ $reference ?? '' }}">
     <!-- Notification Area -->
-    @if(session('error') || session('warning') || session('success') || session('payment_warning') || isset($manual_verification))
-    <div class="notification-area">
-        @if(session('error'))
-        <div class="notification error">
-            <i class="fa-solid fa-circle-exclamation"></i>
-            <p>{{ session('error') }}</p>
-        </div>
-        @endif
-
-        @if(session('warning') || session('payment_warning'))
-        <div class="notification warning">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <p>{{ session('warning') ?? session('payment_warning') }}</p>
-        </div>
-        @endif
-
-        @if(session('success'))
-        <div class="notification success">
-            <i class="fa-solid fa-circle-check"></i>
-            <p>{{ session('success') }}</p>
-        </div>
-        @endif
-
-        @if(isset($manual_verification) && $manual_verification)
-        <div class="notification info">
-            <i class="fa-solid fa-circle-info"></i>
-            <p>Your payment has been processed. We have your reference ({{ $reference ?? 'N/A' }}) on file, and your tickets are valid. Enjoy the event!</p>
-        </div>
-        @endif
-    </div>
-    @endif
 
     <div class="success-wrapper">
         <div class="success-card">
@@ -47,48 +17,6 @@
                 Your payment has been successfully processed. You will receive an email confirmation with your transaction details.
             </p>
 
-            <div class="order-summary">
-                <h2>Order Summary</h2>
-                @if(isset($eventName) && !empty($eventName))
-                <div class="summary-item">
-                    <span class="summary-label">Event:</span>
-                    <span class="summary-value">{{ $eventName }}</span>
-                </div>
-                @endif
-
-                @if(isset($quantity) && !empty($quantity))
-                <div class="summary-item">
-                    <span class="summary-label">Quantity:</span>
-                    <span class="summary-value">{{ $quantity }} ticket(s)</span>
-                </div>
-                @endif
-
-                @if(isset($amount) && !empty($amount))
-                <div class="summary-item">
-                    <span class="summary-label">Price:</span>
-                    <span class="summary-value">₦{{ number_format($amount, 2) }}</span>
-                </div>
-                @endif
-            </div>
-
-            @if(isset($ticketIds) && count($ticketIds) > 0)
-                <div class="ticket-section">
-                    <h2>Your Tickets</h2>
-                    <p class="ticket-instruction">Please save or screenshot these ticket IDs - you'll need to present them at the event.</p>
-
-                    <div class="ticket-list">
-                        @foreach($ticketIds as $id)
-                            <div class="ticket-item">
-                                <div class="ticket-id">{{ $id }}</div>
-                                <div class="ticket-qr">
-                                    <i class="fa-solid fa-qrcode"></i>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
-
             <div class="success-actions">
                 <a href="/" class="home-btn">
                     <i class="fa-solid fa-house"></i> Back to Home
@@ -97,45 +25,75 @@
         </div>
     </div>
 
-    <!-- Manual Verification Form -->
-    <div class="manual-verification-wrapper">
-        <div class="manual-verification-card">
-            <h2>Can't See Your Tickets?</h2>
-            <p>If you've made a payment but don't see your tickets, enter your payment reference below:</p>
-
-            <form id="verifyReferenceForm" class="verify-form">
-                <div class="form-group">
-                    <input type="text" id="referenceInput" name="reference" placeholder="Enter payment reference" required>
+    <!-- Recommendations Section (Added) -->
+    @if(isset($recommendations) && $recommendations->isNotEmpty())
+    <div class="recommendations-section">
+        <h2>Events You Might Like</h2>
+        <div class="recommendations-grid">
+            @foreach($recommendations as $event)
+            <div class="recommendation-card">
+                <div class="recommendation-image">
+                    <img src="{{ $event->image }}" alt="{{ $event->name }}">
                 </div>
-                <button type="submit" class="verify-btn">
-                    <i class="fa-solid fa-magnifying-glass"></i> Verify Payment
-                </button>
-            </form>
-
-            <div id="verificationResult" class="verification-result" style="display: none;"></div>
+                <div class="recommendation-content">
+                    <h3>{{ $event->name }}</h3>
+                    <p class="recommendation-location">
+                        <i class="fa-solid fa-location-dot"></i> {{ $event->location }}
+                    </p>
+                    <a href="/listone/{{ $event->id }}" class="view-event-btn">View Event</a>
+                </div>
+            </div>
+            @endforeach
         </div>
     </div>
+    @endif
 
     <!-- Social Sharing Popup -->
-    <div id="socialSharingPopup" class="social-sharing-popup">
+    <div id="socialSharingPopup" class="social-sharing-popup" style="display:none;">
         <div class="social-sharing-content">
             <div class="close-popup">&times;</div>
+
+            <div class="celebration-header">
+                <div class="confetti-explosion">
+                    <i class="fa-solid fa-gifts fa-beat-fade"></i>
+                    <i class="fa-solid fa-drum fa-shake"></i>
+                    <i class="fa-solid fa-champagne-glasses fa-flip"></i>
+                </div>
+                <h1 class="celebration-title">
+                    <span class="celebration-icon"><i class="fa-solid fa-crown fa-spin-pulse"></i></span>
+                    Ticket Purchase Successful!
+                    <span class="celebration-icon"><i class="fa-solid fa-crown fa-spin-pulse"></i></span>
+                </h1>
+                <div class="fireworks">
+                    <div class="firework-burst burst1"></div>
+                    <div class="firework-burst burst2"></div>
+                    <div class="firework-burst burst3"></div>
+                </div>
+            </div>
+
             <div class="celebration-animation">
                 <i class="fa-solid fa-ticket fa-bounce"></i>
                 <i class="fa-solid fa-star fa-spin"></i>
                 <i class="fa-solid fa-music fa-beat"></i>
             </div>
-            <h2>Share Your Ticket Purchase!</h2>
-            <p>Share your ticket purchase on social media platforms with a celebratory message.</p>
+            <h2>Share Your {{ $eventName ?? 'Ticket' }} Purchase!</h2>
+            <p>You're going to {{ $eventName ?? 'an amazing event' }}! Share with friends and invite them to join you.</p>
+
+            <div class="ticket-preview">
+                <div class="event-details">
+                    <span class="event-name">{{ $eventName ?? 'Your Event' }}</span>
+                    <span class="ticket-count">{{ $quantity ?? '1' }} {{ $quantity > 1 ? 'Tickets' : 'Ticket' }}</span>
+                </div>
+            </div>
 
             <div class="social-buttons">
-                <a href="#" class="social-btn facebook" onclick="shareOnFacebook()">
+                <a href="#" class="social-btn facebook" onclick="shareOnFacebook(); return false;">
                     <i class="fa-brands fa-facebook-f"></i>
                 </a>
-                <a href="#" class="social-btn twitter" onclick="shareOnTwitter()">
+                <a href="#" class="social-btn twitter" onclick="shareOnTwitter(); return false;">
                     <i class="fa-brands fa-x-twitter"></i>
                 </a>
-                <a href="#" class="social-btn whatsapp" onclick="shareOnWhatsapp()">
+                <a href="#" class="social-btn whatsapp" onclick="shareOnWhatsapp(); return false;">
                     <i class="fa-brands fa-whatsapp"></i>
                 </a>
             </div>
@@ -145,182 +103,100 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Show social sharing popup after 5-8 seconds
+        // Mark that we're on the success page
+        localStorage.setItem('on_success_page', 'true');
+
+        // First ensure the popup is hidden by default
+        const popup = document.getElementById('socialSharingPopup');
+        if (popup) {
+            popup.style.display = 'none';
+            popup.classList.remove('active');
+        }
+
+        // Show social sharing popup after 3 seconds
         setTimeout(function() {
-            document.getElementById('socialSharingPopup').classList.add('active');
-        }, Math.floor(Math.random() * (8000 - 5000 + 1)) + 5000);
+            const popup = document.getElementById('socialSharingPopup');
+            if (popup) {
+                popup.style.display = 'flex';
+                setTimeout(() => {
+                    popup.classList.add('active');
+                }, 10);
+            }
+        }, 3000);
 
         // Close popup when clicking the X button
-        document.querySelector('.close-popup').addEventListener('click', function() {
-            document.getElementById('socialSharingPopup').classList.remove('active');
-        });
-
-        // Handle manual verification form submission
-        document.getElementById('verifyReferenceForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const reference = document.getElementById('referenceInput').value.trim();
-            if (!reference) return;
-
-            const resultDiv = document.getElementById('verificationResult');
-            resultDiv.innerHTML = '<div class="verification-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Verifying payment...</div>';
-            resultDiv.style.display = 'block';
-
-            // AJAX call to verify the reference
-            fetch('/verify-reference', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ reference: reference })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.verified) {
-                    let html = '<div class="verification-success">';
-                    html += '<i class="fa-solid fa-circle-check"></i>';
-                    html += '<h3>Payment Verified!</h3>';
-
-                    if (data.ticketIds && data.ticketIds.length > 0) {
-                        html += '<div class="verified-tickets">';
-                        html += '<h4>Your Tickets:</h4>';
-                        html += '<ul>';
-                        data.ticketIds.forEach(id => {
-                            html += `<li>${id}</li>`;
-                        });
-                        html += '</ul></div>';
-                    }
-
-                    if (data.order) {
-                        html += '<div class="verified-order">';
-                        html += `<p><strong>Event:</strong> ${data.order.eventName || 'Not specified'}</p>`;
-                        html += `<p><strong>Quantity:</strong> ${data.order.quantity || 1} ticket(s)</p>`;
-                        html += `<p><strong>Amount:</strong> ₦${(data.order.amount || 0).toLocaleString()}</p>`;
-                        html += '</div>';
-                    }
-
-                    html += '</div>';
-                    resultDiv.innerHTML = html;
-                } else {
-                    // Clean the result div and hide it - remove error message
-                    resultDiv.innerHTML = '';
-                    resultDiv.style.display = 'none';
-
-                    // Just reset the form instead of showing error
-                    document.getElementById('referenceInput').value = '';
+        const closeBtn = document.querySelector('.close-popup');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                const popup = document.getElementById('socialSharingPopup');
+                if (popup) {
+                    popup.classList.remove('active');
+                    setTimeout(() => {
+                        popup.style.display = 'none';
+                    }, 500);
+                    clearAllTransactionFlags();
                 }
-            })
-            .catch(error => {
-                // Hide the result div on error too
-                resultDiv.innerHTML = '';
-                resultDiv.style.display = 'none';
-                console.error('Verification error:', error);
             });
-        });
+        }
     });
 
-    // Social sharing functions
-    function shareOnFacebook() {
-        const eventName = "{{ $eventName ?? 'an awesome event' }}";
-        const shareUrl = window.location.origin;
-        const shareText = `I just purchased tickets for ${eventName}! 🎉 Celebrating my ticket purchase! Join me for this amazing event!`;
+    // When user navigates away from this page, clear all flags
+    window.addEventListener('beforeunload', function() {
+        clearAllTransactionFlags();
+    });
 
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`, '_blank');
+    // Function to clear all transaction-related flags
+    function clearAllTransactionFlags() {
+        localStorage.removeItem('successful_purchase');
+        localStorage.removeItem('purchase_time');
+        localStorage.removeItem('show_sharing_popup');
+        localStorage.removeItem('on_success_page');
+        localStorage.removeItem('redirect_to_success');
+        console.log('All transaction flags cleared');
+    }
+
+    // Social sharing functions with event details
+    function shareOnFacebook() {
+        // Get event details
+        const eventName = "{{ $eventName ?? 'an amazing event' }}";
+        const ticketQuantity = "{{ $quantity ?? '1' }}";
+
+        // Craft personalized message
+        const text = ticketQuantity > 1
+            ? `🎉 Just scored ${ticketQuantity} tickets to ${eventName} on Kaka Ticketing! Who's joining me for this epic experience? #KakaEvents #LiveEntertainment`
+            : `🎉 Just scored my ticket to ${eventName} on Kaka Ticketing! Who's joining me for this epic experience? #KakaEvents #LiveEntertainment`;
+
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`, '_blank');
     }
 
     function shareOnTwitter() {
-        const eventName = "{{ $eventName ?? 'an awesome event' }}";
-        const shareUrl = window.location.origin;
-        const shareText = `I just purchased tickets for ${eventName}! 🎉 Celebrating my ticket purchase! #EventTickets #LiveEvents`;
+        // Get event details
+        const eventName = "{{ $eventName ?? 'an amazing event' }}";
+        const ticketQuantity = "{{ $quantity ?? '1' }}";
+        const eventDate = "{{ date('F d', strtotime($date ?? now())) }}";
 
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+        // Craft personalized message
+        const text = `🎟️ Just locked in ${ticketQuantity > 1 ? 'tickets' : 'my spot'} for ${eventName} on ${eventDate}! Find me in the crowd! Get your tickets on Kaka before they're gone! #EventLife`;
+
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
     }
 
     function shareOnWhatsapp() {
-        const eventName = "{{ $eventName ?? 'an awesome event' }}";
-        const shareUrl = window.location.origin;
-        const shareText = `I just purchased tickets for ${eventName}! 🎉 Celebrating my ticket purchase! Join me for this amazing event!`;
+        // Get event details
+        const eventName = "{{ $eventName ?? 'an amazing event' }}";
+        const ticketQuantity = "{{ $quantity ?? '1' }}";
+        const amount = "{{ number_format($amount ?? 0) }}";
 
-        window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
+        // Craft personalized message
+        const text = `Hey! 🎉 I just got ${ticketQuantity > 1 ? ticketQuantity + ' tickets' : 'a ticket'} to ${eventName} via Kaka Ticketing! Would be awesome if you could join me. Check it out and let's make some memories together! 🎵🎊`;
+
+        window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + window.location.href)}`, '_blank');
     }
 </script>
 
 @endsection
 
 <style>
-    .notification-area {
-        width: 90%;
-        max-width: 800px;
-        margin: 20px auto;
-    }
-
-    .notification {
-        display: flex;
-        align-items: center;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        animation: fadeIn 0.5s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .notification i {
-        font-size: 24px;
-        margin-right: 15px;
-    }
-
-    .notification p {
-        margin: 0;
-        flex: 1;
-        font-size: 15px;
-        line-height: 1.4;
-    }
-
-    .notification.error {
-        background-color: rgba(220, 53, 69, 0.2);
-        border: 1px solid rgba(220, 53, 69, 0.5);
-        color: #f8d7da;
-    }
-
-    .notification.error i {
-        color: #dc3545;
-    }
-
-    .notification.warning {
-        background-color: rgba(255, 193, 7, 0.2);
-        border: 1px solid rgba(255, 193, 7, 0.5);
-        color: #fff3cd;
-    }
-
-    .notification.warning i {
-        color: #ffc107;
-    }
-
-    .notification.success {
-        background-color: rgba(40, 167, 69, 0.2);
-        border: 1px solid rgba(40, 167, 69, 0.5);
-        color: #d4edda;
-    }
-
-    .notification.success i {
-        color: #28a745;
-    }
-
-    .notification.info {
-        background-color: rgba(13, 202, 240, 0.2);
-        border: 1px solid rgba(13, 202, 240, 0.5);
-        color: #d1f2fa;
-    }
-
-    .notification.info i {
-        color: #0dcaf0;
-    }
-
     .success-wrapper {
         width: 90%;
         max-width: 800px;
@@ -363,101 +239,6 @@
         line-height: 1.5;
     }
 
-    .order-summary {
-        background: rgba(37, 36, 50, 0.7);
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 30px;
-        border: 1px solid rgba(192, 72, 136, 0.3);
-    }
-
-    .order-summary h2 {
-        font-size: 22px;
-        margin-bottom: 15px;
-        color: #C04888;
-        text-align: left;
-    }
-
-    .summary-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        text-align: left;
-    }
-
-    .summary-item:last-child {
-        border-bottom: none;
-    }
-
-    .summary-label {
-        color: rgba(255, 255, 255, 0.7);
-    }
-
-    .summary-value {
-        font-weight: bold;
-        color: white;
-    }
-
-    .ticket-section {
-        margin: 30px 0;
-        background: rgba(192, 72, 136, 0.1);
-        padding: 25px;
-        border-radius: 8px;
-        border: 1px solid rgba(192, 72, 136, 0.2);
-        text-align: left;
-    }
-
-    .ticket-section h2 {
-        font-size: 22px;
-        margin-bottom: 10px;
-        color: #C04888;
-    }
-
-    .ticket-instruction {
-        color: rgba(255, 255, 255, 0.7);
-        margin-bottom: 20px;
-        font-size: 14px;
-    }
-
-    .ticket-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 15px;
-    }
-
-    .ticket-item {
-        background: rgba(40, 40, 55, 0.8);
-        border-radius: 8px;
-        padding: 15px;
-        border: 1px solid rgba(192, 72, 136, 0.3);
-        transition: all 0.3s ease;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .ticket-item:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        background: rgba(192, 72, 136, 0.2);
-    }
-
-    .ticket-id {
-        font-family: 'Courier New', monospace;
-        font-size: 16px;
-        font-weight: bold;
-        color: white;
-        margin-bottom: 12px;
-        word-break: break-all;
-    }
-
-    .ticket-qr {
-        font-size: 40px;
-        color: rgba(255, 255, 255, 0.9);
-        margin-top: 5px;
-    }
-
     .success-actions {
         margin-top: 30px;
     }
@@ -485,136 +266,96 @@
         box-shadow: 0 5px 15px rgba(192, 72, 136, 0.3);
     }
 
-    /* Manual Verification Styles */
-    .manual-verification-wrapper {
+    /* Recommendations Section Styles */
+    .recommendations-section {
         width: 90%;
-        max-width: 800px;
-        margin: 30px auto;
-    }
-
-    .manual-verification-card {
+        max-width: 1000px;
+        margin: 60px auto;
         background: rgba(37, 36, 50, 0.8);
-        color: #ffffff;
-        padding: 25px;
         border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        text-align: center;
+        padding: 30px;
         border: 1px solid rgba(192, 72, 136, 0.3);
     }
 
-    .manual-verification-card h2 {
+    .recommendations-section h2 {
         font-size: 24px;
-        margin-bottom: 10px;
-        color: #C04888;
-    }
-
-    .manual-verification-card p {
-        color: rgba(255, 255, 255, 0.8);
+        color: #ffffff;
         margin-bottom: 20px;
+        text-align: center;
     }
 
-    .verify-form {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-        margin-bottom: 20px;
+    .recommendations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 20px;
     }
 
-    .form-group {
-        width: 100%;
-    }
-
-    .form-group input {
-        width: 100%;
-        padding: 12px 15px;
+    .recommendation-card {
+        background: rgba(50, 49, 66, 0.6);
         border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-        font-size: 16px;
+        overflow: hidden;
         transition: all 0.3s ease;
+        border: 1px solid rgba(192, 72, 136, 0.2);
     }
 
-    .form-group input:focus {
-        outline: none;
-        border-color: #C04888;
-        box-shadow: 0 0 0 2px rgba(192, 72, 136, 0.3);
+    .recommendation-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        border-color: rgba(192, 72, 136, 0.5);
     }
 
-    .verify-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 12px 25px;
+    .recommendation-image {
+        height: 120px;
+        overflow: hidden;
+    }
+
+    .recommendation-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .recommendation-card:hover .recommendation-image img {
+        transform: scale(1.1);
+    }
+
+    .recommendation-content {
+        padding: 15px;
+    }
+
+    .recommendation-content h3 {
+        font-size: 16px;
+        color: #ffffff;
+        margin-bottom: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .recommendation-location {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .view-event-btn {
+        display: block;
         background: #C04888;
         color: white;
-        border-radius: 8px;
-        font-weight: bold;
+        text-align: center;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 14px;
         text-decoration: none;
-        font-size: 16px;
         transition: all 0.3s ease;
-        border: none;
-        cursor: pointer;
-        width: 100%;
     }
 
-    .verify-btn:hover {
+    .view-event-btn:hover {
         background: #d658a0;
-        transform: translateY(-2px);
-    }
-
-    .verification-result {
-        padding: 20px;
-        border-radius: 8px;
-        margin-top: 20px;
-        text-align: left;
-    }
-
-    .verification-loading {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: rgba(255, 255, 255, 0.8);
-    }
-
-    .verification-success {
-        background: rgba(40, 167, 69, 0.2);
-        border: 1px solid rgba(40, 167, 69, 0.3);
-        padding: 20px;
-        border-radius: 8px;
-    }
-
-    .verification-success i {
-        font-size: 30px;
-        color: #28a745;
-        margin-bottom: 10px;
-        display: block;
-    }
-
-    .verified-tickets {
-        margin-top: 15px;
-    }
-
-    .verified-tickets ul {
-        list-style: none;
-        padding: 0;
-        margin: 10px 0;
-    }
-
-    .verified-tickets li {
-        font-family: 'Courier New', monospace;
-        padding: 8px;
-        background: rgba(255, 255, 255, 0.1);
-        margin-bottom: 5px;
-        border-radius: 4px;
-        font-weight: bold;
-    }
-
-    .verified-order {
-        margin-top: 15px;
-        padding-top: 15px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     /* Social Sharing Popup Styles */
@@ -625,18 +366,17 @@
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.7);
-        display: flex;
+        display: none;
         align-items: center;
         justify-content: center;
         z-index: 1000;
+        transition: opacity 0.5s ease;
         opacity: 0;
-        visibility: hidden;
-        transition: all 0.5s ease;
     }
 
     .social-sharing-popup.active {
+        display: flex !important;
         opacity: 1;
-        visibility: visible;
     }
 
     .social-sharing-content {
@@ -651,6 +391,187 @@
         max-width: 500px;
         position: relative;
         animation: popIn 0.5s ease forwards;
+        overflow: hidden;
+    }
+
+    /* Celebration header styles */
+    .celebration-header {
+        position: relative;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .celebration-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #fff;
+        text-shadow: 0 0 10px rgba(192, 72, 136, 0.7);
+        margin: 0 0 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: linear-gradient(90deg, #ff6b6b, #C04888, #4ecdc4);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gradientText 3s ease infinite;
+    }
+
+    @keyframes gradientText {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .celebration-icon {
+        font-size: 20px;
+        color: #FFD700;
+    }
+
+    /* Confetti animation */
+    .confetti-explosion {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin-bottom: 15px;
+        font-size: 28px;
+    }
+
+    .confetti-explosion i {
+        color: #FFD700;
+    }
+
+    .confetti-explosion i:nth-child(2) {
+        color: #FF6B6B;
+    }
+
+    .confetti-explosion i:nth-child(3) {
+        color: #4ECDC4;
+    }
+
+    .fa-beat-fade {
+        animation-duration: 2s;
+    }
+
+    .fa-shake {
+        animation-duration: 1.5s;
+    }
+
+    .fa-flip {
+        animation-duration: 2.5s;
+    }
+
+    /* Fireworks */
+    .fireworks {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    .firework-burst {
+        position: absolute;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        box-shadow:
+            0 0 0 4px rgba(255, 200, 0, 0.1),
+            0 0 0 8px rgba(255, 0, 100, 0.1),
+            0 0 0 12px rgba(0, 200, 255, 0.1),
+            0 0 20px rgba(255, 200, 0, 0.5),
+            0 0 40px rgba(255, 0, 100, 0.5),
+            0 0 60px rgba(0, 200, 255, 0.5);
+        transform-origin: center;
+    }
+
+    .burst1 {
+        top: 20%;
+        left: 20%;
+        animation: fireworkEffect 2s ease-out infinite;
+        animation-delay: 0.3s;
+    }
+
+    .burst2 {
+        top: 30%;
+        right: 20%;
+        animation: fireworkEffect 2.5s ease-out infinite;
+        animation-delay: 0.7s;
+    }
+
+    .burst3 {
+        bottom: 30%;
+        left: 50%;
+        animation: fireworkEffect 1.8s ease-out infinite;
+        animation-delay: 1.2s;
+    }
+
+    @keyframes fireworkEffect {
+        0% {
+            transform: scale(0.1);
+            opacity: 0;
+        }
+        20% {
+            opacity: 1;
+        }
+        80% {
+            transform: scale(1.8);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(2);
+            opacity: 0;
+        }
+    }
+
+    /* Ticket preview styles */
+    .ticket-preview {
+        background: rgba(45, 44, 60, 0.6);
+        border-radius: 8px;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        padding: 15px;
+        margin: 15px 0 25px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ticket-preview:before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        width: 40px;
+        height: 40px;
+        background: #C04888;
+        transform: rotate(45deg);
+        z-index: 0;
+    }
+
+    .event-details {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .event-name {
+        font-weight: bold;
+        font-size: 18px;
+        color: #fff;
+    }
+
+    .ticket-count {
+        display: inline-block;
+        background: rgba(192, 72, 136, 0.2);
+        color: #C04888;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
     }
 
     @keyframes popIn {
@@ -757,10 +678,6 @@
             font-size: 24px;
         }
 
-        .ticket-list {
-            grid-template-columns: 1fr;
-        }
-
         .social-sharing-content {
             padding: 30px 20px;
         }
@@ -774,6 +691,20 @@
             width: 50px;
             height: 50px;
             font-size: 20px;
+        }
+
+        .recommendations-section {
+            padding: 20px 15px;
+        }
+
+        .recommendations-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .recommendations-grid {
+            grid-template-columns: 1fr;
         }
     }
 </style>

@@ -22,6 +22,8 @@ use App\Models\Myorders;
 use App\Models\User;
 use App\Models\Transaction;
 use App\Models\TicketType;
+use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\SessionController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -56,8 +58,9 @@ Route::get('/searchnotfound', [ListingController::class, 'searchnotfound'] );
 Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'])->name('payment.verify');
 Route::get('/tryverifypayment/{reference}', [PaymentController::class, 'tryverify'] );
 
-// View Admin Panel
-Route::get('/dunia', [AdminController::class, 'index']);
+// View Admin Panel - with admin-only access
+Route::get('/dunia', [AdminController::class, 'index'])
+    ->middleware(['auth', 'admin.only']);
 
 Route::middleware(['web'])->group(function () {
     // Define your routes here
@@ -125,10 +128,12 @@ Route::post('/formsent', [ListingController::class, 'contactsend']);
 Route::get('/createpost', [AdminController::class, 'adminform'])->middleware('auth');
 
 // This gives the ability to create events (for both admins and regular users)
-Route::post('/creationsuccess', [AdminController::class, 'store']);
+Route::post('/creationsuccess', [AdminController::class, 'store'])->middleware('secure.upload');
 
 // Users can now Login
-Route::post('/authenticated', [AdminController::class, 'authenticate'])->name('login');
+Route::post('/authenticated', [AdminController::class, 'authenticate'])
+    ->name('login')
+    ->middleware('enhanced.throttle:5,1');
 
 // Users can now Log out
 // Route::post('/logout', [AdminController::class, 'disauthenticate']);
@@ -147,8 +152,12 @@ Route::post('/addtocart', [CartController::class, 'addToCart'])
     ->middleware(['throttle:20,1']); // Limit add to cart attempts to 20 per minute
 
 Route::middleware(['throttle:60,1'])->group(function () {
-    Route::patch('/cart/update/{id}', [CartController::class, 'updateItem'])->name('cart.update');
-    Route::delete('/cart/remove/{id}', [CartController::class, 'removeItem'])->name('cart.remove');
+    Route::patch('/cart/update/{id}', [CartController::class, 'updateItem'])
+        ->name('cart.update')
+        ->middleware('auth', 'resource.auth:cart');
+    Route::delete('/cart/remove/{id}', [CartController::class, 'removeItem'])
+        ->name('cart.remove')
+        ->middleware('auth', 'resource.auth:cart');
     Route::get('/cart/totals', [CartController::class, 'getCartTotals'])->name('cart.totals');
 });
 
@@ -403,3 +412,41 @@ Route::get('/test-ticket-types', function() {
         'view_url' => url('/event/' . $event->id . '/ticket')
     ]);
 });
+
+// CSRF token refresh endpoint for AJAX requests
+Route::get('/csrf-refresh', function() {
+    return response()->json([
+        'token' => csrf_token()
+    ]);
+});
+
+// Note: API routes for transactions have been moved to the api.php routes file
+
+// Recommendation routes
+Route::get('/recommendations', [RecommendationController::class, 'index'])->name('recommendations');
+Route::get('/similar-events/{eventId}', [RecommendationController::class, 'similarEvents'])->name('similar-events');
+
+// Admin recommendation routes
+Route::middleware(['auth', 'isAdmin'])->group(function () {
+    Route::get('/admin/update-transaction-ids', [RecommendationController::class, 'updateTransactionIds'])->name('admin.update-transaction-ids');
+    Route::get('/admin/trending-events', [RecommendationController::class, 'trending'])->name('admin.trending-events');
+    Route::get('/admin/payment-security-logs', [AdminController::class, 'paymentSecurityLogs'])->name('admin.payment-security-logs');
+});
+
+// Test routes - ONLY for non-production environments
+if (app()->environment('local', 'development', 'testing')) {
+    Route::get('/test-success-page', [PaymentController::class, 'testSuccessPage'])->name('test.success-page');
+}
+
+// Session Management Routes
+Route::post('/session/refresh', [SessionController::class, 'refresh'])
+    ->middleware(['web', 'auth'])
+    ->name('session.refresh');
+
+Route::post('/session/silent-auth', [SessionController::class, 'silentAuth'])
+    ->middleware(['web'])
+    ->name('session.silent_auth');
+
+Route::get('/session/expired', [SessionController::class, 'expired'])
+    ->middleware(['web'])
+    ->name('session.expired');

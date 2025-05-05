@@ -657,6 +657,98 @@
             height: 35px;
         }
     }
+
+    .auth-timeout-banner {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: rgba(30, 30, 45, 0.9);
+        border-left: 4px solid #C04888;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        animation: slideDown 0.3s ease-in-out;
+    }
+
+    .timeout-icon {
+        background: rgba(192, 72, 136, 0.2);
+        color: #C04888;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+
+    .timeout-icon i {
+        font-size: 1.2rem;
+    }
+
+    .timeout-content {
+        flex-grow: 1;
+    }
+
+    .timeout-content h3 {
+        margin: 0 0 5px 0;
+        font-size: 1rem;
+        color: #C04888;
+    }
+
+    .timeout-content p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #a0aec0;
+    }
+
+    .timeout-close {
+        background: none;
+        border: none;
+        color: #a0aec0;
+        padding: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .timeout-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .remember-checkbox:focus ~ .checkbox-label::before {
+        box-shadow: 0 0 0 3px rgba(192, 72, 136, 0.2);
+    }
+
+    /* Password error specific styling */
+    .password-error {
+        color: #ff3b5c !important;
+        font-weight: 700 !important;
+        animation: pulse-error 2s infinite;
+        border-left: 3px solid #ff3b5c;
+        padding-left: 10px !important;
+        background: rgba(255, 59, 92, 0.1);
+        padding: 5px 8px;
+        border-radius: 4px;
+    }
+
+    @keyframes pulse-error {
+        0% { opacity: 1; }
+        50% { opacity: 0.8; }
+        100% { opacity: 1; }
+    }
 </style>
 <body>
     <header class="site-header">
@@ -724,6 +816,21 @@
             </div>
         @endif
 
+        @if(session('auth_timeout'))
+            <div class="auth-timeout-banner" x-data="{show: true}" x-show="show">
+                <div class="timeout-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="timeout-content">
+                    <h3>Session Expired</h3>
+                    <p>Your session has timed out for security reasons. Please log in again to continue.</p>
+                </div>
+                <button class="timeout-close" @click="show = false">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        @endif
+
         @if(session()->has('auth_error'))
             <div class="auth-error-toast" x-data="{show: true}" x-init="setTimeout(() => show = false, 6000)" x-show="show">
                 <div class="toast-header">
@@ -734,7 +841,7 @@
                             @elseif(session('auth_error')['type'] === 'account_not_found')
                                 <i class="fas fa-exclamation-triangle"></i>
                             @else
-                                <i class="fas fa-exclamation-triangle"></i>
+                                <i class="fas fa-key"></i>
                             @endif
                         </div>
                         <h4 class="toast-title">
@@ -750,7 +857,7 @@
                     </button>
                 </div>
                 <div class="toast-body">
-                    <p class="toast-message">{{ session('auth_error')['message'] }}</p>
+                    <p class="toast-message @if(str_contains(session('auth_error')['message'], 'Passwords do not match')) password-error @endif">{{ session('auth_error')['message'] }}</p>
                     <div class="toast-actions">
                         @if(session('auth_error')['type'] === 'rate_limit')
                             <a href="{{ route('password.request') }}" class="toast-action primary">

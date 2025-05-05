@@ -707,8 +707,14 @@
             <h1>Create Your Account</h1>
             <p>Enter your personal details to get started</p>
 
-            <form method="post" class="fstyle" action="/createnewadmin" enctype="multipart/form-data">
+            <!-- Add generic error container -->
+            <div id="form-errors" style="display: none; background-color: rgba(255, 87, 87, 0.2); border-left: 3px solid #ff5757; padding: 10px; margin-bottom: 20px; color: white; border-radius: 4px;"></div>
+
+            <form method="post" class="fstyle" action="/createnewadmin" enctype="multipart/form-data" id="signupForm">
                 @csrf
+                <input type="hidden" name="is_ajax" value="1">
+                <input type="hidden" name="debug_info" value="troubleshooting_form">
+                <input type="hidden" name="form_timestamp" value="{{ time() }}">
                 <div class="form-group">
                     <label for="firstname" class="form-label">First name</label>
                     <input id="firstname" type="text" name="firstname" class="form-input" placeholder="Enter your first name" value="{{ old('firstname') }}" required>
@@ -755,6 +761,16 @@
                     @enderror
                 </div>
 
+                <div class="form-group">
+                    <label for="password_confirmation" class="form-label">Confirm Password</label>
+                    <input id="password_confirmation" type="password" name="password_confirmation" class="form-input" placeholder="Confirm your password" required autocomplete="new-password">
+                    <span class="input-icon password-toggle-confirm" onclick="toggleConfirmPasswordVisibility()"><i class="fas fa-eye"></i></span>
+
+                    @error('password_confirmation')
+                    <div class="inputerror">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <div class="terms-checkbox">
                     <input type="checkbox" id="terms" name="terms" class="terms-check" required>
                     <label for="terms" class="terms-label">
@@ -783,6 +799,21 @@
         function togglePasswordVisibility() {
             const passwordInput = document.getElementById('password');
             const icon = document.querySelector('.password-toggle i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function toggleConfirmPasswordVisibility() {
+            const passwordInput = document.getElementById('password_confirmation');
+            const icon = document.querySelector('.password-toggle-confirm i');
 
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
@@ -861,6 +892,388 @@
             // Check on load if input has value
             if (input.value !== '') {
                 input.parentElement.classList.add('focused');
+            }
+        });
+
+        // Form submission with AJAX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add debug container to page
+            const debugContainer = document.createElement('div');
+            debugContainer.id = 'ajax-debug';
+            debugContainer.style.display = 'none';
+            debugContainer.style.position = 'fixed';
+            debugContainer.style.bottom = '0';
+            debugContainer.style.right = '0';
+            debugContainer.style.backgroundColor = 'rgba(0,0,0,0.8)';
+            debugContainer.style.color = 'white';
+            debugContainer.style.padding = '10px';
+            debugContainer.style.zIndex = '9999';
+            debugContainer.style.maxHeight = '300px';
+            debugContainer.style.maxWidth = '500px';
+            debugContainer.style.overflow = 'auto';
+            document.body.appendChild(debugContainer);
+
+            // Debug utility function
+            function debugLog(message, data = null) {
+                console.log(message, data);
+                const logEntry = document.createElement('div');
+                logEntry.innerHTML = `<strong>${message}</strong>: ${data ? JSON.stringify(data) : ''}`;
+                debugContainer.appendChild(logEntry);
+                debugContainer.scrollTop = debugContainer.scrollHeight;
+            }
+
+            // Toggle debug view with Shift+D
+            document.addEventListener('keydown', function(e) {
+                if (e.shiftKey && e.key === 'D') {
+                    debugContainer.style.display = debugContainer.style.display === 'none' ? 'block' : 'none';
+                }
+            });
+
+            // Create error container for each form field if not exists
+            document.querySelectorAll('.form-group').forEach(group => {
+                const fieldName = group.querySelector('input').id;
+                if (!document.getElementById(fieldName + '-error')) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.id = fieldName + '-error';
+                    errorDiv.className = 'error-message';
+                    errorDiv.style.color = '#ff5555';
+                    errorDiv.style.fontSize = '13px';
+                    errorDiv.style.marginTop = '5px';
+                    errorDiv.style.display = 'none';
+                    group.appendChild(errorDiv);
+                }
+            });
+
+            const signupForm = document.getElementById('signupForm');
+            if (signupForm) {
+                debugLog('Form found, setting up event listeners');
+
+                // Make sure onsubmit is defined first, before adding event listeners
+                signupForm.onsubmit = function() { return false; };
+
+                signupForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    debugLog('Form submit event triggered');
+                    submitSignupForm();
+                    return false;
+                });
+
+                // Also bind click event to submit button directly
+                const submitButton = signupForm.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        debugLog('Submit button clicked');
+                        submitSignupForm();
+                        return false;
+                    });
+                }
+
+                function submitSignupForm() {
+                    // Clear all previous error messages
+                    document.querySelectorAll('.error-message').forEach(el => {
+                        el.textContent = '';
+                        el.style.display = 'none';
+                    });
+
+                    // Clear the form errors container
+                    const formErrors = document.getElementById('form-errors');
+                    if (formErrors) {
+                        formErrors.textContent = '';
+                        formErrors.style.display = 'none';
+                    }
+
+                    // Check if terms checkbox is checked
+                    const termsCheckbox = document.getElementById('terms');
+                    if (!termsCheckbox.checked) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'error-message';
+                        errorDiv.style.color = '#ff5555';
+                        errorDiv.style.marginTop = '5px';
+                        errorDiv.textContent = 'You must agree to the Terms of Service and Privacy Policy';
+                        termsCheckbox.parentElement.appendChild(errorDiv);
+                        debugLog('Terms not checked', {checked: termsCheckbox.checked});
+                        return false;
+                    }
+
+                    // Validate email
+                    const email = document.getElementById('email').value;
+                    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailPattern.test(email)) {
+                        const emailError = document.getElementById('email-error');
+                        if (emailError) {
+                            emailError.textContent = 'Please enter a valid email address';
+                            emailError.style.display = 'block';
+                        }
+                        debugLog('Email validation failed', {email});
+                        return false;
+                    }
+
+                    // Password validation
+                    const password = document.getElementById('password').value;
+                    const passwordConfirmation = document.getElementById('password_confirmation').value;
+
+                    // Check passwords match
+                    if (password !== passwordConfirmation) {
+                        const passwordConfirmError = document.getElementById('password_confirmation-error');
+                        if (passwordConfirmError) {
+                            passwordConfirmError.textContent = 'Passwords do not match';
+                            passwordConfirmError.style.display = 'block';
+                        }
+                        debugLog('Passwords do not match');
+                        return false;
+                    }
+
+                    if (password.length < 8 ||
+                        !/[a-z]/.test(password) ||
+                        !/[A-Z]/.test(password) ||
+                        !/[0-9]/.test(password) ||
+                        !/[@$!%*#?&]/.test(password)) {
+
+                        const passwordError = document.getElementById('password-error');
+                        if (passwordError) {
+                            passwordError.textContent = 'Password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters';
+                            passwordError.style.display = 'block';
+                        }
+                        debugLog('Password validation failed', {length: password.length});
+                        return false;
+                    }
+
+                    debugLog('Form validation passed, preparing to submit');
+
+                    // Show loading indicator on button
+                    const submitButton = signupForm.querySelector('button[type="submit"]');
+                    const originalText = submitButton.textContent;
+                    submitButton.textContent = 'Creating Account...';
+                    submitButton.disabled = true;
+
+                    // Get form data and add debugging information
+                    const formData = new FormData(signupForm);
+                    formData.append('client_timestamp', new Date().toISOString());
+                    formData.append('client_timezone', Intl.DateTimeFormat().resolvedOptions().timeZone);
+                    formData.append('client_screen', `${window.innerWidth}x${window.innerHeight}`);
+
+                    // Log form data (without sensitive info)
+                    const formDataLog = {};
+                    for (let [key, value] of formData.entries()) {
+                        if (key !== 'password' && key !== 'password_confirmation') {
+                            formDataLog[key] = value;
+                        } else {
+                            formDataLog[key] = '***REDACTED***';
+                        }
+                    }
+                    debugLog('Form data being sent', formDataLog);
+
+                    // Send request with proper error handling
+                    fetch('/createnewadmin', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        debugLog('Server response received', {
+                            status: response.status,
+                            statusText: response.statusText,
+                            headers: Object.fromEntries([...response.headers]),
+                            redirected: response.redirected,
+                            url: response.url
+                        });
+
+                        // Handle CSRF token mismatch (response code 419)
+                        if (response.status === 419) {
+                            debugLog('CSRF token mismatch detected');
+                            // Request a new CSRF token and retry
+                            return fetch('/csrf-refresh', {
+                                method: 'GET',
+                                credentials: 'same-origin'
+                            })
+                            .then(tokenResponse => tokenResponse.json())
+                            .then(tokenData => {
+                                if (tokenData.token) {
+                                    debugLog('Received new CSRF token, retrying form submission');
+                                    // Update the token in the form
+                                    document.querySelector('input[name="_token"]').value = tokenData.token;
+                                    // Update the token in formData
+                                    formData.set('_token', tokenData.token);
+                                    // Retry the submission
+                                    return fetch('/createnewadmin', {
+                                        method: 'POST',
+                                        body: formData,
+                                        headers: {
+                                            'X-Requested-With': 'XMLHttpRequest',
+                                            'Accept': 'application/json',
+                                            'X-CSRF-TOKEN': tokenData.token
+                                        },
+                                        credentials: 'same-origin'
+                                    });
+                                } else {
+                                    // If we couldn't get a new token, reload the page
+                                    debugLog('Failed to get new CSRF token, reloading page');
+                                    window.location.reload();
+                                    return new Response('{}', { status: 200 });
+                                }
+                            })
+                            .catch(error => {
+                                debugLog('Error refreshing CSRF token', error);
+                                window.location.reload();
+                                return new Response('{}', { status: 200 });
+                            });
+                        }
+
+                        if (!response.ok && response.status !== 422) {
+                            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                        }
+
+                        // Try to parse as JSON first
+                        return response.text().then(text => {
+                            debugLog('Raw response text', {text: text.substring(0, 100) + '...'});
+
+                            try {
+                                return JSON.parse(text);
+                            } catch (e) {
+                                // If JSON parsing fails, handle it as a redirect or HTML response
+                                debugLog('Not a JSON response, checking for redirect');
+
+                                if (response.redirected) {
+                                    window.location.href = response.url;
+                                    return null;
+                                }
+
+                                // If we have an unexpected error message in the HTML
+                                if (text.includes('unexpected error occurred')) {
+                                    throw new Error('An unexpected server error occurred. Please try again later.');
+                                }
+
+                                // As a fallback, reload the page to show server-rendered errors
+                                window.location.reload();
+                                return null;
+                            }
+                        });
+                    })
+                    .then(data => {
+                        if (!data) {
+                            debugLog('No data to process (likely due to redirect)');
+                            return;
+                        }
+
+                        if (data.success) {
+                            // Success - redirect
+                            debugLog('Account created successfully, redirecting', {redirect: data.redirect});
+                            window.location.href = data.redirect || '/';
+                        } else if (data.errors) {
+                            // Handle validation errors
+                            debugLog('Validation errors', data.errors);
+
+                            // Display generic error at the top if needed
+                            if (Object.keys(data.errors).length > 0) {
+                                const formErrors = document.getElementById('form-errors');
+                                if (formErrors) {
+                                    formErrors.innerHTML = '<ul style="margin: 0; padding-left: 20px; list-style-type: disc;">';
+
+                                    Object.entries(data.errors).forEach(([field, messages]) => {
+                                        formErrors.innerHTML += `<li>${messages[0]}</li>`;
+                                    });
+
+                                    formErrors.innerHTML += '</ul>';
+                                    formErrors.style.display = 'block';
+
+                                    // Scroll to top of form
+                                    signupForm.scrollIntoView({ behavior: 'smooth' });
+                                }
+                            }
+
+                            // Create convenience function to show errors
+                            function showFieldError(field, message) {
+                                const errorElement = document.getElementById(`${field}-error`);
+                                if (errorElement) {
+                                    errorElement.textContent = message;
+                                    errorElement.style.display = 'block';
+                                } else {
+                                    // If element doesn't exist, create it
+                                    const input = document.getElementById(field);
+                                    if (input) {
+                                        const errorDiv = document.createElement('div');
+                                        errorDiv.id = `${field}-error`;
+                                        errorDiv.className = 'error-message';
+                                        errorDiv.style.color = '#ff5555';
+                                        errorDiv.style.marginTop = '5px';
+                                        errorDiv.textContent = message;
+                                        input.parentElement.appendChild(errorDiv);
+                                    } else {
+                                        // Last resort - if we can't find the field
+                                        debugLog(`Field not found: ${field}`, message);
+                                    }
+                                }
+                            }
+
+                            // Loop through each field with error
+                            for (const [field, messages] of Object.entries(data.errors)) {
+                                showFieldError(field, messages[0]);
+                            }
+
+                            // Reset button
+                            submitButton.textContent = originalText;
+                            submitButton.disabled = false;
+                        } else if (data.message) {
+                            // Generic message
+                            debugLog('Server message', data.message);
+
+                            // Display in the form errors section
+                            const formErrors = document.getElementById('form-errors');
+                            if (formErrors) {
+                                formErrors.textContent = data.message;
+                                formErrors.style.display = 'block';
+
+                                // Scroll to top of form
+                                signupForm.scrollIntoView({ behavior: 'smooth' });
+                            } else {
+                                alert(data.message);
+                            }
+
+                            // Reset button
+                            submitButton.textContent = originalText;
+                            submitButton.disabled = false;
+                        } else {
+                            // Unexpected response
+                            debugLog('Unexpected server response', data);
+                            alert('An unexpected error occurred. Please try again.');
+
+                            // Reset button
+                            submitButton.textContent = originalText;
+                            submitButton.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        debugLog('Error in fetch operation', {
+                            message: error.message,
+                            stack: error.stack
+                        });
+
+                        console.error('Error:', error);
+                        submitButton.textContent = originalText;
+                        submitButton.disabled = false;
+
+                        // Show the error in the form errors section
+                        const formErrors = document.getElementById('form-errors');
+                        if (formErrors) {
+                            formErrors.innerHTML = `
+                                <strong>An error occurred:</strong> ${error.message}<br>
+                                Please try again with a different email or password.
+                            `;
+                            formErrors.style.display = 'block';
+                            signupForm.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                            alert('A network error occurred. Please check your connection and try again.');
+                        }
+                    });
+
+                    return false;
+                }
             }
         });
     </script>

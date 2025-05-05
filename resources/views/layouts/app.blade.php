@@ -41,6 +41,7 @@
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     <script src="{{ asset('js/main.js') }}"></script>
+    <script src="{{ asset('js/session-manager.js') }}"></script>
 
     <style>
         body {
@@ -162,7 +163,7 @@
         }
     </style>
 </head>
-<body>
+<body class="{{ Auth::check() ? 'user-authenticated' : 'guest' }}">
     <div id="app">
         <!-- Global Header -->
         @include('_header')
@@ -235,6 +236,218 @@
                 }, 5000);
             });
         });
+    </script>
+
+    <!-- Social sharing popup will appear on home page after successful purchase -->
+
+    <!-- Show social sharing popup on home page after successful transaction -->
+    <script>
+        // Check if we're on the home page and there was a successful purchase
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.location.pathname === '/' && localStorage.getItem('successful_purchase')) {
+                // Check if the purchase was recent (within the last 5 minutes)
+                const purchaseTime = parseInt(localStorage.getItem('purchase_time') || '0');
+                const currentTime = Date.now();
+                const timeElapsed = currentTime - purchaseTime;
+
+                // If purchase was within last 5 minutes (300000 ms)
+                if (timeElapsed < 300000) {
+                    // Try to find the sharing popup
+                    const sharingPopup = document.querySelector('.social-sharing-popup');
+
+                    if (sharingPopup) {
+                        // Show the popup after 5-8 seconds
+                        setTimeout(function() {
+                            sharingPopup.classList.add('active');
+                        }, Math.floor(Math.random() * (8000 - 5000 + 1)) + 5000);
+                    } else {
+                        // If the popup doesn't exist in the DOM, create it dynamically
+                        const popupHTML = `
+                        <div id="socialSharingPopup" class="social-sharing-popup active">
+                            <div class="social-sharing-content">
+                                <div class="close-popup">&times;</div>
+                                <div class="celebration-animation">
+                                    <i class="fa-solid fa-ticket fa-bounce"></i>
+                                    <i class="fa-solid fa-star fa-spin"></i>
+                                    <i class="fa-solid fa-music fa-beat"></i>
+                                </div>
+                                <h2>Share Your Ticket Purchase!</h2>
+                                <p>Share your ticket purchase on social media platforms with a celebratory message.</p>
+                                <div class="social-buttons">
+                                    <a href="#" class="social-btn facebook" onclick="shareOnFacebook(); return false;">
+                                        <i class="fa-brands fa-facebook-f"></i>
+                                    </a>
+                                    <a href="#" class="social-btn twitter" onclick="shareOnTwitter(); return false;">
+                                        <i class="fa-brands fa-x-twitter"></i>
+                                    </a>
+                                    <a href="#" class="social-btn whatsapp" onclick="shareOnWhatsapp(); return false;">
+                                        <i class="fa-brands fa-whatsapp"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>`;
+
+                        // Add the popup styles if they don't exist
+                        if (!document.querySelector('style#socialSharingStyles')) {
+                            const popupStyles = `
+                            <style id="socialSharingStyles">
+                                .social-sharing-popup {
+                                    position: fixed;
+                                    top: 0;
+                                    left: 0;
+                                    width: 100%;
+                                    height: 100%;
+                                    background: rgba(0, 0, 0, 0.7);
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    z-index: 1000;
+                                    opacity: 0;
+                                    visibility: hidden;
+                                    transition: all 0.5s ease;
+                                }
+
+                                .social-sharing-popup.active {
+                                    opacity: 1;
+                                    visibility: visible;
+                                }
+
+                                .social-sharing-content {
+                                    background: rgba(37, 36, 50, 0.95);
+                                    color: #ffffff;
+                                    padding: 40px;
+                                    border-radius: 12px;
+                                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                                    text-align: center;
+                                    border: 2px solid #C04888;
+                                    width: 90%;
+                                    max-width: 500px;
+                                    position: relative;
+                                    animation: popIn 0.5s ease forwards;
+                                }
+
+                                @keyframes popIn {
+                                    0% { transform: scale(0.8); opacity: 0; }
+                                    100% { transform: scale(1); opacity: 1; }
+                                }
+
+                                .close-popup {
+                                    position: absolute;
+                                    top: 15px;
+                                    right: 15px;
+                                    font-size: 24px;
+                                    cursor: pointer;
+                                    color: rgba(255, 255, 255, 0.7);
+                                    transition: all 0.3s ease;
+                                }
+
+                                .close-popup:hover {
+                                    color: white;
+                                    transform: scale(1.2);
+                                }
+
+                                .celebration-animation {
+                                    margin: 20px 0;
+                                    font-size: 40px;
+                                    color: #C04888;
+                                    display: flex;
+                                    justify-content: center;
+                                    gap: 30px;
+                                }
+
+                                .fa-bounce { animation-duration: 2s; }
+                                .fa-spin { animation-duration: 4s; }
+                                .fa-beat { animation-duration: 1.5s; }
+
+                                .social-sharing-content h2 {
+                                    font-size: 28px;
+                                    margin-bottom: 10px;
+                                    color: white;
+                                }
+
+                                .social-sharing-content p {
+                                    color: rgba(255, 255, 255, 0.8);
+                                    margin-bottom: 25px;
+                                }
+
+                                .social-buttons {
+                                    display: flex;
+                                    justify-content: center;
+                                    gap: 20px;
+                                }
+
+                                .social-btn {
+                                    width: 60px;
+                                    height: 60px;
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 24px;
+                                    color: white;
+                                    transition: all 0.3s ease;
+                                }
+
+                                .social-btn:hover {
+                                    transform: translateY(-5px);
+                                }
+
+                                .facebook { background: #3b5998; }
+                                .twitter { background: #000000; }
+                                .whatsapp { background: #25D366; }
+                            </style>`;
+
+                            document.head.insertAdjacentHTML('beforeend', popupStyles);
+                        }
+
+                        // Add the popup to the body after a delay
+                        setTimeout(function() {
+                            document.body.insertAdjacentHTML('beforeend', popupHTML);
+
+                            // Add event listener for the close button
+                            const closeButton = document.querySelector('.close-popup');
+                            if (closeButton) {
+                                closeButton.addEventListener('click', function() {
+                                    const popup = document.getElementById('socialSharingPopup');
+                                    if (popup) {
+                                        popup.classList.remove('active');
+                                        // Remove the purchase flag after closing
+                                        localStorage.removeItem('successful_purchase');
+                                        localStorage.removeItem('purchase_time');
+                                    }
+                                });
+                            }
+                        }, Math.floor(Math.random() * (8000 - 5000 + 1)) + 5000);
+                    }
+                } else {
+                    // Purchase is too old, clear the flags
+                    localStorage.removeItem('successful_purchase');
+                    localStorage.removeItem('purchase_time');
+                }
+            }
+        });
+
+        // Social sharing functions (for dynamically created popup)
+        function shareOnFacebook() {
+            const text = "I just purchased tickets using the Kaka Ticketing Platform! Can't wait for the event.";
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`, '_blank');
+            localStorage.removeItem('successful_purchase');
+            localStorage.removeItem('purchase_time');
+        }
+
+        function shareOnTwitter() {
+            const text = "I just purchased tickets using the Kaka Ticketing Platform! Can't wait for the event.";
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
+            localStorage.removeItem('successful_purchase');
+            localStorage.removeItem('purchase_time');
+        }
+
+        function shareOnWhatsapp() {
+            const text = "I just purchased tickets using the Kaka Ticketing Platform! Can't wait for the event.";
+            window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + window.location.href)}`, '_blank');
+            localStorage.removeItem('successful_purchase');
+            localStorage.removeItem('purchase_time');
+        }
     </script>
 </body>
 </html>
