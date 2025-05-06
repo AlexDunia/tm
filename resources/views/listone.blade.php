@@ -8,7 +8,7 @@
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    z-index: 9999 !important;
+    z-index: 999 !important; /* Reduced from 9999 to 999 to be lower than the modal */
 }
 
 /* Add padding to body to account for fixed header */
@@ -44,7 +44,7 @@ body {
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    z-index: 9999 !important;
+    z-index: 999 !important; /* Reduced from 9999 to 999 to be lower than the modal */
 }
 
 .header-content {
@@ -3415,13 +3415,16 @@ document.body.classList.remove('body-loading');
         height: 100%;
         background: rgba(0, 0, 0, 0.8);
         backdrop-filter: blur(5px);
-        z-index: 9999;
+        z-index: 10000; /* Increased from 9999 to ensure it's above header */
         display: flex;
         align-items: center;
         justify-content: center;
         opacity: 0;
         visibility: hidden;
         transition: all 0.3s ease;
+        /* Add these properties to ensure proper stacking context */
+        transform: translateZ(0);
+        will-change: opacity, visibility;
     }
 
     .share-modal-overlay.active {
@@ -4007,6 +4010,9 @@ document.body.classList.remove('body-loading');
         const shareModal = document.getElementById('shareModal');
         shareModal.classList.add('active');
         document.body.style.overflow = 'hidden';
+
+        // Add this line to ensure modal appears at the correct z-index
+        document.documentElement.style.setProperty('--modal-z-index', '10000');
     }
 
     // Close the share modal
@@ -4014,6 +4020,9 @@ document.body.classList.remove('body-loading');
         const shareModal = document.getElementById('shareModal');
         shareModal.classList.remove('active');
         document.body.style.overflow = '';
+
+        // Reset the z-index variable when modal is closed
+        document.documentElement.style.setProperty('--modal-z-index', '0');
     }
 
     // Copy share link to clipboard
