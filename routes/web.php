@@ -155,9 +155,11 @@ Route::middleware(['throttle:60,1'])->group(function () {
     Route::patch('/cart/update/{id}', [CartController::class, 'updateItem'])
         ->name('cart.update')
         ->middleware('auth', 'resource.auth:cart');
-    Route::delete('/cart/remove/{id}', [CartController::class, 'removeItem'])
-        ->name('cart.remove')
-        ->middleware('auth', 'resource.auth:cart');
+
+    // Allow both GET and DELETE methods for cart removal without authentication
+    Route::match(['get', 'delete'], '/cart/remove/{id}', [CartController::class, 'removeItem'])
+        ->name('cart.remove');
+
     Route::get('/cart/totals', [CartController::class, 'getCartTotals'])->name('cart.totals');
 });
 

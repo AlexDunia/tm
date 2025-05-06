@@ -557,8 +557,7 @@
 <div class="cart-container">
     <div class="cart-header">
         <div>
-            <h1 class="cart-title">Your Order <span class="order-id">#ORD317140</span></h1>
-            <div class="items-count">{{ count($mycart) }} {{ count($mycart) == 1 ? 'item' : 'items' }} in cart</div>
+            <h1 class="cart-title">Your Order</h1>
         </div>
         <div>
             <a href="/" class="continue-shopping">
@@ -751,15 +750,12 @@
                             <div class="item-price-info">
                                 <div class="item-price">₦{{ number_format(getCartItemPrice($item)) }}</div>
                                 <div class="ticket-quantity-display">{{ getCartItemQuantity($item) }} ticket{{ getCartItemQuantity($item) > 1 ? 's' : '' }}</div>
-                                <div class="shipping-info">
-                                    Eligible for returns up to 30 days
-                                </div>
                             </div>
 
                             <div class="item-actions">
-                                <button class="remove-btn cart-item-remove" data-id="{{ getCartItemId($item, $index) }}">
+                                <a href="/cart/remove/{{ getCartItemId($item, $index) }}" class="remove-btn cart-item-remove">
                                     <i class="fa-solid fa-trash"></i> Remove
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -814,93 +810,61 @@
 
 <!-- Add this script at the end of the file -->
 <script>
-    $(document).ready(function() {
-        // Handle item removal with AJAX
-        $(document).on('click', '.cart-item-remove', function(e) {
-            e.preventDefault();
+    $(function() {
+        // Cache DOM elements and HTML templates
+        const $cartContainer = $('.cart-container');
+        const $cartItems = $('.cart-items');
+        const $cartNotifications = $('#cart-notification-container');
 
-            const cartItem = $(this).closest('.cart-item');
-            const itemId = cartItem.data('item-id');
+        // Create empty cart HTML template only once
+        const emptyCartHTML = `
+            <div class="empty-cart">
+                <div class="empty-cart-icon">
+                    <i class="fa-solid fa-shopping-cart"></i>
+                </div>
+                <h2 class="empty-cart-title">Your cart is empty</h2>
+                <p class="empty-cart-text">Looks like you haven't added any tickets to your cart yet.</p>
+                <a href="/" class="browse-events-btn">
+                    <i class="fa-solid fa-ticket"></i> Browse Events
+                </a>
+            </div>
+        `;
 
-            if (!itemId) return;
+        // Delegate click handler for better performance - only attach one event listener
+        $cartItems.on('click', '.cart-item-remove', function(e) {
+            // Fast check if this is the last item in the cart
+            if ($('.cart-item').length <= 1) {
+                e.preventDefault();
+                e.stopPropagation();
 
-            // Fade out item
-            cartItem.css('opacity', '0.5');
+                const removeUrl = this.href;
+                const $btn = $(this).addClass('disabled');
 
-            // Send AJAX request to remove item
-            $.ajax({
-                url: '/cart/remove/' + itemId,
-                type: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        // Remove item with animation
-                        cartItem.slideUp(300, function() {
-                            $(this).remove();
+                // Clean up any existing notifications first
+                $('.cart-notification').remove();
 
-                            // Check if cart is empty
-                            if ($('.cart-item').length === 0) {
-                                // Show empty cart view instead of reloading
-                                $('.cart-content').hide();
-                                $('.cart-header').hide();
-                                $('.cart-footer').hide();
-                                $('#fixedBuyFooter').hide();
-                                $('.empty-cart').fadeIn();
-                            } else {
-                                // Update displayed count
-                                const itemCount = $('.cart-item').length;
-                                $('.items-count').text(itemCount + (itemCount === 1 ? ' item' : ' items') + ' in cart');
+                // Use GET request which is faster than DELETE for simple operations
+                $.get(removeUrl)
+                    .always(function() {
+                        showNotification('Last item removed from cart', 'success');
 
-                                // Recalculate total
-                                let newTotal = 0;
-                                let totalTickets = 0;
-                                $('.cart-item').each(function() {
-                                    const price = parseFloat($(this).find('.item-price').text().replace('₦', '').replace(/,/g, ''));
-                                    const quantityText = $(this).find('.ticket-quantity-display').text();
-                                    const quantity = parseInt(quantityText);
-                                    if (!isNaN(price) && !isNaN(quantity)) {
-                                        newTotal += price * quantity;
-                                        totalTickets += quantity;
-                                    }
-                                });
-
-                                // Update total display
-                                $('.total-value').text('₦' + newTotal.toLocaleString());
-                                $('#fixedBuyTotal').text('₦' + newTotal.toLocaleString());
-                                $('#fixedBuyCount').text(totalTickets + ' ' + (totalTickets === 1 ? 'ticket' : 'tickets') + ' selected');
-                            }
-                        });
-
-                        // Show notification
-                        showNotification('Item removed from cart', 'success');
-                    }
-                },
-                error: function() {
-                    // Restore opacity and show error
-                    cartItem.css('opacity', '1');
-                    showNotification('Failed to remove item', 'error');
-                }
-            });
+                        // Optimized reload - use timeout to ensure notification is visible
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 800); // Reduced time for faster response
+                    });
+            }
         });
 
-        // Simple notification function
+        // Optimized notification function
         function showNotification(message, type) {
             const notification = $('<div class="cart-notification ' + type + '">' + message + '</div>');
-            $('#cart-notification-container').append(notification);
+            $cartNotifications.html(notification); // Replace instead of append for better performance
 
-            setTimeout(function() {
+            // Use requestAnimationFrame for smoother animations
+            requestAnimationFrame(function() {
                 notification.addClass('show');
-
-                setTimeout(function() {
-                    notification.removeClass('show');
-                    setTimeout(function() {
-                        notification.remove();
-                    }, 300);
-                }, 3000);
-            }, 100);
+            });
         }
     });
 </script>

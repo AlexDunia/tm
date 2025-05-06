@@ -709,8 +709,8 @@ class CartController extends Controller
      */
     public function removeItem(Request $request, $id)
     {
-        // Add CSRF token verification
-        if ($request->header('X-CSRF-TOKEN') !== csrf_token() && $request->input('_token') !== csrf_token()) {
+        // Skip CSRF token verification for GET requests
+        if ($request->method() === 'DELETE' && $request->header('X-CSRF-TOKEN') !== csrf_token() && $request->input('_token') !== csrf_token()) {
             Log::warning('CSRF token mismatch on cart removal', [
                 'ip' => $request->ip(),
                 'user_agent' => $request->userAgent()
@@ -722,7 +722,8 @@ class CartController extends Controller
         Log::info('Removing cart item', [
             'auth_check' => auth()->check(),
             'user_id' => auth()->check() ? auth()->id() : 'guest',
-            'item_id' => $id
+            'item_id' => $id,
+            'method' => $request->method()
         ]);
 
         try {
@@ -732,7 +733,21 @@ class CartController extends Controller
 
                 $cartItem = Cart::where('id', $id)
                     ->where('user_id', auth()->id())
-                    ->firstOrFail();
+                    ->first();
+
+                if (!$cartItem) {
+                    Log::warning('Cart item not found for authenticated user', [
+                        'item_id' => $id,
+                        'user_id' => auth()->id()
+                    ]);
+
+                    // For direct GET requests, always redirect to cart page
+                    if ($request->method() === 'GET') {
+                        return redirect()->route('cart')->with('error', 'Item not found in your cart');
+                    }
+
+                    return $this->securityFailureResponse($request, 'Cart item not found');
+                }
 
                 Log::info('Found cart item to remove', [
                     'cart_id' => $cartItem->id,
@@ -740,6 +755,9 @@ class CartController extends Controller
                     'event' => $cartItem->eventname,
                     'quantity' => $cartItem->cquantity
                 ]);
+
+                // Check if this is the last item in the cart
+                $isLastItem = Cart::where('user_id', auth()->id())->count() === 1;
 
                 // Store values before deleting for response
                 $cartName = $cartItem->cname;
@@ -758,8 +776,19 @@ class CartController extends Controller
 
                 Log::info('Cart item removed for auth user', [
                     'total_cart_count' => $totalCartCount,
-                    'total_amount' => $totalAmount
+                    'total_amount' => $totalAmount,
+                    'was_last_item' => $isLastItem
                 ]);
+
+                // For direct GET requests
+                if ($request->method() === 'GET') {
+                    if ($isLastItem) {
+                        // Do a full redirect to the cart page to force a fresh load
+                        return redirect('/cart');
+                    } else {
+                        return redirect()->route('cart')->with('success', 'Item removed from cart');
+                    }
+                }
 
                 return response()->json([
                     'success' => true,
@@ -780,6 +809,12 @@ class CartController extends Controller
                         'item_id' => $id,
                         'available_keys' => array_keys($cartItems)
                     ]);
+
+                    // For direct GET requests, always redirect to cart page
+                    if ($request->method() === 'GET') {
+                        return redirect()->route('cart')->with('error', 'Item not found in your cart');
+                    }
+
                     return $this->securityFailureResponse($request, 'Cart item not found');
                 }
 
@@ -788,6 +823,9 @@ class CartController extends Controller
                     'product' => $cartItems[$id]['product_name'] ?? 'Unknown',
                     'item' => $cartItems[$id]['item_name'] ?? 'Unknown'
                 ]);
+
+                // Check if this is the last item in the cart
+                $isLastItem = count($cartItems) === 1;
 
                 unset($cartItems[$id]);
                 session()->put('cart_items', $cartItems);
@@ -802,8 +840,19 @@ class CartController extends Controller
 
                 Log::info('Cart item removed for non-auth user', [
                     'total_cart_count' => $totalCartCount,
-                    'total_amount' => $totalAmount
+                    'total_amount' => $totalAmount,
+                    'was_last_item' => $isLastItem
                 ]);
+
+                // For direct GET requests
+                if ($request->method() === 'GET') {
+                    if ($isLastItem) {
+                        // Do a full redirect to the cart page to force a fresh load
+                        return redirect('/cart');
+                    } else {
+                        return redirect()->route('cart')->with('success', 'Item removed from cart');
+                    }
+                }
 
                 return response()->json([
                     'success' => true,
@@ -820,6 +869,11 @@ class CartController extends Controller
                 'id' => $id,
                 'request' => $request->all()
             ]);
+
+            // For direct GET requests, redirect to cart page with error message
+            if ($request->method() === 'GET') {
+                return redirect()->route('cart')->with('error', 'Failed to remove item from cart');
+            }
 
             return $this->securityFailureResponse($request);
         }
