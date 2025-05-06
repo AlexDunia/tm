@@ -44,72 +44,70 @@
       </div>
     </header>
 
-    <main class="site-main">
-      <section class="cart-page">
-        <div class="cart-container">
-          <div class="cart-header">
-            <h1 class="cart-title">Your Cart</h1>
-            <p class="cart-subtitle">Review your selected tickets before checkout</p>
+    <section class="cart-page">
+      <div class="cart-container">
+        <div class="cart-header">
+          <h1 class="cart-title">Your Cart</h1>
+          <p class="cart-subtitle">Review your selected tickets before checkout</p>
+        </div>
+
+        <!-- Empty Cart Message (hidden by JS when items exist) -->
+        <div class="empty-cart">
+          <div class="empty-cart-icon">
+            <i class="fas fa-shopping-cart"></i>
           </div>
-          
-          <!-- Empty Cart Message (hidden by JS when items exist) -->
-          <div class="empty-cart">
-            <div class="empty-cart-icon">
-              <i class="fas fa-shopping-cart"></i>
-            </div>
-            <h2 class="empty-cart-title">Your cart is empty</h2>
-            <p class="empty-cart-text">Looks like you haven't added any tickets to your cart yet. Browse our events and find something exciting to attend!</p>
-            <a href="/" class="browse-events-btn">
-              <i class="fas fa-ticket-alt"></i> Browse Events
-            </a>
+          <h2 class="empty-cart-title">Your cart is empty</h2>
+          <p class="empty-cart-text">Looks like you haven't added any tickets to your cart yet. Browse our events and find something exciting to attend!</p>
+          <a href="/" class="browse-events-btn">
+            <i class="fas fa-ticket-alt"></i> Browse Events
+          </a>
+        </div>
+
+        <!-- Cart Content (shown by JS when items exist) -->
+        <div class="cart-content">
+          <!-- Left Column: Cart Items -->
+          <div class="cart-items">
+            <!-- Cart items will be populated dynamically via JavaScript -->
           </div>
-          
-          <!-- Cart Content (shown by JS when items exist) -->
-          <div class="cart-content">
-            <!-- Left Column: Cart Items -->
-            <div class="cart-items">
-              <!-- Cart items will be populated dynamically via JavaScript -->
+
+          <!-- Right Column: Order Summary -->
+          <div class="cart-sidebar">
+            <div class="cart-summary">
+              <h3 class="summary-title">Order Summary</h3>
+
+              <div class="summary-row">
+                <div class="summary-label">Subtotal</div>
+                <div class="summary-value">₦0</div>
+              </div>
+
+              <div class="summary-row">
+                <div class="summary-label">Service Fee</div>
+                <div class="summary-value">₦0</div>
+              </div>
+
+              <!-- Discount row will be added here dynamically when promo applied -->
+
+              <div class="summary-total-row">
+                <div class="summary-total-label">Total</div>
+                <div class="summary-total-value">₦0</div>
+              </div>
+
+              <button class="checkout-btn">
+                <i class="fas fa-credit-card"></i> Proceed to Checkout
+              </button>
             </div>
-            
-            <!-- Right Column: Order Summary -->
-            <div class="cart-sidebar">
-              <div class="cart-summary">
-                <h3 class="summary-title">Order Summary</h3>
-                
-                <div class="summary-row">
-                  <div class="summary-label">Subtotal</div>
-                  <div class="summary-value">₦0</div>
-                </div>
-                
-                <div class="summary-row">
-                  <div class="summary-label">Service Fee</div>
-                  <div class="summary-value">₦0</div>
-                </div>
-                
-                <!-- Discount row will be added here dynamically when promo applied -->
-                
-                <div class="summary-total-row">
-                  <div class="summary-total-label">Total</div>
-                  <div class="summary-total-value">₦0</div>
-                </div>
-                
-                <button class="checkout-btn">
-                  <i class="fas fa-credit-card"></i> Proceed to Checkout
-                </button>
-              </div>
-              
-              <div class="promo-code">
-                <h3 class="promo-title">Promo Code</h3>
-                <form class="promo-form">
-                  <input type="text" class="promo-input" placeholder="Enter promo code">
-                  <button type="submit" class="promo-btn">Apply</button>
-                </form>
-              </div>
+
+            <div class="promo-code">
+              <h3 class="promo-title">Promo Code</h3>
+              <form class="promo-form">
+                <input type="text" class="promo-input" placeholder="Enter promo code">
+                <button type="submit" class="promo-btn">Apply</button>
+              </form>
             </div>
           </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </section>
 
     <footer class="site-footer">
       <div class="footer-content">
@@ -117,7 +115,7 @@
         <p>&copy; 2024 TickDemand. All rights reserved.</p>
       </div>
     </footer>
-    
+
     <!-- Loading Animation -->
     <div class="loading-overlay">
       <div class="loading-spinner"></div>
@@ -128,4 +126,4 @@
   <!-- Include JS Files -->
   <script src="/js/ticket-selection.js"></script>
 </body>
-</html> 
+</html>

@@ -121,23 +121,21 @@
                 setTimeout(() => {
                     popup.classList.add('active');
                 }, 10);
+
+                // Add direct click handler for clicking outside the modal
+                popup.addEventListener('click', function(event) {
+                    // If the clicked element is the popup background (not its children)
+                    if (event.target === popup) {
+                        console.log('Clicked outside modal on success page');
+                        if (typeof clearAllModalData === 'function') {
+                            clearAllModalData();
+                        } else {
+                            clearAllTransactionFlags();
+                        }
+                    }
+                });
             }
         }, 3000);
-
-        // Close popup when clicking the X button
-        const closeBtn = document.querySelector('.close-popup');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function() {
-                const popup = document.getElementById('socialSharingPopup');
-                if (popup) {
-                    popup.classList.remove('active');
-                    setTimeout(() => {
-                        popup.style.display = 'none';
-                    }, 500);
-                    clearAllTransactionFlags();
-                }
-            });
-        }
     });
 
     // When user navigates away from this page, clear all flags
@@ -167,6 +165,13 @@
             : `🎉 Just scored my ticket to ${eventName} on Kaka Ticketing! Who's joining me for this epic experience? #KakaEvents #LiveEntertainment`;
 
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`, '_blank');
+
+        // Use global clearAllModalData if available, otherwise use local function
+        if (typeof clearAllModalData === 'function') {
+            clearAllModalData();
+        } else {
+            clearAllTransactionFlags();
+        }
     }
 
     function shareOnTwitter() {
@@ -179,6 +184,13 @@
         const text = `🎟️ Just locked in ${ticketQuantity > 1 ? 'tickets' : 'my spot'} for ${eventName} on ${eventDate}! Find me in the crowd! Get your tickets on Kaka before they're gone! #EventLife`;
 
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
+
+        // Use global clearAllModalData if available, otherwise use local function
+        if (typeof clearAllModalData === 'function') {
+            clearAllModalData();
+        } else {
+            clearAllTransactionFlags();
+        }
     }
 
     function shareOnWhatsapp() {
@@ -191,6 +203,13 @@
         const text = `Hey! 🎉 I just got ${ticketQuantity > 1 ? ticketQuantity + ' tickets' : 'a ticket'} to ${eventName} via Kaka Ticketing! Would be awesome if you could join me. Check it out and let's make some memories together! 🎵🎊`;
 
         window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + window.location.href)}`, '_blank');
+
+        // Use global clearAllModalData if available, otherwise use local function
+        if (typeof clearAllModalData === 'function') {
+            clearAllModalData();
+        } else {
+            clearAllTransactionFlags();
+        }
     }
 </script>
 
@@ -583,15 +602,25 @@
         position: absolute;
         top: 15px;
         right: 15px;
-        font-size: 24px;
+        font-size: 28px;
         cursor: pointer;
-        color: rgba(255, 255, 255, 0.7);
+        color: #ffffff;
+        background: rgba(192, 72, 136, 0.8);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
         transition: all 0.3s ease;
+        z-index: 10;
     }
 
     .close-popup:hover {
         color: white;
         transform: scale(1.2);
+        background: rgba(192, 72, 136, 1);
     }
 
     .celebration-animation {

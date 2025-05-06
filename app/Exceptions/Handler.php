@@ -6,6 +6,7 @@ use Throwable;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Session\TokenMismatchException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class Handler extends ExceptionHandler
 {
@@ -50,7 +51,7 @@ class Handler extends ExceptionHandler
                 return response()->json([
                     'status' => 'error',
                     'message' => 'An unexpected error occurred.',
-                    'error' => $e->getMessage(),
+                    // Never expose detailed error information in production
                     'code' => $e instanceof HttpException ? $e->getStatusCode() : 500
                 ], $e instanceof HttpException ? $e->getStatusCode() : 500);
             }
@@ -73,6 +74,16 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $exception)
     {
+        // For database connection issues, show a generic error
+        if ($exception instanceof \PDOException) {
+            return $this->handleDatabaseException($request, $exception);
+        }
+
+        // For middleware/class not found exceptions
+        if ($exception instanceof \Illuminate\Contracts\Container\BindingResolutionException) {
+            return $this->handleGenericException($request, $exception, 500, 'Server configuration error');
+        }
+
         // AJAX requests should always receive JSON responses for errors
         if ($request->ajax() || $request->wantsJson() ||
             $request->header('X-Requested-With') == 'XMLHttpRequest' ||
@@ -101,18 +112,10 @@ class Handler extends ExceptionHandler
                 $message = $exception->getMessage() ?: 'HTTP error';
             }
 
-            // Debug info only in development
-            $debug = config('app.debug') ? [
-                'exception' => get_class($exception),
-                'message' => $exception->getMessage(),
-                'file' => $exception->getFile(),
-                'line' => $exception->getLine(),
-            ] : null;
-
+            // Never include debug info in production responses
             return response()->json([
                 'success' => false,
-                'message' => $message,
-                'debug' => $debug
+                'message' => $message
             ], $status);
         }
 
@@ -122,8 +125,62 @@ class Handler extends ExceptionHandler
             return redirect()->route('logg');
         }
 
-        // Default Laravel handling for other non-AJAX requests
+        // For all other exceptions in web context, show a generic error page
+        if (!$request->expectsJson()) {
+            return response()->view('errors.generic', ['message' => 'An unexpected error occurred'], 500);
+        }
+
+        // Default Laravel handling as a fallback
         return parent::render($request, $exception);
     }
 
+    /**
+     * Handle database exceptions with a generic message
+     */
+    private function handleDatabaseException($request, $exception)
+    {
+        // Log the actual error for debugging
+        \Log::error('Database error', [
+            'exception' => get_class($exception),
+            'message' => $exception->getMessage(),
+            'file' => $exception->getFile(),
+            'line' => $exception->getLine(),
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Database connection error. Please try again later.'
+            ], 500);
+        }
+
+        return response()->view('errors.generic', [
+            'message' => 'Database connection error. Please try again later.'
+        ], 500);
+    }
+
+    /**
+     * Handle generic exceptions with a sanitized message
+     */
+    private function handleGenericException($request, $exception, $status = 500, $message = 'Server error')
+    {
+        // Log the actual error for debugging
+        \Log::error('Application error', [
+            'exception' => get_class($exception),
+            'message' => $exception->getMessage(),
+            'file' => $exception->getFile(),
+            'line' => $exception->getLine(),
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => $message
+            ], $status);
+        }
+
+        return response()->view('errors.generic', [
+            'message' => $message
+        ], $status);
+    }
 }

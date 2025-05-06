@@ -123,34 +123,58 @@ class ListingController extends Controller
             \Illuminate\Support\Facades\Log::warning("No ticket types found for event {$listonee->id}");
         }
 
-        // Prepare meta data just like in the show method
-        $metaTitle = htmlspecialchars($listonee->name, ENT_QUOTES, 'UTF-8');
-        $description = $listonee->description ?? 'Join us at ' . $listonee->name . ' on ' . $listonee->date;
-        $metaDescription = htmlspecialchars($description, ENT_QUOTES, 'UTF-8');
-
-        if (strlen($metaDescription) > 160) {
-            $metaDescription = substr($metaDescription, 0, 157) . '...';
+        // Extract event location if available
+        $location = null;
+        if (isset($listonee->location)) {
+            $location = $listonee->location;
+        } elseif (isset($listonee->venue)) {
+            $location = $listonee->venue;
         }
 
+        // Format date for SEO
+        $eventDate = null;
+        if ($listonee->date) {
+            try {
+                $eventDate = \Carbon\Carbon::parse($listonee->date)->format('F j, Y');
+            } catch (\Exception $e) {
+                // Use raw date if parsing fails
+                $eventDate = $listonee->date;
+            }
+        }
+
+        // Prepare image URL
+        $imageUrl = null;
         if (str_starts_with($listonee->image, 'http')) {
             if (filter_var($listonee->image, FILTER_VALIDATE_URL)) {
-                $metaImage = $listonee->image;
-            } else {
-                $metaImage = asset('images/default-share.jpg');
+                $imageUrl = $listonee->image;
             }
         } else {
             $imagePath = preg_replace('/[^a-zA-Z0-9\/\._-]/', '', $listonee->image);
-            $metaImage = asset('storage/' . $imagePath);
+            $imageUrl = asset('storage/' . $imagePath);
         }
 
-        $metaType = 'event';
+        // Generate slug from name if available
+        $slug = Str::slug($listonee->name);
+        $canonicalUrl = url("/event/{$slug}");
+
+        // Use SeoHelper to prepare meta data
+        $meta = \App\Helpers\SeoHelper::prepareMeta([
+            'eventName' => $listonee->name,
+            'location' => $location,
+            'date' => $eventDate,
+            'description' => $listonee->description,
+            'imageUrl' => $imageUrl,
+            'canonicalUrl' => $canonicalUrl,
+            'type' => 'event'
+        ]);
 
         return view('listone', [
             'listonee' => $listonee,
-            'metaTitle' => $metaTitle,
-            'metaDescription' => $metaDescription,
-            'metaImage' => $metaImage,
-            'metaType' => $metaType
+            'metaTitle' => $meta['metaTitle'],
+            'metaDescription' => $meta['metaDescription'],
+            'metaImage' => $meta['metaImage'],
+            'metaType' => $meta['metaType'],
+            'canonicalUrl' => $meta['canonicalUrl']
         ]);
     }
 

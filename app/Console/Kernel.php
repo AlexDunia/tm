@@ -5,6 +5,7 @@ namespace App\Console;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use App\Console\Commands\MigrateToMysql;
+use App\Console\Commands\GenerateSitemap;
 
 class Kernel extends ConsoleKernel
 {
@@ -15,6 +16,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         MigrateToMysql::class,
+        GenerateSitemap::class,
     ];
 
     /**
@@ -22,6 +24,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // Generate sitemap daily at midnight
+        $schedule->command('sitemap:generate')->daily();
+
         // $schedule->command('inspire')->hourly();
     }
 

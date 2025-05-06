@@ -187,34 +187,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     popup.classList.add('active');
                 }, 10);
 
+                // Add dedicated click handler for clicking outside the modal
+                popup.addEventListener('click', function(event) {
+                    // If the clicked element is the popup background (not its children)
+                    if (event.target === popup) {
+                        console.log('Clicked outside modal on welcome page');
+                        if (typeof clearAllModalData === 'function') {
+                            clearAllModalData();
+                        } else {
+                            clearAllTransactionFlags();
+                        }
+                    }
+                });
+
                 // Auto-close the popup after 8 seconds
                 setTimeout(function() {
-                    popup.classList.remove('active');
-                    setTimeout(() => {
-                        popup.style.display = 'none';
-                    }, 500);
-                    // Clear all transaction-related flags when auto-closing
-                    clearAllTransactionFlags();
+                    if (typeof clearAllModalData === 'function') {
+                        clearAllModalData();
+                    } else {
+                        popup.classList.remove('active');
+                        setTimeout(() => {
+                            popup.style.display = 'none';
+                            popup.remove();
+                        }, 500);
+                        // Clear all transaction-related flags when auto-closing
+                        clearAllTransactionFlags();
+                    }
                 }, 8000);
             }
         }, 3000);
     }
 
-    // Close popup when clicking the X button
-    const closeBtn = document.querySelector('.close-popup');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-            const popup = document.getElementById('socialSharingPopup');
-            if (popup) {
-                popup.classList.remove('active');
-                setTimeout(() => {
-                    popup.style.display = 'none';
-                }, 500);
-                // Clear all transaction-related flags when manually closing
-                clearAllTransactionFlags();
-            }
-        });
-    }
+    // We don't need to add event listeners for close buttons here
+    // They're handled by the global event listener in layouts/app.blade.php
 });
 
 // Function to clear all transaction-related flags
@@ -232,18 +237,39 @@ function shareOnFacebook() {
     // Craft personalized message
     const text = "🎉 Just scored amazing tickets on Kaka Ticketing! Who's joining me for this epic experience? #KakaEvents #LiveEntertainment";
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`, '_blank');
+
+    // Use global clearAllModalData if available, otherwise use local function
+    if (typeof clearAllModalData === 'function') {
+        clearAllModalData();
+    } else {
+        clearAllTransactionFlags();
+    }
 }
 
 function shareOnTwitter() {
     // Craft personalized message
     const text = `🎟️ Just locked in my spot for an incredible event! Find me in the crowd! Get your tickets on Kaka before they're gone! #EventLife`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
+
+    // Use global clearAllModalData if available, otherwise use local function
+    if (typeof clearAllModalData === 'function') {
+        clearAllModalData();
+    } else {
+        clearAllTransactionFlags();
+    }
 }
 
 function shareOnWhatsapp() {
     // Craft personalized message
     const text = `Hey! 🎉 I just got tickets to an amazing event via Kaka Ticketing! Would be awesome if you could join me. Check it out and let's make some memories together! 🎵🎊`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + window.location.href)}`, '_blank');
+
+    // Use global clearAllModalData if available, otherwise use local function
+    if (typeof clearAllModalData === 'function') {
+        clearAllModalData();
+    } else {
+        clearAllTransactionFlags();
+    }
 }
 </script>
 

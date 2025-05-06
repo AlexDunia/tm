@@ -7,22 +7,86 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ isset($metaTitle) ? $metaTitle : config('app.name', 'Laravel') }}</title>
-    <meta name="description" content="{{ isset($metaDescription) ? $metaDescription : 'Find and book tickets for events, concerts, theater, and more.' }}">
+    <title>{{ isset($metaTitle) ? $metaTitle : config('app.name', 'KakaWorld') }}</title>
+    <meta name="description" content="{{ isset($metaDescription) ? $metaDescription : 'Find and book tickets for events, concerts, theater, and more in Nigeria.' }}">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ isset($canonicalUrl) ? $canonicalUrl : url()->current() }}" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="{{ isset($metaType) ? $metaType : 'website' }}">
-    <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:title" content="{{ isset($metaTitle) ? $metaTitle : config('app.name', 'Laravel') }}">
-    <meta property="og:description" content="{{ isset($metaDescription) ? $metaDescription : 'Find and book tickets for events, concerts, theater, and more.' }}">
+    <meta property="og:url" content="{{ isset($canonicalUrl) ? $canonicalUrl : url()->current() }}">
+    <meta property="og:title" content="{{ isset($metaTitle) ? $metaTitle : config('app.name', 'KakaWorld') }}">
+    <meta property="og:description" content="{{ isset($metaDescription) ? $metaDescription : 'Find and book tickets for events, concerts, theater, and more in Nigeria.' }}">
     <meta property="og:image" content="{{ isset($metaImage) ? $metaImage : asset('images/default-share.jpg') }}">
+    <meta property="og:site_name" content="KakaWorld">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="{{ url()->current() }}">
-    <meta name="twitter:title" content="{{ isset($metaTitle) ? $metaTitle : config('app.name', 'Laravel') }}">
-    <meta name="twitter:description" content="{{ isset($metaDescription) ? $metaDescription : 'Find and book tickets for events, concerts, theater, and more.' }}">
+    <meta name="twitter:url" content="{{ isset($canonicalUrl) ? $canonicalUrl : url()->current() }}">
+    <meta name="twitter:title" content="{{ isset($metaTitle) ? $metaTitle : config('app.name', 'KakaWorld') }}">
+    <meta name="twitter:description" content="{{ isset($metaDescription) ? $metaDescription : 'Find and book tickets for events, concerts, theater, and more in Nigeria.' }}">
     <meta name="twitter:image" content="{{ isset($metaImage) ? $metaImage : asset('images/default-share.jpg') }}">
+
+    <!-- Additional SEO Meta Tags -->
+    <meta name="keywords" content="events, tickets, concerts, theater, Nigeria, kaka, kakaworld, event tickets, {{ isset($metaKeywords) ? $metaKeywords : '' }}">
+    <meta name="author" content="KakaWorld">
+    <meta name="robots" content="index, follow">
+
+    <!-- Structured Data for Events -->
+    @if(isset($listonee) && isset($metaType) && $metaType == 'event')
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        "name": "{{ $listonee->name }}",
+        "description": "{{ isset($listonee->description) ? str_replace('"', '\"', $listonee->description) : 'Event details' }}",
+        "image": "{{ isset($metaImage) ? $metaImage : asset('images/default-share.jpg') }}",
+        "startDate": "{{ $listonee->date ?? 'TBD' }}",
+        "endDate": "{{ $listonee->end_date ?? $listonee->date ?? 'TBD' }}",
+        "location": {
+            "@type": "Place",
+            "name": "{{ $listonee->venue ?? $listonee->location ?? 'TBD' }}",
+            "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "{{ $listonee->city ?? $listonee->location ?? 'Nigeria' }}"
+            }
+        },
+        "offers": {
+            "@type": "AggregateOffer",
+            "priceCurrency": "NGN",
+            "url": "{{ url()->current() }}",
+            "availability": "https://schema.org/InStock"
+        },
+        "organizer": {
+            "@type": "Organization",
+            "name": "KakaWorld",
+            "url": "{{ url('/') }}"
+        }
+    }
+    </script>
+    @else
+    <!-- Structured Data for Organization -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "KakaWorld",
+        "url": "{{ url('/') }}",
+        "logo": "{{ asset('images/logo.png') }}",
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+234-XXX-XXX-XXXX",
+            "contactType": "customer service"
+        },
+        "sameAs": [
+            "https://www.facebook.com/kakaworld",
+            "https://www.twitter.com/kakaworld",
+            "https://www.instagram.com/kakaworld"
+        ]
+    }
+    </script>
+    @endif
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
@@ -50,11 +114,6 @@
             font-family: 'Nunito', sans-serif;
             margin: 0;
             padding: 0;
-        }
-
-        .site-main {
-            min-height: calc(100vh - 200px);
-            padding-bottom: 50px;
         }
 
         .site-footer {
@@ -161,6 +220,31 @@
                 width: auto;
             }
         }
+
+        .close-popup {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #ffffff;
+            background: rgba(192, 72, 136, 0.8);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .close-popup:hover {
+            color: white;
+            transform: scale(1.2);
+            background: rgba(192, 72, 136, 1);
+        }
     </style>
 </head>
 <body class="{{ Auth::check() ? 'user-authenticated' : 'guest' }}">
@@ -209,9 +293,7 @@
         </div>
         @endif
 
-        <main class="site-main">
-            @yield('content')
-        </main>
+        @yield('content')
 
         <!-- Global Footer -->
         <footer class="site-footer">
@@ -242,23 +324,68 @@
 
     <!-- Show social sharing popup on home page after successful transaction -->
     <script>
+        // Ensure all modals can be closed with a global function
+        function clearAllModalData() {
+            // Clear all transaction-related flags
+            localStorage.removeItem('successful_purchase');
+            localStorage.removeItem('purchase_time');
+            localStorage.removeItem('show_sharing_popup');
+            localStorage.removeItem('on_success_page');
+            localStorage.removeItem('redirect_to_success');
+            console.log('All transaction flags cleared');
+
+            // Find and remove any sharing popup in the DOM
+            const popup = document.getElementById('socialSharingPopup');
+            if (popup) {
+                popup.classList.remove('active');
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                    popup.remove();
+                }, 500);
+            }
+        }
+
+        // Global document event listener for any close button clicks
+        document.addEventListener('click', function(event) {
+            // Handle clicking the X button
+            if (event.target.classList.contains('close-popup') ||
+                event.target.closest('.close-popup')) {
+                console.log('Close button clicked');
+                clearAllModalData();
+                return;
+            }
+
+            // Handle clicking outside the modal
+            const popup = document.getElementById('socialSharingPopup');
+            if (popup && event.target === popup) {
+                console.log('Clicked outside modal content, closing popup');
+                clearAllModalData();
+            }
+        });
+
         // Check if we're on the home page and there was a successful purchase
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Current path:', window.location.pathname);
+            console.log('Purchase flag:', localStorage.getItem('successful_purchase'));
+
             if (window.location.pathname === '/' && localStorage.getItem('successful_purchase')) {
                 // Check if the purchase was recent (within the last 5 minutes)
                 const purchaseTime = parseInt(localStorage.getItem('purchase_time') || '0');
                 const currentTime = Date.now();
                 const timeElapsed = currentTime - purchaseTime;
+                console.log('Time elapsed since purchase:', timeElapsed);
 
                 // If purchase was within last 5 minutes (300000 ms)
                 if (timeElapsed < 300000) {
                     // Try to find the sharing popup
                     const sharingPopup = document.querySelector('.social-sharing-popup');
+                    console.log('Found existing popup:', !!sharingPopup);
 
                     if (sharingPopup) {
                         // Show the popup after 5-8 seconds
                         setTimeout(function() {
                             sharingPopup.classList.add('active');
+                            console.log('Showing existing popup');
                         }, Math.floor(Math.random() * (8000 - 5000 + 1)) + 5000);
                     } else {
                         // If the popup doesn't exist in the DOM, create it dynamically
@@ -335,15 +462,25 @@
                                     position: absolute;
                                     top: 15px;
                                     right: 15px;
-                                    font-size: 24px;
+                                    font-size: 28px;
                                     cursor: pointer;
-                                    color: rgba(255, 255, 255, 0.7);
+                                    color: #ffffff;
+                                    background: rgba(192, 72, 136, 0.8);
+                                    width: 40px;
+                                    height: 40px;
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
                                     transition: all 0.3s ease;
+                                    z-index: 10;
                                 }
 
                                 .close-popup:hover {
                                     color: white;
                                     transform: scale(1.2);
+                                    background: rgba(192, 72, 136, 1);
                                 }
 
                                 .celebration-animation {
@@ -403,24 +540,31 @@
                         // Add the popup to the body after a delay
                         setTimeout(function() {
                             document.body.insertAdjacentHTML('beforeend', popupHTML);
+                            console.log('Created and added dynamic popup');
 
-                            // Add event listener for the close button
-                            const closeButton = document.querySelector('.close-popup');
-                            if (closeButton) {
-                                closeButton.addEventListener('click', function() {
-                                    const popup = document.getElementById('socialSharingPopup');
-                                    if (popup) {
-                                        popup.classList.remove('active');
-                                        // Remove the purchase flag after closing
-                                        localStorage.removeItem('successful_purchase');
-                                        localStorage.removeItem('purchase_time');
+                            // Close popup when clicking outside the modal content
+                            const popup = document.getElementById('socialSharingPopup');
+                            if (popup) {
+                                popup.addEventListener('click', function(event) {
+                                    // If the clicked element is the popup background (not its children)
+                                    if (event.target === popup) {
+                                        console.log('Background clicked, closing popup');
+                                        clearAllModalData();
                                     }
                                 });
+
+                                // Make sure the popup is actually visible with the right styling
+                                setTimeout(() => {
+                                    popup.style.display = 'flex';
+                                    popup.style.opacity = '1';
+                                    popup.style.visibility = 'visible';
+                                }, 100);
                             }
-                        }, Math.floor(Math.random() * (8000 - 5000 + 1)) + 5000);
+                        }, Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000);
                     }
                 } else {
                     // Purchase is too old, clear the flags
+                    console.log('Purchase is too old, clearing flags');
                     localStorage.removeItem('successful_purchase');
                     localStorage.removeItem('purchase_time');
                 }
@@ -431,22 +575,19 @@
         function shareOnFacebook() {
             const text = "I just purchased tickets using the Kaka Ticketing Platform! Can't wait for the event.";
             window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`, '_blank');
-            localStorage.removeItem('successful_purchase');
-            localStorage.removeItem('purchase_time');
+            clearAllModalData();
         }
 
         function shareOnTwitter() {
             const text = "I just purchased tickets using the Kaka Ticketing Platform! Can't wait for the event.";
             window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
-            localStorage.removeItem('successful_purchase');
-            localStorage.removeItem('purchase_time');
+            clearAllModalData();
         }
 
         function shareOnWhatsapp() {
             const text = "I just purchased tickets using the Kaka Ticketing Platform! Can't wait for the event.";
             window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + window.location.href)}`, '_blank');
-            localStorage.removeItem('successful_purchase');
-            localStorage.removeItem('purchase_time');
+            clearAllModalData();
         }
     </script>
 </body>

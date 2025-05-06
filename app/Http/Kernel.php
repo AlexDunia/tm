@@ -38,6 +38,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\ContextAwareSessionMiddleware::class,
+            \App\Http\Middleware\SeoMiddleware::class,
             // \Illuminate\Routing\Middleware\ThrottleRequests::class . ':10,5',
             // 'transaction.check' => \App\Http\Middleware\TransactionCheckMiddleware::class,
 
@@ -79,5 +80,6 @@ class Kernel extends HttpKernel
         'payment.verified' => \App\Http\Middleware\PaymentVerifiedMiddleware::class,
         'isAdmin' => \App\Http\Middleware\IsAdminMiddleware::class,
         'context.session' => \App\Http\Middleware\ContextAwareSessionMiddleware::class,
+        'seo' => \App\Http\Middleware\SeoMiddleware::class,
     ];
 }

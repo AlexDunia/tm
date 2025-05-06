@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\ServiceProvider;
+use App\Helpers\SeoHelper;
 
 return [
 
@@ -16,7 +17,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'KakaWorld'),
 
     /*
     |--------------------------------------------------------------------------
@@ -170,6 +171,7 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        App\Providers\SeoServiceProvider::class,
         Stevebauman\Location\LocationServiceProvider::class,
     ])->toArray(),
 
@@ -186,6 +188,7 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         'Location' => 'Stevebauman\Location\Facades\Location',
+        'SeoHelper' => App\Helpers\SeoHelper::class,
         // 'Example' => App\Facades\Example::class,
     ])->toArray(),
 

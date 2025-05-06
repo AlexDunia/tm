@@ -1,2 +1,20 @@
 User-agent: *
-Disallow:
+Allow: /
+Allow: /events/
+Allow: /event/
+Allow: /category/
+Allow: /listone/
+Allow: /sitemap.xml
+
+Disallow: /admin/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /login
+Disallow: /register
+Disallow: /password/
+Disallow: /*.php$
+Disallow: /*.js$
+Disallow: /*.css$
+Disallow: /*/search/
+
+Sitemap: https://kakaworld.co/sitemap.xml

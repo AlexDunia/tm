@@ -161,14 +161,6 @@
     }
 
     /* Login Form Styles */
-    .site-main {
-        min-height: calc(100vh - 80px);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding-top: 20px;
-    }
-
     .tyaround {
         width: 90%;
         max-width: 450px;
@@ -809,116 +801,114 @@
         </div>
     </header>
 
-    <div class="site-main">
-        @if(session()->has("message"))
-            <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 3000)" x-show="show">
-                <p>{{ session("message") }}</p>
-            </div>
-        @endif
+    @if(session()->has("message"))
+        <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 3000)" x-show="show">
+            <p>{{ session("message") }}</p>
+        </div>
+    @endif
 
-        @if(session('auth_timeout'))
-            <div class="auth-timeout-banner" x-data="{show: true}" x-show="show">
-                <div class="timeout-icon">
-                    <i class="fas fa-clock"></i>
+    @if(session('auth_timeout'))
+        <div class="auth-timeout-banner" x-data="{show: true}" x-show="show">
+            <div class="timeout-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="timeout-content">
+                <h3>Session Expired</h3>
+                <p>Your session has timed out for security reasons. Please log in again to continue.</p>
+            </div>
+            <button class="timeout-close" @click="show = false">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    @endif
+
+    @if(session()->has('auth_error'))
+        <div class="auth-error-toast" x-data="{show: true}" x-init="setTimeout(() => show = false, 6000)" x-show="show">
+            <div class="toast-header">
+                <div class="toast-title-area">
+                    <div class="toast-icon">
+                        @if(session('auth_error')['type'] === 'rate_limit')
+                            <i class="fas fa-clock"></i>
+                        @elseif(session('auth_error')['type'] === 'account_not_found')
+                            <i class="fas fa-exclamation-triangle"></i>
+                        @else
+                            <i class="fas fa-key"></i>
+                        @endif
+                    </div>
+                    <h4 class="toast-title">
+                        @if(session('auth_error')['type'] === 'rate_limit')
+                            Sign-in Limit Reached
+                        @else
+                            Sign-in Unsuccessful
+                        @endif
+                    </h4>
                 </div>
-                <div class="timeout-content">
-                    <h3>Session Expired</h3>
-                    <p>Your session has timed out for security reasons. Please log in again to continue.</p>
-                </div>
-                <button class="timeout-close" @click="show = false">
+                <button class="toast-close" @click="show = false">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-        @endif
-
-        @if(session()->has('auth_error'))
-            <div class="auth-error-toast" x-data="{show: true}" x-init="setTimeout(() => show = false, 6000)" x-show="show">
-                <div class="toast-header">
-                    <div class="toast-title-area">
-                        <div class="toast-icon">
-                            @if(session('auth_error')['type'] === 'rate_limit')
-                                <i class="fas fa-clock"></i>
-                            @elseif(session('auth_error')['type'] === 'account_not_found')
-                                <i class="fas fa-exclamation-triangle"></i>
-                            @else
-                                <i class="fas fa-key"></i>
-                            @endif
-                        </div>
-                        <h4 class="toast-title">
-                            @if(session('auth_error')['type'] === 'rate_limit')
-                                Sign-in Limit Reached
-                            @else
-                                Sign-in Unsuccessful
-                            @endif
-                        </h4>
-                    </div>
-                    <button class="toast-close" @click="show = false">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="toast-body">
-                    <p class="toast-message @if(str_contains(session('auth_error')['message'], 'Passwords do not match')) password-error @endif">{{ session('auth_error')['message'] }}</p>
-                    <div class="toast-actions">
-                        @if(session('auth_error')['type'] === 'rate_limit')
-                            <a href="{{ route('password.request') }}" class="toast-action primary">
-                                <i class="fas fa-key"></i>Reset Password
-                            </a>
-                            <button class="toast-action secondary" @click="show = false">
-                                <i class="fas fa-clock"></i>Try Again Later
-                            </button>
-                        @else
-                            <a href="{{ route('password.request') }}" class="toast-action primary">
-                                <i class="fas fa-key"></i>Recover Account
-                            </a>
-                            <a href="{{ route('register') }}" class="toast-action secondary">
-                                <i class="fas fa-user-plus"></i>Create Account
-                            </a>
-                        @endif
-                    </div>
+            <div class="toast-body">
+                <p class="toast-message @if(str_contains(session('auth_error')['message'], 'Passwords do not match')) password-error @endif">{{ session('auth_error')['message'] }}</p>
+                <div class="toast-actions">
+                    @if(session('auth_error')['type'] === 'rate_limit')
+                        <a href="{{ route('password.request') }}" class="toast-action primary">
+                            <i class="fas fa-key"></i>Reset Password
+                        </a>
+                        <button class="toast-action secondary" @click="show = false">
+                            <i class="fas fa-clock"></i>Try Again Later
+                        </button>
+                    @else
+                        <a href="{{ route('password.request') }}" class="toast-action primary">
+                            <i class="fas fa-key"></i>Recover Account
+                        </a>
+                        <a href="{{ route('register') }}" class="toast-action secondary">
+                            <i class="fas fa-user-plus"></i>Create Account
+                        </a>
+                    @endif
                 </div>
             </div>
-        @endif
-
-        <div class="tyaround">
-            <h1>Login to your account</h1>
-            <p>Enter your login details to access your account</p>
-
-            <form method="post" class="fstyle" action="/authenticated">
-                @csrf
-                <div class="form-group">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" name="email" value="{{ old('email') }}" class="form-input" placeholder="Enter your email">
-                    <span class="input-icon"><i class="fas fa-envelope"></i></span>
-                    @error('email')
-                        @unless(session()->has('auth_error'))
-                            <div class="inputerror">{{ $message }}</div>
-                        @endunless
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
-                    <input id="password" type="password" name="password" class="form-input"
-                        placeholder="Enter your password" required autocomplete="current-password"
-                        {{ session()->has('auth_error') && old('email') ? 'autofocus' : '' }}>
-                    <span class="input-icon password-toggle" onclick="togglePasswordVisibility()"><i class="fas fa-eye"></i></span>
-                    @error('password')
-                        <div class="inputerror">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="remember-me">
-                    <input type="checkbox" id="remember" name="remember" class="remember-checkbox">
-                    <label for="remember" class="checkbox-label">Remember me</label>
-                </div>
-
-                <a href="{{ route('fp') }}" class="forgot-password">Forgot Password?</a>
-
-                <button class="login-button" type="submit">Log In</button>
-            </form>
-
-            <p class="create-account">Don't have an account?<a href="/signup">Sign up</a></p>
         </div>
+    @endif
+
+    <div class="tyaround">
+        <h1>Login to your account</h1>
+        <p>Enter your login details to access your account</p>
+
+        <form method="post" class="fstyle" action="/authenticated">
+            @csrf
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" value="{{ old('email') }}" class="form-input" placeholder="Enter your email">
+                <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                @error('email')
+                    @unless(session()->has('auth_error'))
+                        <div class="inputerror">{{ $message }}</div>
+                    @endunless
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input id="password" type="password" name="password" class="form-input"
+                    placeholder="Enter your password" required autocomplete="current-password"
+                    {{ session()->has('auth_error') && old('email') ? 'autofocus' : '' }}>
+                <span class="input-icon password-toggle" onclick="togglePasswordVisibility()"><i class="fas fa-eye"></i></span>
+                @error('password')
+                    <div class="inputerror">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="remember-me">
+                <input type="checkbox" id="remember" name="remember" class="remember-checkbox">
+                <label for="remember" class="checkbox-label">Remember me</label>
+            </div>
+
+            <a href="{{ route('fp') }}" class="forgot-password">Forgot Password?</a>
+
+            <button class="login-button" type="submit">Log In</button>
+        </form>
+
+        <p class="create-account">Don't have an account?<a href="/signup">Sign up</a></p>
     </div>
 
     <script>

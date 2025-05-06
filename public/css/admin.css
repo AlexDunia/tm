@@ -32,13 +32,6 @@ body {
 }
 
 /* Main content area */
-.site-main {
-  flex: 1 0 auto;
-  display: flex;
-  flex-direction: column;
-  padding-top: 80px; /* Add space for fixed header */
-}
-
 /* Global Header */
 .site-header {
   position: fixed;
@@ -402,7 +395,7 @@ body {
 }
 
 .mobile-nav.active {
-  height: calc(100vh - 80px);
+  height: calc(100vh - 70px);
   overflow-y: auto;
 }
 
@@ -486,10 +479,6 @@ body.menu-open {
   .mobile-nav.active {
     height: calc(100vh - 70px);
   }
-
-  .site-main {
-    padding-top: 70px;
-  }
 }
 
 @media (max-width: 600px) {
@@ -516,10 +505,6 @@ body.menu-open {
 
   .auth-buttons {
    display: none;
-  }
-
-  .site-main {
-    padding-top: 60px;
   }
 }
 

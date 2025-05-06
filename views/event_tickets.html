@@ -3,7 +3,7 @@
   <div class="pricing-form">
     <h2>Available Tickets</h2>
     <p>Choose from our selection of tickets for this event</p>
-    
+
     <div class="ticket-type-cards">
       <!-- Regular Ticket -->
       <div class="ticket-card" data-ticket-id="regular">
@@ -20,7 +20,7 @@
           <div class="ticket-description">
             Standard event access. Includes entry to all general areas.
           </div>
-          
+
           <div class="ticket-capacity">
             <div class="capacity-label">
               <i class="fas fa-users"></i> Availability
@@ -30,7 +30,7 @@
             </div>
             <div class="capacity-text">70% available</div>
           </div>
-          
+
           <div class="ticket-dates">
             <div class="ticket-date">
               <i class="far fa-calendar-alt"></i>
@@ -46,7 +46,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- VIP Ticket -->
       <div class="ticket-card" data-ticket-id="vip">
         <div class="ticket-card-header">
@@ -62,7 +62,7 @@
           <div class="ticket-description">
             Premium experience with priority entry, dedicated seating area, and complimentary drinks.
           </div>
-          
+
           <div class="ticket-capacity">
             <div class="capacity-label">
               <i class="fas fa-users"></i> Availability
@@ -72,7 +72,7 @@
             </div>
             <div class="capacity-text">45% available</div>
           </div>
-          
+
           <div class="ticket-dates">
             <div class="ticket-date">
               <i class="far fa-calendar-alt"></i>
@@ -88,7 +88,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- VVIP Ticket -->
       <div class="ticket-card" data-ticket-id="vvip">
         <div class="ticket-card-header">
@@ -104,7 +104,7 @@
           <div class="ticket-description">
             Ultimate luxury experience with exclusive access, front row seating, meet & greet with artists, and premium refreshments package.
           </div>
-          
+
           <div class="ticket-capacity">
             <div class="capacity-label">
               <i class="fas fa-users"></i> Availability
@@ -114,7 +114,7 @@
             </div>
             <div class="capacity-text">25% available</div>
           </div>
-          
+
           <div class="ticket-dates">
             <div class="ticket-date">
               <i class="far fa-calendar-alt"></i>
@@ -131,7 +131,7 @@
         </div>
       </div>
     </div>
-    
+
     <div class="cart-summary">
       <div class="summary-details">
         <div class="summary-item">
@@ -170,43 +170,43 @@ function initTicketQuantityControls() {
       const input = this.parentNode.querySelector('.quantity-input');
       const currentValue = parseInt(input.value) || 0;
       const maxValue = parseInt(input.getAttribute('max')) || 10;
-      
+
       if (currentValue < maxValue) {
         input.value = currentValue + 1;
         updateCartSummary();
       }
     });
   });
-  
+
   // Minus buttons
   const minusBtns = document.querySelectorAll('.minus-btn');
   minusBtns.forEach(btn => {
     btn.addEventListener('click', function() {
       const input = this.parentNode.querySelector('.quantity-input');
       const currentValue = parseInt(input.value) || 0;
-      
+
       if (currentValue > 0) {
         input.value = currentValue - 1;
         updateCartSummary();
       }
     });
   });
-  
+
   // Manual input
   const quantityInputs = document.querySelectorAll('.quantity-input');
   quantityInputs.forEach(input => {
     input.addEventListener('change', function() {
       let value = parseInt(this.value) || 0;
       const maxValue = parseInt(this.getAttribute('max')) || 10;
-      
+
       if (value < 0) value = 0;
       if (value > maxValue) value = maxValue;
-      
+
       this.value = value;
       updateCartSummary();
     });
   });
-  
+
   // Add to cart button
   const addToCartBtn = document.querySelector('.add-to-cart-button');
   if (addToCartBtn) {
@@ -221,13 +221,13 @@ function initTicketQuantityControls() {
 function updateCartSummary() {
   const ticketCount = getTotalTicketCount();
   const totalAmount = calculateTotalAmount();
-  
+
   // Update ticket count
   document.querySelector('.ticket-count').textContent = ticketCount;
-  
+
   // Update total amount
   document.querySelector('.total-amount').textContent = totalAmount.toLocaleString();
-  
+
   // Enable/disable add to cart button
   const addToCartBtn = document.querySelector('.add-to-cart-button');
   if (addToCartBtn) {
@@ -247,35 +247,35 @@ function getTotalTicketCount() {
 function calculateTotalAmount() {
   let total = 0;
   const ticketCards = document.querySelectorAll('.ticket-card');
-  
+
   ticketCards.forEach(card => {
     const priceText = card.querySelector('.ticket-price').textContent;
     const price = parseFloat(priceText.replace(/[^\d.-]/g, ''));
     const quantity = parseInt(card.querySelector('.quantity-input').value) || 0;
-    
+
     total += price * quantity;
   });
-  
+
   return total;
 }
 
 function addTicketsToCart() {
   // Show loading animation
   document.querySelector('.loading-overlay').classList.add('active');
-  
+
   // Collect ticket data
   const tickets = [];
   const ticketCards = document.querySelectorAll('.ticket-card');
-  
+
   ticketCards.forEach(card => {
     const quantity = parseInt(card.querySelector('.quantity-input').value) || 0;
-    
+
     if (quantity > 0) {
       const ticketId = card.dataset.ticketId;
       const name = card.querySelector('.ticket-name').textContent;
       const priceText = card.querySelector('.ticket-price').textContent;
       const price = parseFloat(priceText.replace(/[^\d.-]/g, ''));
-      
+
       tickets.push({
         id: ticketId,
         name: name,
@@ -284,10 +284,10 @@ function addTicketsToCart() {
       });
     }
   });
-  
+
   // Get current cart from localStorage or create new one
   let cart = JSON.parse(localStorage.getItem('ticketCart') || '[]');
-  
+
   // Add event details and tickets
   cart.push({
     eventId: 'current-event',
@@ -298,13 +298,13 @@ function addTicketsToCart() {
     tickets: tickets,
     timestamp: new Date().getTime()
   });
-  
+
   // Save to localStorage
   localStorage.setItem('ticketCart', JSON.stringify(cart));
-  
+
   // Redirect to cart page after delay
   setTimeout(() => {
     window.location.href = '/cart';
   }, 1500);
 }
-</script> 
+</script>

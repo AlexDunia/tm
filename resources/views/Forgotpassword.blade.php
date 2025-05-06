@@ -356,42 +356,40 @@
         </div>
     </header>
 
-    <div class="site-main">
-        @if(session()->has('message'))
-            <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 3000)" x-show="show">
-                <p>{{ session('message') }}</p>
-                </div>
-        @endif
-
-        @if(session()->has('error'))
-            <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 5000)" x-show="show">
-                <p>{{ session('error') }}</p>
+    @if(session()->has('message'))
+        <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 3000)" x-show="show">
+            <p>{{ session('message') }}</p>
             </div>
-        @endif
+    @endif
 
-        <div class="tyaround">
-            <h1>Forgot Your Password?</h1>
-            <p>Enter your email address below and we'll send you a link to reset your password.</p>
-
-            <form method="post" class="fstyle" action="/forgotpasswordpost">
-                @csrf
-                <label for="email">Email</label>
-                <input id="email" type="email" name="email" placeholder="Your Email Address" value="{{ old('email') }}" required autocomplete="email">
-              @error('email')
-                <p class="inputerror">{{ $message }}</p>
-              @enderror
-
-                <button class="btncontact" type="submit">Send Reset Link</button>
-            </form>
-
-            <div class="info-box">
-                <p><strong>Note:</strong> If your email is registered with us, you will receive a password reset link. For security reasons, we do not disclose whether an email is registered in our system.</p>
-                <p>The password reset link will expire in 60 minutes.</p>
-          </div>
-
-            <p class="createact">Remember your password? <a href="/login">Log in</a></p>
+    @if(session()->has('error'))
+        <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 5000)" x-show="show">
+            <p>{{ session('error') }}</p>
         </div>
-                </div>
+    @endif
+
+    <div class="tyaround">
+        <h1>Forgot Your Password?</h1>
+        <p>Enter your email address below and we'll send you a link to reset your password.</p>
+
+        <form method="post" class="fstyle" action="/forgotpasswordpost">
+            @csrf
+            <label for="email">Email</label>
+            <input id="email" type="email" name="email" placeholder="Your Email Address" value="{{ old('email') }}" required autocomplete="email">
+          @error('email')
+            <p class="inputerror">{{ $message }}</p>
+          @enderror
+
+            <button class="btncontact" type="submit">Send Reset Link</button>
+        </form>
+
+        <div class="info-box">
+            <p><strong>Note:</strong> If your email is registered with us, you will receive a password reset link. For security reasons, we do not disclose whether an email is registered in our system.</p>
+            <p>The password reset link will expire in 60 minutes.</p>
+      </div>
+
+        <p class="createact">Remember your password? <a href="/login">Log in</a></p>
+    </div>
 
     <script>
         // Mobile menu functionality

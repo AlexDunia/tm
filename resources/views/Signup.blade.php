@@ -161,14 +161,6 @@
     }
 
     /* Signup Form Styles */
-    .site-main {
-        min-height: calc(100vh - 80px);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding-top: 20px;
-    }
-
     .tyaround {
         width: 90%;
         max-width: 450px;
@@ -685,104 +677,102 @@
         </div>
     </header>
 
-    <div class="site-main">
-        @if(session()->has("message"))
-            <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 3000)" x-show="show">
-                <p>{{ session("message") }}</p>
-            </div>
-        @endif
-
-        @if(session('message') && str_contains(session('message'), 'couldn\'t find an account'))
-            <div class="security-banner">
-                <div class="security-icon"><i class="fas fa-shield-alt"></i></div>
-                <div class="security-content">
-                    <h3>Account Not Found</h3>
-                    <p>Invalid login credentials. Please create an account to continue with Kaka.</p>
-                    <p class="security-tip"><i class="fas fa-info-circle"></i> Your security is important to us. All accounts require a strong password and are protected with advanced security measures.</p>
-                </div>
-            </div>
-        @endif
-
-        <div class="tyaround">
-            <h1>Create Your Account</h1>
-            <p>Enter your personal details to get started</p>
-
-            <!-- Add generic error container -->
-            <div id="form-errors" style="display: none; background-color: rgba(255, 87, 87, 0.2); border-left: 3px solid #ff5757; padding: 10px; margin-bottom: 20px; color: white; border-radius: 4px;"></div>
-
-            <form method="post" class="fstyle" action="/createnewadmin" enctype="multipart/form-data" id="signupForm">
-                @csrf
-                <input type="hidden" name="is_ajax" value="1">
-                <input type="hidden" name="debug_info" value="troubleshooting_form">
-                <input type="hidden" name="form_timestamp" value="{{ time() }}">
-                <div class="form-group">
-                    <label for="firstname" class="form-label">First name</label>
-                    <input id="firstname" type="text" name="firstname" class="form-input" placeholder="Enter your first name" value="{{ old('firstname') }}" required>
-                    <span class="input-icon"><i class="fas fa-user"></i></span>
-                    @error('firstname')
-                    <div class="inputerror">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="lastname" class="form-label">Last name</label>
-                    <input id="lastname" type="text" name="lastname" class="form-input" placeholder="Enter your last name" value="{{ old('lastname') }}" required>
-                    <span class="input-icon"><i class="fas fa-user"></i></span>
-                    @error('lastname')
-                    <div class="inputerror">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="email" class="form-label">Email</label>
-                    <input id="email" type="email" name="email" class="form-input" placeholder="Enter your email address" value="{{ old('email') }}" required autocomplete="email">
-                    <span class="input-icon"><i class="fas fa-envelope"></i></span>
-                    @error('email')
-                    <div class="inputerror">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
-                    <input id="password" type="password" name="password" class="form-input" placeholder="Create a strong password (min. 8 characters)" required autocomplete="new-password">
-                    <span class="input-icon password-toggle" onclick="togglePasswordVisibility()"><i class="fas fa-eye"></i></span>
-
-                    <div class="password-strength">
-                        <div class="strength-meter">
-                            <div class="strength-meter-fill"></div>
-                        </div>
-                        <div class="strength-text">
-                            <i class="fas fa-circle"></i> Password strength: <span id="strength-value">Too weak</span>
-                        </div>
-                    </div>
-
-                    @error('password')
-                    <div class="inputerror">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="password_confirmation" class="form-label">Confirm Password</label>
-                    <input id="password_confirmation" type="password" name="password_confirmation" class="form-input" placeholder="Confirm your password" required autocomplete="new-password">
-                    <span class="input-icon password-toggle-confirm" onclick="toggleConfirmPasswordVisibility()"><i class="fas fa-eye"></i></span>
-
-                    @error('password_confirmation')
-                    <div class="inputerror">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="terms-checkbox">
-                    <input type="checkbox" id="terms" name="terms" class="terms-check" required>
-                    <label for="terms" class="terms-label">
-                        I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
-                    </label>
-                </div>
-
-                <button class="signup-button" type="submit">Create Account</button>
-            </form>
-
-            <p class="login-account">Already have an account?<a href="/login">Log in</a></p>
+    @if(session()->has("message"))
+        <div class="qerror" x-data="{show: true}" x-init="setTimeout(() => show = false, 3000)" x-show="show">
+            <p>{{ session("message") }}</p>
         </div>
+    @endif
+
+    @if(session('message') && str_contains(session('message'), 'couldn\'t find an account'))
+        <div class="security-banner">
+            <div class="security-icon"><i class="fas fa-shield-alt"></i></div>
+            <div class="security-content">
+                <h3>Account Not Found</h3>
+                <p>Invalid login credentials. Please create an account to continue with Kaka.</p>
+                <p class="security-tip"><i class="fas fa-info-circle"></i> Your security is important to us. All accounts require a strong password and are protected with advanced security measures.</p>
+            </div>
+        </div>
+    @endif
+
+    <div class="tyaround">
+        <h1>Create Your Account</h1>
+        <p>Enter your personal details to get started</p>
+
+        <!-- Add generic error container -->
+        <div id="form-errors" style="display: none; background-color: rgba(255, 87, 87, 0.2); border-left: 3px solid #ff5757; padding: 10px; margin-bottom: 20px; color: white; border-radius: 4px;"></div>
+
+        <form method="post" class="fstyle" action="/createnewadmin" enctype="multipart/form-data" id="signupForm">
+            @csrf
+            <input type="hidden" name="is_ajax" value="1">
+            <input type="hidden" name="debug_info" value="troubleshooting_form">
+            <input type="hidden" name="form_timestamp" value="{{ time() }}">
+            <div class="form-group">
+                <label for="firstname" class="form-label">First name</label>
+                <input id="firstname" type="text" name="firstname" class="form-input" placeholder="Enter your first name" value="{{ old('firstname') }}" required>
+                <span class="input-icon"><i class="fas fa-user"></i></span>
+                @error('firstname')
+                <div class="inputerror">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="lastname" class="form-label">Last name</label>
+                <input id="lastname" type="text" name="lastname" class="form-input" placeholder="Enter your last name" value="{{ old('lastname') }}" required>
+                <span class="input-icon"><i class="fas fa-user"></i></span>
+                @error('lastname')
+                <div class="inputerror">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input id="email" type="email" name="email" class="form-input" placeholder="Enter your email address" value="{{ old('email') }}" required autocomplete="email">
+                <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                @error('email')
+                <div class="inputerror">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input id="password" type="password" name="password" class="form-input" placeholder="Create a strong password (min. 8 characters)" required autocomplete="new-password">
+                <span class="input-icon password-toggle" onclick="togglePasswordVisibility()"><i class="fas fa-eye"></i></span>
+
+                <div class="password-strength">
+                    <div class="strength-meter">
+                        <div class="strength-meter-fill"></div>
+                    </div>
+                    <div class="strength-text">
+                        <i class="fas fa-circle"></i> Password strength: <span id="strength-value">Too weak</span>
+                    </div>
+                </div>
+
+                @error('password')
+                <div class="inputerror">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="password_confirmation" class="form-label">Confirm Password</label>
+                <input id="password_confirmation" type="password" name="password_confirmation" class="form-input" placeholder="Confirm your password" required autocomplete="new-password">
+                <span class="input-icon password-toggle-confirm" onclick="toggleConfirmPasswordVisibility()"><i class="fas fa-eye"></i></span>
+
+                @error('password_confirmation')
+                <div class="inputerror">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="terms-checkbox">
+                <input type="checkbox" id="terms" name="terms" class="terms-check" required>
+                <label for="terms" class="terms-label">
+                    I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
+                </label>
+            </div>
+
+            <button class="signup-button" type="submit">Create Account</button>
+        </form>
+
+        <p class="login-account">Already have an account?<a href="/login">Log in</a></p>
     </div>
 
     <script>

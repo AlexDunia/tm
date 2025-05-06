@@ -83,8 +83,6 @@
                             @csrf
                             <button type="submit" class="dropdown-link">Logout</button>
                         </form>
-                        <a href="/profile" class="dropdown-link">My Profile</a>
-                        <a href="/orders" class="dropdown-link">My Orders</a>
                     </div>
                 </div>
                 @else
@@ -152,12 +150,6 @@
                     @csrf
                     <button type="submit" class="mobile-nav-link logout-link">Logout</button>
                 </form>
-            </li>
-            <li class="mobile-nav-item auth-item">
-                <a href="/profile" class="mobile-nav-link">My Profile</a>
-            </li>
-            <li class="mobile-nav-item auth-item">
-                <a href="/orders" class="mobile-nav-link">My Orders</a>
             </li>
             @endauth
         </ul>

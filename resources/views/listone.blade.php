@@ -2749,6 +2749,213 @@ var selectedTickets = {};
             </form>
         </section>
 
+        <!-- Event Description Section -->
+        <section class="event-description-section">
+            <div class="description-container">
+                <h2 class="description-title">Event Description</h2>
+                <div class="description-content">
+                    @php
+                        // Check multiple possible fields for description content
+                        $descriptionContent = '';
+
+                        if (!empty($listonee->description)) {
+                            $descriptionContent = $listonee->description;
+                        } elseif (!empty($listonee->desc)) {
+                            $descriptionContent = $listonee->desc;
+                        } elseif (!empty($listonee->about)) {
+                            $descriptionContent = $listonee->about;
+                        } elseif (!empty($listonee->event_description)) {
+                            $descriptionContent = $listonee->event_description;
+                        } elseif (!empty($listonee->details)) {
+                            $descriptionContent = $listonee->details;
+                        }
+
+                        // If still empty, provide a placeholder
+                        if (empty($descriptionContent)) {
+                            $descriptionContent = 'No detailed description available for this event. Please contact the organizer for more information.';
+                        }
+                    @endphp
+
+                    {!! nl2br(e($descriptionContent)) !!}
+                </div>
+
+                <div class="event-additional-info">
+                    <!-- Website URL with copy button -->
+                    <div class="info-detail">
+                        <span class="info-label"><i class="fa-solid fa-link"></i> Website:</span>
+                        <span class="info-value">
+                            <div class="copy-url-container">
+                                <input type="text" id="currentUrl" value="{{ url()->current() }}" readonly>
+                                <button class="copy-url-btn" onclick="copyCurrentUrl()">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                            </div>
+                        </span>
+                    </div>
+
+                    @if(!empty($listonee->organizer))
+                        <div class="info-detail">
+                            <span class="info-label"><i class="fa-solid fa-user-tie"></i> Organizer:</span>
+                            <span class="info-value">{{ $listonee->organizer }}</span>
+                        </div>
+                    @endif
+
+                    @if(!empty($listonee->venue) || !empty($listonee->location))
+                        <div class="info-detail">
+                            <span class="info-label"><i class="fa-solid fa-location-dot"></i> Venue:</span>
+                            <span class="info-value">{{ $listonee->venue ?? $listonee->location }}</span>
+                        </div>
+                    @endif
+
+                    @if(!empty($listonee->event_type) || !empty($listonee->category))
+                        <div class="info-detail">
+                            <span class="info-label"><i class="fa-solid fa-tag"></i> Event Type:</span>
+                            <span class="info-value">{{ $listonee->event_type ?? $listonee->category }}</span>
+                        </div>
+                    @endif
+
+                    @if(!empty($listonee->duration))
+                        <div class="info-detail">
+                            <span class="info-label"><i class="fa-regular fa-clock"></i> Duration:</span>
+                            <span class="info-value">{{ $listonee->duration }}</span>
+                        </div>
+                    @endif
+
+                    @if(!empty($listonee->age_restriction))
+                        <div class="info-detail">
+                            <span class="info-label"><i class="fa-solid fa-id-card"></i> Age Restriction:</span>
+                            <span class="info-value">{{ $listonee->age_restriction }}</span>
+                        </div>
+                    @endif
+
+                    @if(!empty($listonee->dress_code))
+                        <div class="info-detail">
+                            <span class="info-label"><i class="fa-solid fa-shirt"></i> Dress Code:</span>
+                            <span class="info-value">{{ $listonee->dress_code }}</span>
+                        </div>
+                    @endif
+
+                    <!-- Display any other available event details -->
+                    @foreach($listonee->getAttributes() as $key => $value)
+                        @php
+                            // Skip fields we've already displayed or that shouldn't be shown
+                            $skipFields = ['id', 'name', 'date', 'time', 'location', 'venue', 'image', 'description', 'desc', 'about',
+                                           'event_description', 'details', 'organizer', 'event_type', 'category', 'duration',
+                                           'age_restriction', 'dress_code', 'created_at', 'updated_at', 'user_id',
+                                           'startingprice', 'earlybirds', 'tableone', 'tabletwo', 'tablethree', 'tablefour',
+                                           'tablefive', 'tablesix', 'tableseven', 'tableeight',
+                                           'website', 'url', 'link', 'herolink', 'hero_link', 'web_address', 'webpage', 'web_url',
+                                           'site_url', 'event_url', 'event_link', 'event_website'];
+
+                            // Skip any image-related fields
+                            $imagePatterns = ['image', 'img', 'photo', 'picture', 'thumbnail', 'banner', 'logo', 'icon', 'heroimg', 'heroimage'];
+                        @endphp
+
+                        @if(!in_array($key, $skipFields) && !is_null($value) && $value !== '' && !is_array($value) && !is_object($value))
+                            @php
+                                $isImageField = false;
+                                // Check if this is an image field we should skip
+                                foreach($imagePatterns as $pattern) {
+                                    if(stripos($key, $pattern) !== false || stripos($value, '.jpg') !== false || stripos($value, '.png') !== false ||
+                                       stripos($value, '.jpeg') !== false || stripos($value, '.gif') !== false ||
+                                       stripos($value, '/image/') !== false || stripos($value, 'cloudinary') !== false ||
+                                       stripos($value, '/img/') !== false) {
+                                        $isImageField = true;
+                                        break;
+                                    }
+                                }
+
+                                // Also skip any website/URL fields that weren't caught by the skipFields array
+                                $websitePatterns = ['website', 'url', 'link', 'http', 'www', 'site', 'web'];
+                                foreach($websitePatterns as $pattern) {
+                                    if(stripos($key, $pattern) !== false) {
+                                        $isImageField = true; // We're using isImageField as a general "skip this field" flag
+                                        break;
+                                    }
+                                }
+
+                                // Create friendly display names for fields
+                                $displayNames = [
+                                    'herolink' => 'Website',
+                                    'hero_link' => 'Website',
+                                    'website' => 'Website',
+                                    'url' => 'Website',
+                                    'link' => 'Website',
+                                    'email' => 'Contact Email',
+                                    'contact_email' => 'Contact Email',
+                                    'phone' => 'Contact Phone',
+                                    'tel' => 'Contact Phone',
+                                    'phone_number' => 'Contact Phone',
+                                    'contact_phone' => 'Contact Phone',
+                                    'start_date' => 'Start Date',
+                                    'end_date' => 'End Date',
+                                    'facebook' => 'Facebook',
+                                    'twitter' => 'Twitter',
+                                    'instagram' => 'Instagram',
+                                    'capacity' => 'Capacity',
+                                    'max_capacity' => 'Capacity',
+                                    'address' => 'Address',
+                                    'full_address' => 'Address',
+                                    'city' => 'City',
+                                    'state' => 'State',
+                                    'country' => 'Country',
+                                    'zip' => 'Zip/Postal Code',
+                                    'postal_code' => 'Zip/Postal Code',
+                                ];
+
+                                // Get the display name or generate one from the field name
+                                if(array_key_exists($key, $displayNames)) {
+                                    $displayName = $displayNames[$key];
+                                } else {
+                                    $displayName = ucwords(str_replace(['_', '-'], ' ', $key));
+                                }
+
+                                // Select the appropriate icon
+                                $icon = 'fa-circle-info';
+                                if(stripos($key, 'email') !== false || stripos($key, 'contact') !== false) {
+                                    $icon = 'fa-envelope';
+                                } elseif(stripos($key, 'phone') !== false || stripos($key, 'tel') !== false) {
+                                    $icon = 'fa-phone';
+                                } elseif(stripos($key, 'website') !== false || stripos($key, 'url') !== false || stripos($key, 'link') !== false) {
+                                    $icon = 'fa-link';
+                                } elseif(stripos($key, 'facebook') !== false) {
+                                    $icon = 'fa-facebook';
+                                } elseif(stripos($key, 'twitter') !== false) {
+                                    $icon = 'fa-twitter';
+                                } elseif(stripos($key, 'instagram') !== false) {
+                                    $icon = 'fa-instagram';
+                                } elseif(stripos($key, 'capacity') !== false) {
+                                    $icon = 'fa-users';
+                                } elseif(stripos($key, 'address') !== false || stripos($key, 'city') !== false ||
+                                        stripos($key, 'state') !== false || stripos($key, 'country') !== false) {
+                                    $icon = 'fa-map-marker-alt';
+                                } elseif(stripos($key, 'date') !== false) {
+                                    $icon = 'fa-calendar-alt';
+                                }
+                            @endphp
+
+                            @if(!$isImageField)
+                                <div class="info-detail">
+                                    <span class="info-label"><i class="fa-solid {{ $icon }}"></i> {{ $displayName }}:</span>
+                                    <span class="info-value">
+                                        @if(stripos($key, 'website') !== false || stripos($key, 'url') !== false || stripos($key, 'link') !== false)
+                                            <a href="{{ strpos($value, 'http') === 0 ? $value : 'https://' . $value }}" target="_blank" rel="noopener noreferrer" class="info-link">{{ $value }}</a>
+                                        @elseif(stripos($key, 'email') !== false)
+                                            <a href="mailto:{{ $value }}" class="info-link">{{ $value }}</a>
+                                        @elseif(stripos($key, 'phone') !== false || stripos($key, 'tel') !== false)
+                                            <a href="tel:{{ $value }}" class="info-link">{{ $value }}</a>
+                                        @else
+                                            {{ $value }}
+                                        @endif
+                                    </span>
+                                </div>
+                            @endif
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
         <!-- Fixed Buy Now Footer -->
         <div class="fixed-buy-footer" id="fixedBuyFooter">
             <div class="fixed-buy-summary">
@@ -2762,12 +2969,67 @@ var selectedTickets = {};
     </div>
 </div>
 
+<!-- Copy URL Notification -->
+<div class="copy-notification" id="copyNotification">
+    <i class="fa-solid fa-check-circle"></i>
+    <span>URL copied to clipboard!</span>
+</div>
+
 <script>
     // Share event function
     function shareEvent() {
         const shareModal = document.getElementById('shareModal');
         shareModal.classList.add('active');
         document.body.style.overflow = 'hidden';
+    }
+
+    // Function to copy current URL to clipboard
+    function copyCurrentUrl() {
+        const urlField = document.getElementById('currentUrl');
+        urlField.select();
+
+        try {
+            // Modern approach using Clipboard API
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(urlField.value)
+                    .then(showCopyNotification)
+                    .catch(err => {
+                        console.error('Clipboard write failed:', err);
+                        // Fallback to document.execCommand
+                        document.execCommand('copy');
+                        showCopyNotification();
+                    });
+            } else {
+                // Fallback for older browsers
+                document.execCommand('copy');
+                showCopyNotification();
+            }
+        } catch (err) {
+            console.error('Copy failed:', err);
+        }
+    }
+
+    // Show copy notification
+    function showCopyNotification() {
+        const notification = document.getElementById('copyNotification');
+        notification.classList.add('active');
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('active');
+        }, 3000);
+
+        // Change button icon to indicate success
+        const copyButton = document.querySelector('.copy-url-btn');
+        if (copyButton) {
+            const originalIcon = copyButton.innerHTML;
+            copyButton.innerHTML = '<i class="fa-solid fa-check"></i>';
+
+            // Reset icon after 2 seconds
+            setTimeout(() => {
+                copyButton.innerHTML = originalIcon;
+            }, 2000);
+        }
     }
 
     // Bookmark event function
@@ -4000,6 +4262,252 @@ document.body.classList.remove('body-loading');
     .hero-action-buttons {
         display: flex;
         justify-content: center;
+    }
+
+    /* Event Description Section Styling */
+    .event-description-section {
+        margin: 60px auto;
+        width: 85%;
+        max-width: 1200px;
+    }
+
+    .description-container {
+        background-color: rgba(18, 18, 18, 0.4);
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    .description-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+        border-color: rgba(192, 72, 136, 0.3);
+    }
+
+    .description-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 20px;
+        letter-spacing: -0.02em;
+        position: relative;
+        padding-bottom: 15px;
+    }
+
+    .description-title:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, #C04888, rgba(192, 72, 136, 0.3));
+        border-radius: 3px;
+    }
+
+    .description-content {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 16px;
+        line-height: 1.7;
+        white-space: pre-line;
+    }
+
+    .description-content p {
+        margin-bottom: 16px;
+    }
+
+    /* Responsive adjustments for description section */
+    @media (max-width: 768px) {
+        .event-description-section {
+            width: 90%;
+            margin: 40px auto;
+        }
+
+        .description-container {
+            padding: 20px;
+        }
+
+        .description-title {
+            font-size: 1.5rem;
+        }
+
+        .description-content {
+            font-size: 15px;
+        }
+    }
+
+    .add-to-cart-modal-btn {
+        background: #FECC01;
+        color: black;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Event Additional Info Styling */
+    .event-additional-info {
+        margin-top: 30px;
+        padding-top: 25px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+    }
+
+    .info-detail {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px;
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .info-detail:hover {
+        transform: translateY(-3px);
+        background-color: rgba(192, 72, 136, 0.1);
+        border-color: rgba(192, 72, 136, 0.3);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #C04888;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 120px;
+    }
+
+    .info-label i {
+        font-size: 16px;
+        width: 20px;
+        text-align: center;
+    }
+
+    .info-value {
+        color: rgba(255, 255, 255, 0.9);
+        flex: 1;
+        word-break: break-word;
+    }
+
+    .info-link {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        border-bottom: 1px dashed rgba(192, 72, 136, 0.5);
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+
+    .info-link:hover {
+        color: #C04888;
+        border-bottom: 1px solid #C04888;
+    }
+
+    /* Responsive adjustments for description section */
+    @media (max-width: 768px) {
+        .event-description-section {
+            width: 90%;
+            margin: 40px auto;
+        }
+
+        .description-container {
+            padding: 20px;
+        }
+
+        .description-title {
+            font-size: 1.5rem;
+        }
+
+        .description-content {
+            font-size: 15px;
+        }
+    }
+
+    /* Copy URL styling */
+    .copy-url-container {
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .copy-url-container input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.9);
+        padding: 8px 12px;
+        font-size: 14px;
+        outline: none;
+        width: calc(100% - 40px);
+        cursor: text;
+    }
+
+    .copy-url-btn {
+        background: rgba(192, 72, 136, 0.2);
+        border: none;
+        width: 40px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #C04888;
+        transition: all 0.3s ease;
+    }
+
+    .copy-url-btn:hover {
+        background: rgba(192, 72, 136, 0.4);
+    }
+
+    .copy-url-btn:active {
+        transform: scale(0.95);
+    }
+
+    .copy-notification {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: rgba(18, 18, 18, 0.9);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-left: 3px solid #C04888;
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .copy-notification.active {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+
+    .copy-notification i {
+        color: #C04888;
+        font-size: 18px;
     }
 </style>
 

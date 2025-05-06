@@ -24,6 +24,7 @@ use App\Models\Transaction;
 use App\Models\TicketType;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SessionController;
+use Illuminate\Support\Facades\Artisan;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -452,3 +453,17 @@ Route::post('/session/silent-auth', [SessionController::class, 'silentAuth'])
 Route::get('/session/expired', [SessionController::class, 'expired'])
     ->middleware(['web'])
     ->name('session.expired');
+
+// Add route for sitemap.xml
+Route::get('/sitemap.xml', function() {
+    // Check if sitemap exists
+    if (!file_exists(public_path('sitemap.xml'))) {
+        // Generate it if it doesn't exist
+        Artisan::call('sitemap:generate');
+    }
+
+    // Return the sitemap with proper content type
+    return response()->file(public_path('sitemap.xml'), [
+        'Content-Type' => 'application/xml'
+    ]);
+});

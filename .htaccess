@@ -5,6 +5,15 @@
     php_value upload_max_filesize 20M
     php_value post_max_size 20M
     php_flag opcache.enable On
+
+    # Disable PHP error display in production
+    php_flag display_errors Off
+    php_flag display_startup_errors Off
+    php_value error_reporting E_ALL
+    php_flag log_errors On
+
+    # Hide PHP version information
+    php_flag expose_php Off
 </IfModule>
 
 # Security Headers
@@ -15,6 +24,10 @@
     Header set Referrer-Policy "strict-origin-when-cross-origin"
     Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
     Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # Remove PHP signature
+    Header unset X-Powered-By
+    ServerSignature Off
 </IfModule>
 
 # Disable directory browsing
@@ -24,4 +37,11 @@ Options -Indexes
 <FilesMatch "^\.env|composer\.json|composer\.lock|package\.json|package-lock\.json|phpunit\.xml|README\.md">
     Order allow,deny
     Deny from all
-</FilesMatch> 
+</FilesMatch>
+
+# Custom error pages
+ErrorDocument 400 /errors/400.html
+ErrorDocument 401 /errors/401.html
+ErrorDocument 403 /errors/403.html
+ErrorDocument 404 /errors/404.html
+ErrorDocument 500 /errors/500.html
