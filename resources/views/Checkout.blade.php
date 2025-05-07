@@ -670,62 +670,30 @@
                     payButton.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Verifying payment...';
                     showNotification('Verifying your payment...', 'info');
 
-                    // Set flag for successful purchase
-                    localStorage.setItem('successful_purchase', 'true');
-                    localStorage.setItem('purchase_time', Date.now().toString());
-                    localStorage.setItem('show_sharing_popup', 'true');
-
-                    // Try direct redirect with the reference, skipping verification
+                    // Set flags for successful purchase with a slight delay to ensure they persist
                     setTimeout(() => {
-                        window.location.href = "{{ url('success') }}?reference=" + reference;
-                    }, 1500);
+                        // Clear any existing flags first
+                        localStorage.removeItem('successful_purchase');
+                        localStorage.removeItem('purchase_time');
+                        localStorage.removeItem('show_sharing_popup');
+                        localStorage.removeItem('on_success_page');
+                        localStorage.removeItem('redirect_to_success');
 
-                    /* Commented out verification for now
-                    // Verify the payment with our server - try the GET approach Paystack uses
-                    fetch("{{ url('verifypayment') }}/" + reference, {
-                        method: 'GET',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(response => {
-                        // First check if response is ok
-                        if (!response.ok) {
-                            throw new Error('Verification failed with status: ' + response.status);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Verification response:', data);
+                        // Set new flags
+                        localStorage.setItem('successful_purchase', 'true');
+                        localStorage.setItem('purchase_time', Date.now().toString());
+                        localStorage.setItem('show_sharing_popup', 'true');
 
-                        // Check if we have a success status in the response
-                        if (data && (data.status === 'success' || data.success === true || data.verified === true)) {
-                            // Update button state to completed
-                            payButton.dataset.state = 'completed';
-                            payButton.innerHTML = '<i class="fa-solid fa-check"></i> Payment successful!';
-                            payButton.disabled = true; // Keep disabled to prevent double-clicks
+                        // Log the flags to verify they're set
+                        console.log('Purchase flags set:', {
+                            successful_purchase: localStorage.getItem('successful_purchase'),
+                            purchase_time: localStorage.getItem('purchase_time'),
+                            show_sharing_popup: localStorage.getItem('show_sharing_popup')
+                        });
 
-                            showNotification('Payment successful! Redirecting to success page...', 'success');
-
-                            // Simple redirect instead of form submission
-                            setTimeout(() => {
-                                window.location.href = "{{ url('success') }}?reference=" + reference;
-                            }, 1500);
-                        } else {
-                            throw new Error('Payment verification returned unsuccessful status');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Verification error:', error);
-                        // Reset button on error
-                        payButton.innerHTML = originalButtonText;
-                        payButton.disabled = false;
-                        payButton.dataset.state = 'ready';
-
-                        showNotification('There was an error verifying your payment. Please contact support.', 'error');
-                    });
-                    */
+                        // Redirect to home page
+                        window.location.href = "{{ url('/') }}";
+                    }, 500);
                 }
             });
 

@@ -69,6 +69,17 @@ body {
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
+    padding-top: 100px;
+    padding-bottom: 100px;
+    min-height: 90vh;
+}
+
+@media (max-width: 768px) {
+    .event-hero-section {
+        padding-top: 60px;
+        padding-bottom: 60px;
+        min-height: 70vh;
+    }
 }
 
 .event-hero-section::before {

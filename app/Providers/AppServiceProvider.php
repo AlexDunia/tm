@@ -54,7 +54,7 @@ class AppServiceProvider extends ServiceProvider
         $dbConnection = config('database.default');
         if ($dbConnection === 'mysql') {
             // MySQL specific configuration
-            DB::statement('SET SESSION MAX_EXECUTION_TIME=30000'); // 30 seconds in milliseconds
+            // DB::statement('SET SESSION MAX_EXECUTION_TIME=30000'); // 30 seconds in milliseconds
 
             // Set MySQL strict mode
             DB::statement("SET SESSION sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'");

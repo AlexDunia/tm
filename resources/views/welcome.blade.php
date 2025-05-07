@@ -153,8 +153,7 @@ function showSlides() {
 // Check for successful purchase and redirect to success page
 document.addEventListener('DOMContentLoaded', function() {
     const successfulPurchase = localStorage.getItem('successful_purchase');
-    const onSuccessPage = localStorage.getItem('on_success_page');
-    const redirectToSuccess = localStorage.getItem('redirect_to_success');
+    const purchaseTime = localStorage.getItem('purchase_time');
     const showSharingPopup = localStorage.getItem('show_sharing_popup');
 
     // First ensure the popup is hidden by default
@@ -164,53 +163,49 @@ document.addEventListener('DOMContentLoaded', function() {
         popup.classList.remove('active');
     }
 
-    // Only redirect if we have successful purchase flag, we're not already on success page,
-    // and we haven't already attempted a redirect (to prevent loops)
-    if (successfulPurchase === 'true' && onSuccessPage !== 'true' && redirectToSuccess !== 'true') {
-        // Mark that we've attempted a redirect
-        localStorage.setItem('redirect_to_success', 'true');
-        window.location.href = '/success'; // Adjust this URL to your actual success page URL
-    }
-
-    // If successful purchase flag is set and there's no redirect to success page flag,
-    // show the social sharing popup after a delay
+    // Only show if purchase was within last 5 minutes and flags are set
     if (successfulPurchase === 'true' && showSharingPopup === 'true') {
-        // Clear the sharing popup flag so it doesn't show again on page refresh
-        localStorage.removeItem('show_sharing_popup');
+        const purchaseTimestamp = parseInt(purchaseTime || '0');
+        const currentTime = Date.now();
+        const timeElapsed = currentTime - purchaseTimestamp;
 
-        // Show popup after delay
-        setTimeout(function() {
-            const popup = document.getElementById('socialSharingPopup');
-            if (popup) {
-                popup.style.display = 'flex';
-                setTimeout(() => {
-                    popup.classList.add('active');
-                }, 10);
-
-                // Auto-close the popup after 8 seconds
-                setTimeout(function() {
-                    popup.classList.remove('active');
+        if (timeElapsed < 300000) { // 5 minutes in ms
+            // Show popup after delay
+            setTimeout(function() {
+                if (popup) {
+                    popup.style.display = 'flex';
+                    popup.style.zIndex = '99999';
+                    document.body.classList.add('modal-blur-active');
                     setTimeout(() => {
-                        popup.style.display = 'none';
-                    }, 500);
-                    // Clear all transaction-related flags when auto-closing
-                    clearAllTransactionFlags();
-                }, 8000);
-            }
-        }, 3000);
+                        popup.classList.add('active');
+                    }, 10);
+
+                    // Auto-close after 8 seconds
+                    setTimeout(function() {
+                        popup.classList.remove('active');
+                        setTimeout(() => {
+                            popup.style.display = 'none';
+                            document.body.classList.remove('modal-blur-active');
+                        }, 500);
+                        clearAllTransactionFlags();
+                    }, 8000);
+                }
+            }, 3000);
+        }
+        // Always clear flags after checking, so it doesn't show again
+        clearAllTransactionFlags();
     }
 
     // Close popup when clicking the X button
     const closeBtn = document.querySelector('.close-popup');
     if (closeBtn) {
         closeBtn.addEventListener('click', function() {
-            const popup = document.getElementById('socialSharingPopup');
             if (popup) {
                 popup.classList.remove('active');
                 setTimeout(() => {
                     popup.style.display = 'none';
+                    document.body.classList.remove('modal-blur-active');
                 }, 500);
-                // Clear all transaction-related flags when manually closing
                 clearAllTransactionFlags();
             }
         });
@@ -654,6 +649,20 @@ function shareOnWhatsapp() {
         height: 50px;
         font-size: 20px;
     }
+}
+
+/* Blur effect for modal */
+body.modal-blur-active .main-container,
+body.modal-blur-active .navbar,
+body.modal-blur-active .header,
+body.modal-blur-active .footer {
+    filter: blur(6px) grayscale(0.2) brightness(0.8);
+    pointer-events: none;
+    user-select: none;
+}
+
+.social-sharing-popup {
+    z-index: 99999 !important;
 }
 </style>
 @endsection
