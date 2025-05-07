@@ -46,6 +46,11 @@ class Handler extends ExceptionHandler
             }
         });
 
+        // TEMPORARY: Skip some of the error handling for non-API routes to help with debugging
+        if (env('APP_DEBUG', false)) {
+            return;
+        }
+
         $this->renderable(function (Throwable $e, $request) {
             if ($request->is('api/*')) {
                 return response()->json([
@@ -74,6 +79,11 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $exception)
     {
+        // TEMPORARY: Skip some of the error handling for easier debugging
+        if (env('APP_DEBUG', false)) {
+            return parent::render($request, $exception);
+        }
+
         // For database connection issues, show a generic error
         if ($exception instanceof \PDOException) {
             return $this->handleDatabaseException($request, $exception);
