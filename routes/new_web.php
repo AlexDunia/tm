@@ -25,6 +25,7 @@ use App\Models\TicketType;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SessionController;
 use Illuminate\Support\Facades\Artisan;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -36,29 +37,16 @@ use Illuminate\Support\Facades\Artisan;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome', [
-//         'heading' => 'My laravel application',
-//         'welcome' => mctlists::all()
-//     ]);
-// });
-
-// Route::get('/events/{id}', function($id) {
-//     return view('listone', [
-//         'listonee' => mctlists::find($id)
-//     ]);
-// });
-
-
+// Apply purchase.verified middleware to home route to handle after_purchase parameter
 Route::get('/', [ListingController::class, 'index'])
     ->name('home')
-    ->middleware(['payment.verified']);
+    ->middleware(['purchase.verified']);
 
 Route::get('/payment', [PaymentController::class, 'index'] );
 Route::get('/contact', [ListingController::class, 'contact'] );
 Route::get('/search', [ListingController::class, 'search'] );
 Route::get('/searchnotfound', [ListingController::class, 'searchnotfound'] );
-Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'])->name('verify.payment');
+Route::get('/verifypayment/{reference}', [PaymentController::class, 'verify'])->name('payment.verify');
 Route::get('/tryverifypayment/{reference}', [PaymentController::class, 'tryverify'] );
 
 // View Admin Panel - with admin-only access
@@ -142,11 +130,6 @@ Route::post('/authenticated', [AdminController::class, 'authenticate'])
 // Route::post('/logout', [AdminController::class, 'disauthenticate']);
 Route::match(['get', 'post'], '/logout', [AdminController::class, 'disauthenticate'])->name('logout');
 
-// create ghon ghon
-// Route::get('/alexadmin', function () {
-//     return view('Admin');
-// });
-
 // Cart routes (optimized)
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
@@ -169,8 +152,7 @@ Route::middleware(['throttle:60,1'])->group(function () {
 Route::get('/trypayment', [ListingController::class, 'trypayment'] );
 Route::post('/tryverify/{reference}', [ListingController::class, 'tryverify'] );
 
-// Cart view.
-// Route::get('/success', [PaymentController::class, 'success'])->name('success');
+// Removed the success route as requested
 
 Route::post('/verify-reference', [PaymentController::class, 'verifyReference'])->name('verify.reference');
 
@@ -197,18 +179,6 @@ Route::get('/cartitem', function(){
 // Route::get('/category/{category}', 'ListingController@showByCategory')->name('Filter');
 Route::get('/category/{category}', [ListingController::class, 'showByCategory'] );
 Route::get('/noresults/{category}', [ListingController::class, 'showByCategory'] );
-// Route::get('/c', function(){
-//     return view('checkout');
-// });
-
-// Route::get('/music', [ListingController::class, 'filterByCategory']);
-// Route::get('/movies', 'ListingController@index');
-
-// Make the create admin button work
-
-
-
-
 
 // delete functionality.
 Route::get('/delete/{id}', [ListingController::class, 'delete']);
@@ -320,22 +290,10 @@ Route::POST('/createticket', function (Request $request) {
     }
 });
 
-
-
 // I belive it would be easier to work on the edit now that i know where the error was actually coming from.
 Route::get('/event/{listonee}/ticket', [ListingController::class, 'viewone']);
 
 Route::get('/events/{name}', [ListingController::class, 'show'] );
-// Route::get('/addtocart/{id}', [ListingController::class, 'cart'] );
-
-
-// so what exactly do we want to do first?
-// Click to view something with the code.
-//
-// Auth::routes();
-
-// Remove home route - use root route instead
-// Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 // Clear cart for non-authenticated users
 Route::get('/clear-cart', function() {
@@ -347,126 +305,29 @@ Route::get('/clear-cart', function() {
         session()->forget('eventname');
         session()->forget('totalprice');
         session()->forget('timage');
-    } else {
-        // Also clear cart for authenticated users
-        Cart::where('user_id', auth()->id())->delete();
     }
-    return redirect()->route('cart')->with('message', 'Cart cleared successfully');
+    return redirect()->route('home')->with('message', 'Cart cleared successfully');
 });
 
-// Add new cart payment processing routes
-Route::post('/prepare-payment', [CartController::class, 'preparePayment'])->name('prepare.payment');
+// Ajax cart clearing endpoint for all user types
+Route::post('/clear-cart-ajax', [CartController::class, 'clearCartAjax'])->name('cart.clear.ajax');
+
+// User account and order history
+Route::middleware(['auth'])->group(function () {
+    Route::get('/account', [UserController::class, 'account'])->name('user.account');
+    Route::get('/orders', [UserController::class, 'orders'])->name('user.orders');
+    Route::get('/orders/{id}', [UserController::class, 'orderDetails'])->name('user.order.details');
+});
+
+// Process successful payments
 Route::get('/process-payment/{reference}', [CartController::class, 'processSuccessfulPayment'])->name('process.payment');
 
-// Test cart routes for debugging
-Route::get('/test-add-to-cart', [App\Http\Controllers\TestCartController::class, 'testAddToCart']);
-Route::get('/test-view-cart', [App\Http\Controllers\TestCartController::class, 'testViewCart']);
-Route::get('/debug-cart-creation', [App\Http\Controllers\TestCartController::class, 'debugCartCreation']);
+// Debug routes (remove in production)
+Route::get('/debug/clear-session', [SessionController::class, 'clearSession']);
+Route::get('/debug/session', [SessionController::class, 'showSession']);
+Route::get('/debug/transaction/{reference}', [PaymentController::class, 'debugTransaction']);
 
-// Test route to create event with ticket types
-Route::get('/test-ticket-types', function() {
-    // Create a test event
-    $event = \App\Models\mctlists::create([
-        'name' => 'Test Event ' . time(),
-        'description' => 'This is a test event',
-        'location' => 'Test Location',
-        'date' => now()->addWeek(),
-        'image' => 'https://res.cloudinary.com/demo/image/upload/v1629401603/samples/landscapes/architecture-signs.jpg',
-        'heroimage' => 'https://res.cloudinary.com/demo/image/upload/v1629401603/samples/landscapes/nature-mountains.jpg',
-        'herolink' => 'https://example.com/event',
-        'category' => 'Music'
-    ]);
-
-    // Create ticket types
-    $regularTicket = \App\Models\TicketType::create([
-        'mctlists_id' => $event->id,
-        'name' => 'Regular Ticket',
-        'price' => 5000,
-        'description' => 'Standard event access',
-        'capacity' => 100,
-        'sales_start' => now(),
-        'sales_end' => now()->addMonths(1),
-        'is_active' => true,
-        'sold' => 0
-    ]);
-
-    $vipTicket = \App\Models\TicketType::create([
-        'mctlists_id' => $event->id,
-        'name' => 'VIP Ticket',
-        'price' => 15000,
-        'description' => 'Premium seating with complimentary drinks',
-        'capacity' => 50,
-        'sales_start' => now(),
-        'sales_end' => now()->addMonths(1),
-        'is_active' => true,
-        'sold' => 0
-    ]);
-
-    // Load the event with ticket types to verify they're connected
-    $loadedEvent = \App\Models\mctlists::with('ticketTypes')->find($event->id);
-
-    // Output debug information
-    return response()->json([
-        'event' => $event,
-        'ticket_types_count' => $loadedEvent->ticketTypes->count(),
-        'ticket_types' => $loadedEvent->ticketTypes,
-        'regular_ticket' => $regularTicket,
-        'vip_ticket' => $vipTicket,
-        'view_url' => url('/event/' . $event->id . '/ticket')
-    ]);
+// Catch-all route for direct URL access to deep links
+Route::fallback(function () {
+    return redirect()->route('home');
 });
-
-// CSRF token refresh endpoint for AJAX requests
-Route::get('/csrf-refresh', function() {
-    return response()->json([
-        'token' => csrf_token()
-    ]);
-});
-
-// Note: API routes for transactions have been moved to the api.php routes file
-
-// Recommendation routes
-Route::get('/recommendations', [RecommendationController::class, 'index'])->name('recommendations');
-Route::get('/similar-events/{eventId}', [RecommendationController::class, 'similarEvents'])->name('similar-events');
-
-// Admin recommendation routes
-Route::middleware(['auth', 'isAdmin'])->group(function () {
-    Route::get('/admin/update-transaction-ids', [RecommendationController::class, 'updateTransactionIds'])->name('admin.update-transaction-ids');
-    Route::get('/admin/trending-events', [RecommendationController::class, 'trending'])->name('admin.trending-events');
-    Route::get('/admin/payment-security-logs', [AdminController::class, 'paymentSecurityLogs'])->name('admin.payment-security-logs');
-});
-
-// Test routes - ONLY for non-production environments
-if (app()->environment('local', 'development', 'testing')) {
-    Route::get('/test-success-page', [PaymentController::class, 'testSuccessPage'])->name('test.success-page');
-}
-
-// Session Management Routes
-Route::post('/session/refresh', [SessionController::class, 'refresh'])
-    ->middleware(['web', 'auth'])
-    ->name('session.refresh');
-
-Route::post('/session/silent-auth', [SessionController::class, 'silentAuth'])
-    ->middleware(['web'])
-    ->name('session.silent_auth');
-
-Route::get('/session/expired', [SessionController::class, 'expired'])
-    ->middleware(['web'])
-    ->name('session.expired');
-
-// Add route for sitemap.xml
-Route::get('/sitemap.xml', function() {
-    // Check if sitemap exists
-    if (!file_exists(public_path('sitemap.xml'))) {
-        // Generate it if it doesn't exist
-        Artisan::call('sitemap:generate');
-    }
-
-    // Return the sitemap with proper content type
-    return response()->file(public_path('sitemap.xml'), [
-        'Content-Type' => 'application/xml'
-    ]);
-});
-
-// Add the clear cart route
-Route::post('/clear-cart', [CartController::class, 'forceCartClear'])->name('force.clear.cart');

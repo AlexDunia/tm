@@ -152,74 +152,21 @@ function showSlides() {
 
 // Check for successful purchase and redirect to success page
 document.addEventListener('DOMContentLoaded', function() {
-    const successfulPurchase = localStorage.getItem('successful_purchase');
-    const onSuccessPage = localStorage.getItem('on_success_page');
-    const redirectToSuccess = localStorage.getItem('redirect_to_success');
-    const showSharingPopup = localStorage.getItem('show_sharing_popup');
-
-    // First ensure the popup is hidden by default
-    const popup = document.getElementById('socialSharingPopup');
-    if (popup) {
-        popup.style.display = 'none';
-        popup.classList.remove('active');
-    }
-
-    // Only redirect if we have successful purchase flag, we're not already on success page,
-    // and we haven't already attempted a redirect (to prevent loops)
-    if (successfulPurchase === 'true' && onSuccessPage !== 'true' && redirectToSuccess !== 'true') {
-        // Mark that we've attempted a redirect
-        localStorage.setItem('redirect_to_success', 'true');
-        window.location.href = '/success'; // Adjust this URL to your actual success page URL
-    }
-
-    // If successful purchase flag is set and there's no redirect to success page flag,
-    // show the social sharing popup after a delay
-    if (successfulPurchase === 'true' && showSharingPopup === 'true') {
-        // Clear the sharing popup flag so it doesn't show again on page refresh
+    // Remove success page redirect logic
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('payment_success')) {
+        // Clear all cart data
+        if (window.clearAllCartData) {
+            window.clearAllCartData();
+        }
+        
+        // Clear any lingering flags
+        localStorage.removeItem('successful_purchase');
+        localStorage.removeItem('purchase_time');
         localStorage.removeItem('show_sharing_popup');
-
-        // Show popup after delay
-        setTimeout(function() {
-            const popup = document.getElementById('socialSharingPopup');
-            if (popup) {
-                popup.style.display = 'flex';
-                setTimeout(() => {
-                    popup.classList.add('active');
-                }, 10);
-
-                // Add dedicated click handler for clicking outside the modal
-                popup.addEventListener('click', function(event) {
-                    // If the clicked element is the popup background (not its children)
-                    if (event.target === popup) {
-                        console.log('Clicked outside modal on welcome page');
-                        if (typeof clearAllModalData === 'function') {
-                            clearAllModalData();
-                        } else {
-                            clearAllTransactionFlags();
-                        }
-                    }
-                });
-
-                // Auto-close the popup after 8 seconds
-                setTimeout(function() {
-                    if (typeof clearAllModalData === 'function') {
-                        clearAllModalData();
-                    } else {
-                        popup.classList.remove('active');
-                        setTimeout(() => {
-                            popup.style.display = 'none';
-                            popup.remove();
-                        }, 500);
-                        // Clear all transaction-related flags when auto-closing
-                        clearAllTransactionFlags();
-                    }
-                }, 8000);
-            }
-        }, 3000);
+        localStorage.removeItem('on_success_page');
+        localStorage.removeItem('redirect_to_success');
     }
-
-    // We don't need to add event listeners for close buttons here
-    // They're handled by the global event listener in layouts/app.blade.php
 });
 
 // Function to clear all transaction-related flags

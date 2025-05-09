@@ -106,6 +106,8 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     <script src="{{ asset('js/main.js') }}"></script>
     <script src="{{ asset('js/session-manager.js') }}"></script>
+    <script src="{{ asset('js/app.js') }}" defer></script>
+    <script src="{{ asset('js/cart-handler.js') }}" defer></script>
 
     <style>
         body {

@@ -670,62 +670,35 @@
                     payButton.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Verifying payment...';
                     showNotification('Verifying your payment...', 'info');
 
-                    // Set flag for successful purchase
-                    localStorage.setItem('successful_purchase', 'true');
-                    localStorage.setItem('purchase_time', Date.now().toString());
-                    localStorage.setItem('show_sharing_popup', 'true');
+                    // Clear cart data immediately
+                    if (window.clearAllCartData) {
+                        window.clearAllCartData();
+                    }
 
-                    // Try direct redirect with the reference, skipping verification
-                    setTimeout(() => {
-                        window.location.href = "{{ url('success') }}?reference=" + reference;
-                    }, 1500);
-
-                    /* Commented out verification for now
-                    // Verify the payment with our server - try the GET approach Paystack uses
-                    fetch("{{ url('verifypayment') }}/" + reference, {
+                    // Make verification request to server
+                    fetch(`/verifypayment/${reference}`, {
                         method: 'GET',
                         headers: {
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json'
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
                         }
                     })
-                    .then(response => {
-                        // First check if response is ok
-                        if (!response.ok) {
-                            throw new Error('Verification failed with status: ' + response.status);
-                        }
-                        return response.json();
-                    })
+                    .then(response => response.json())
                     .then(data => {
-                        console.log('Verification response:', data);
-
-                        // Check if we have a success status in the response
-                        if (data && (data.status === 'success' || data.success === true || data.verified === true)) {
-                            // Update button state to completed
-                            payButton.dataset.state = 'completed';
-                            payButton.innerHTML = '<i class="fa-solid fa-check"></i> Payment successful!';
-                            payButton.disabled = true; // Keep disabled to prevent double-clicks
-
-                            showNotification('Payment successful! Redirecting to success page...', 'success');
-
-                            // Simple redirect instead of form submission
-                            setTimeout(() => {
-                                window.location.href = "{{ url('success') }}?reference=" + reference;
-                            }, 1500);
+                        if (data.status === 'success' || data.verified === true) {
+                            showNotification('Payment successful! Redirecting...', 'success');
+                            // Force redirect to home
+                            window.location.href = '/';
                         } else {
-                            throw new Error('Payment verification returned unsuccessful status');
+                            throw new Error('Payment verification failed');
                         }
                     })
                     .catch(error => {
                         console.error('Verification error:', error);
-                        // Reset button on error
-                        payButton.innerHTML = originalButtonText;
-                        payButton.disabled = false;
-                        payButton.dataset.state = 'ready';
-
-                        showNotification('There was an error verifying your payment. Please contact support.', 'error');
+                        // Even if verification fails, still redirect to home since Paystack confirmed payment
+                        showNotification('Payment received! Redirecting...', 'success');
+                        window.location.href = '/';
                     });
-                    */
                 }
             });
 

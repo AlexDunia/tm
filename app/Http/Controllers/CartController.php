@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use App\Services\CartService;
+use Illuminate\Support\Facades\Session;
 
 class CartController extends Controller
 {
@@ -911,20 +913,7 @@ class CartController extends Controller
      */
     public static function getCartCount()
     {
-        if (auth()->check()) {
-            // For authenticated users, get count from database
-            return Cart::where('user_id', auth()->id())->sum(DB::raw('CAST(cquantity AS SIGNED)'));
-        } else {
-            $count = 0;
-            $cartItems = session()->get('cart_items', []);
-
-            foreach ($cartItems as $item) {
-                $count += isset($item['quantity']) ? (int)$item['quantity'] :
-                          (isset($item['cquantity']) ? (int)$item['cquantity'] : 0);
-            }
-
-            return $count;
-        }
+        return CartService::getCartCount();
     }
 
     /**
@@ -1038,7 +1027,10 @@ class CartController extends Controller
             session()->forget('pending_order');
 
             // For Ajax responses, return proper success URL with token
-            $successUrl = route('success', ['token' => $successToken]);
+            $successUrl = route('home', [
+                'payment_success' => true,
+                'reference' => $paymentRef
+            ]);
 
             Log::info('Payment processed successfully', [
                 'payment_ref' => $paymentRef,
@@ -1062,6 +1054,39 @@ class CartController extends Controller
                 'success' => false,
                 'message' => 'Error processing payment'
             ], 500);
+        }
+    }
+
+    /**
+     * Clear the cart after successful payment
+     */
+    private function clearCart()
+    {
+        CartService::clearCart();
+    }
+
+    public function forceCartClear(Request $request)
+    {
+        try {
+            // Clear database cart for authenticated users
+            if (auth()->check()) {
+                Cart::where('user_id', auth()->id())->delete();
+                Cache::forget('cart_totals_' . auth()->id());
+                Cache::forget('cart_items_' . auth()->id());
+                Cache::forget('cart_count_' . auth()->id());
+            }
+            
+            // Clear session cart data
+            Session::forget('cart_items');
+            Session::forget('cart_totals');
+            Session::forget('cart_count');
+            Session::forget('cart');
+            Session::save();
+            
+            return response()->json(['status' => 'success', 'message' => 'Cart cleared successfully']);
+        } catch (\Exception $e) {
+            \Log::error('Error clearing cart: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Error clearing cart'], 500);
         }
     }
 }

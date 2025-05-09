@@ -72,7 +72,7 @@ function payWithPaystack(e) {
     .then(response => response.json())
     .then(data => {
         console.log(data);
-        window.location.href = "{{URL::to('success')}}";
+        window.location.href = "{{ route('home') }}?payment_success=true&reference=" + reference;
     })
     .catch(error => {
         console.error("Error:", error);

@@ -112,6 +112,54 @@ class PaymentVerifiedMiddleware
             }
         }
 
+        // Only check if payment_success parameter is present
+        if ($request->has('payment_success')) {
+            $reference = $request->get('reference');
+            
+            // Validate reference format
+            $validReferencePattern = '/^[A-Za-z0-9\-_]{3,50}$/';
+            if (!preg_match($validReferencePattern, $reference)) {
+                Log::warning('Invalid reference format in payment success', [
+                    'reference' => $reference,
+                    'ip' => $request->ip()
+                ]);
+                return redirect()->route('home');
+            }
+
+            // Check if we have success data in session
+            if (!session()->has('success_data')) {
+                // Look for transaction in database
+                $transaction = Transaction::where(function($query) use ($reference) {
+                    $query->where('reference', $reference)
+                        ->orWhere('message', 'like', '%' . $reference . '%')
+                        ->orWhere('message', 'like', '%"reference":"' . $reference . '"%');
+                })
+                ->where('status', 'success')
+                ->first();
+
+                if (!$transaction) {
+                    Log::warning('No transaction found for payment success', [
+                        'reference' => $reference,
+                        'ip' => $request->ip()
+                    ]);
+                    return redirect()->route('home');
+                }
+
+                // Store transaction data in session for the modal
+                session()->flash('success_data', [
+                    'message' => 'Payment successful!',
+                    'reference' => $reference,
+                    'amount' => $transaction->amount / 100,
+                    'email' => $transaction->email,
+                    'ticket_data' => [
+                        'name' => $transaction->tablename,
+                        'quantity' => $transaction->quantity,
+                        'event' => $transaction->eventname
+                    ]
+                ]);
+            }
+        }
+
         // If payment is verified, proceed to success page
         if ($isVerifiedPayment) {
             Log::info('Payment verified, allowing access to success page');

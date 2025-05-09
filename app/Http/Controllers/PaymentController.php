@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
+use App\Services\CartService;
+use Illuminate\Support\Facades\Cache;
+use App\Models\Cart;
 
 class PaymentController extends Controller
 {
@@ -18,7 +21,6 @@ class PaymentController extends Controller
     {
         // Apply auth middleware to all methods except these
         $this->middleware('auth')->except([
-            'success',
             'verify',
             'getTransactionByReference',
             'debugTransaction'
@@ -140,11 +142,24 @@ class PaymentController extends Controller
                             'status' => 'success',
                             'verified' => true,
                             'message' => 'Payment previously verified',
-                            'token' => $reference
+                            'redirect_url' => route('home', ['payment_success' => true, 'reference' => $reference])
                         ]);
                     }
 
-                    return redirect()->route('success');
+                    return redirect()->route('home', [
+                        'payment_success' => true,
+                        'reference' => $reference
+                    ])->with('success_data', [
+                        'message' => 'Payment previously verified',
+                        'reference' => $reference,
+                        'amount' => $existingTransaction->amount / 100,
+                        'email' => $existingTransaction->email,
+                        'ticket_data' => [
+                            'name' => $existingTransaction->tablename,
+                            'quantity' => $existingTransaction->quantity,
+                            'event' => $existingTransaction->eventname
+                        ]
+                    ]);
                 }
 
                 if ($request->ajax() || $request->wantsJson()) {
@@ -251,20 +266,19 @@ class PaymentController extends Controller
                     'trace' => $e->getTraceAsString()
                 ]);
 
-                // If we've got status success but failed to save, still redirect to success
-                // with the data in session (fallback)
+                // If we've got status success but failed to save, still redirect to home
                 if ($status === 'success') {
                     if ($request->ajax() || $request->wantsJson()) {
                         return response()->json([
                             'status' => 'success',
                             'verified' => true,
                             'message' => 'Payment verified but there was an issue with order processing.',
-                            'reference' => $reference
+                            'redirect_url' => route('home', ['payment_success' => true, 'reference' => $reference])
                         ]);
                     }
 
                     session()->flash('payment_warning', 'Your payment was successful, but there was an issue processing your order. Please contact support with reference: ' . $reference);
-                    return redirect()->route('success', ['reference' => $reference]);
+                    return redirect()->route('home', ['payment_success' => true, 'reference' => $reference]);
                 }
 
                 if ($request->ajax() || $request->wantsJson()) {
@@ -281,66 +295,52 @@ class PaymentController extends Controller
 
             // Final verification and redirect based on payment status
             if ($status === 'success') {
-                // Generate a cryptographically secure token for success page
-                $successToken = hash_hmac('sha256', $reference . uniqid(), config('app.key'));
-                $expiryTime = now()->addMinutes(15)->timestamp; // Token expires in 15 minutes
-
-                // Store in session with expiry time
-                Session::put('success_token', $successToken);
-                Session::put('success_token_expires', $expiryTime);
-
-                // IMPORTANT: Store transaction details in a completed_order session variable
-                // This ensures the data is available when the success page loads
-                Session::put('completed_order', [
-                    'ref' => $reference,
-                    'paymentRef' => $reference,
-                    'amount' => $amount / 100, // Convert to naira
-                    'email' => $email,
-                    'first_name' => $firstname,
-                    'last_name' => $lastname,
-                    'ticket_data' => [
-                        [
-                            'name' => $eventname,
-                            'price' => $amount / 100 / $quantityvalue, // Per ticket price
-                            'quantity' => $quantityvalue,
-                            'event' => $event
-                        ]
-                    ],
-                    'ticket_ids' => $ticketIds
-                ]);
-
-                // Log the token creation (but not the full token)
-                \Log::info('Payment verified, created success token and stored order data', [
-                    'reference' => $reference,
-                    'token_expiry' => $expiryTime,
-                    'token_prefix' => substr($successToken, 0, 8) . '...'
-                ]);
-
-                // Clear shopping cart if payment is successful
-                if (auth()->check()) {
-                    \App\Models\Cart::where('user_id', auth()->id())->delete();
-                } else {
+                // Clear the cart FIRST before anything else
+                try {
+                    // Clear database cart items for authenticated users
+                    if (auth()->check()) {
+                        Cart::where('user_id', auth()->id())->delete();
+                        
+                        // Clear all cart-related caches
+                        Cache::forget('cart_totals_' . auth()->id());
+                        Cache::forget('cart_items_' . auth()->id());
+                        Cache::forget('cart_count_' . auth()->id());
+                    }
+                    
+                    // Clear all session cart data
                     Session::forget('cart_items');
-                    Session::forget('tname');
-                    Session::forget('tprice');
-                    Session::forget('tquantity');
-                    Session::forget('eventname');
-                    Session::forget('totalprice');
-                    Session::forget('timage');
+                    Session::forget('cart_totals');
+                    Session::forget('cart_count');
+                    Session::forget('cart');
+                    Session::forget('completed_order');
+                    Session::forget('success_token');
+                    Session::forget('success_token_expires');
+                    
+                    // Force session save
+                    Session::save();
+                    
+                    \Log::info('Cart cleared successfully after payment', [
+                        'user_id' => auth()->id() ?? 'guest',
+                        'reference' => $reference
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Error clearing cart after payment', [
+                        'error' => $e->getMessage(),
+                        'user_id' => auth()->id() ?? 'guest',
+                        'reference' => $reference
+                    ]);
                 }
 
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'status' => 'success',
                         'verified' => true,
-                        'message' => 'Payment verified successfully',
-                        'token' => $successToken,
-                        'reference' => $reference,
-                        'redirect_url' => route('success', ['token' => $successToken])
+                        'message' => 'Payment successful',
+                        'redirect_url' => '/'
                     ]);
                 }
 
-                return redirect()->route('success', ['token' => $successToken]);
+                return redirect('/')->with('success', 'Payment successful!');
             } else {
                 \Log::warning('Payment not successful', [
                     'reference' => $reference,
@@ -383,252 +383,6 @@ class PaymentController extends Controller
             session()->flash('error', 'We encountered an issue processing your payment. If you believe your payment was successful, please contact customer support with reference: ' . $reference);
 
             return redirect()->route('checkout');
-        }
-    }
-
-
-    public function success(Request $request){
-        // Log all request and session data for debugging
-        \Log::info('Success page accessed', [
-            'auth' => auth()->check() ? 'yes' : 'no',
-            'user_id' => auth()->check() ? auth()->id() : 'guest',
-            'request_params' => $request->all(),
-            'has_token' => $request->has('token') ? 'yes' : 'no',
-            'has_reference' => $request->has('reference') ? 'yes' : 'no',
-            'session_data' => [
-                'has_reference_data' => session()->has('reference_data') ? 'yes' : 'no',
-                'has_success_token' => session()->has('success_token') ? 'yes' : 'no',
-                'has_completed_order' => session()->has('completed_order') ? 'yes' : 'no',
-            ]
-        ]);
-
-        // Make token validation explicit but simplified for better success rate
-        // The PaymentVerifiedMiddleware has already done most of the checks
-        // This is a secondary validation
-        if ($request->has('token')) {
-            $token = $request->get('token');
-            $storedToken = session('success_token');
-
-            // If tokens don't match, log but don't block the flow
-            // The middleware will have already blocked truly invalid requests
-            if ($storedToken && $token !== $storedToken) {
-                \Log::warning('Controller detected token mismatch, but continuing flow', [
-                    'provided_token_prefix' => substr($token, 0, 8) . '...',
-                    'stored_token_prefix' => substr($storedToken, 0, 8) . '...',
-                ]);
-            }
-
-            // Clear tokens after successful access (one-time use token)
-            // But only if we have the token in session
-            if ($storedToken) {
-                session()->forget(['success_token', 'success_token_expires']);
-                \Log::info('Success tokens cleared after use');
-            }
-        }
-
-        // Explicitly check if we're coming directly from a verified payment
-        $isDirectPaymentAccess = $request->has('token') &&
-                                !empty(session('completed_order')) &&
-                                session()->has('_previous') &&
-                                strpos(session('_previous.url'), 'verifypayment') !== false;
-
-        if ($isDirectPaymentAccess) {
-            \Log::info('Direct access from payment verification detected');
-        }
-
-        // Check for completed order data first (from our own processing)
-        if (Session::has('completed_order')) {
-            $completedOrder = Session::get('completed_order');
-
-            // Log success
-            \Log::info('Showing success page from completed_order', [
-                'reference' => $completedOrder['ref'] ?? 'unknown',
-                'user_id' => auth()->check() ? auth()->id() : 'guest'
-            ]);
-
-            // Extract ticket data
-            $ticketData = $completedOrder['ticket_data'] ?? [];
-            $ticketIds = $completedOrder['ticket_ids'] ?? [];
-
-            // Generate ticket IDs if not already provided
-            if (empty($ticketIds) && !empty($ticketData)) {
-                $baseId = 'TIX-' . strtoupper(substr(md5(time() . uniqid()), 0, 6));
-                $counter = 1;
-
-                foreach ($ticketData as $ticket) {
-                    $quantity = $ticket['quantity'] ?? 1;
-                    for ($i = 0; $i < $quantity; $i++) {
-                        $ticketIds[] = $baseId . '-' . str_pad($counter++, 3, '0', STR_PAD_LEFT);
-                    }
-                }
-            }
-
-            // Get recommendations based on this order
-            $recommendations = $this->getRecommendations(auth()->id(), $completedOrder['email'] ?? null);
-
-            // Return the success view with ticket information
-            return view('Success', [
-                'ticketIds' => $ticketIds,
-                'orderRef' => $completedOrder['ref'] ?? '',
-                'paymentRef' => $completedOrder['paymentRef'] ?? '',
-                'amount' => $completedOrder['amount'] ?? 0,
-                'email' => $completedOrder['email'] ?? '',
-                'name' => ($completedOrder['first_name'] ?? '') . ' ' . ($completedOrder['last_name'] ?? ''),
-                'tickets' => $ticketData ?? [],
-                'recommendations' => $recommendations,
-                'reference' => $completedOrder['ref'] ?? null
-            ]);
-        }
-
-        // First check if we have reference data in the session (from Paystack callback)
-        else if (Session::has('reference_data')) {
-            $referenceData = Session::get('reference_data');
-
-            // Get ticket IDs from the transaction
-            $ticketIds = [];
-            if (isset($referenceData->data->metadata->custom_fields[3]->value)) {
-                $ticketIdsJson = $referenceData->data->metadata->custom_fields[3]->value;
-                $ticketIds = json_decode($ticketIdsJson, true) ?? [];
-            } else {
-                // Try to get from most recent transaction
-                $transaction = Transaction::where('email', $referenceData->data->customer->email)
-                                ->latest()
-                                ->first();
-
-                if ($transaction && $transaction->ticket_ids) {
-                    $ticketIds = json_decode($transaction->ticket_ids, true) ?? [];
-                } else {
-                    // Generate new IDs if needed
-                    $event = $referenceData->data->metadata->custom_fields[0]->value ?? '';
-                    $quantity = $referenceData->data->metadata->custom_fields[1]->value ?? 1;
-                    $baseId = 'TIX-' . strtoupper(substr(md5($event), 0, 6));
-                    for ($i = 1; $i <= $quantity; $i++) {
-                        $ticketIds[] = $baseId . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
-                    }
-                }
-            }
-
-            // Clear the user's cart after successful payment
-            if (auth()->check()) {
-                // For authenticated users, clear from database
-                \App\Models\Cart::where('user_id', auth()->id())->delete();
-            } else {
-                // For guest users, clear from session
-                Session::forget('cart_items');
-                Session::forget('tname');
-                Session::forget('tprice');
-                Session::forget('tquantity');
-                Session::forget('eventname');
-                Session::forget('totalprice');
-                Session::forget('timage');
-            }
-
-            // Clear the 'reference_data' session variable
-            Session::forget('reference_data');
-
-            // Log the successful transaction retrieval
-            \Log::info('Successfully retrieved transaction for reference', [
-                'reference' => $referenceData->data->reference,
-                'transaction_id' => $transaction->id ?? 'unknown'
-            ]);
-
-            // Update transaction reference if needed
-            if (isset($transaction)) {
-            $this->ensureTransactionReference($transaction, $referenceData->data->reference);
-            }
-
-            // Get recommendations based on this transaction
-            $email = $referenceData->data->customer->email ?? null;
-            $recommendations = $this->getRecommendations(auth()->id(), $email);
-
-            // Return the success view with ticket information
-            return view('Success', [
-                'ticketIds' => $ticketIds,
-                'eventName' => $referenceData->data->metadata->custom_fields[0]->value ?? '',
-                'quantity' => $referenceData->data->metadata->custom_fields[1]->value ?? 1,
-                'amount' => $referenceData->data->amount / 100, // Convert amount to naira
-                'recommendations' => $recommendations
-            ]);
-        }
-        // FALLBACK: If no reference data in session, try to get from query parameters
-        else if ($request->has('reference')) {
-            $reference = $request->input('reference');
-
-            // Validate reference format with strict pattern
-            $validReferencePattern = '/^[A-Za-z0-9\-_]{3,50}$/';
-            if (!preg_match($validReferencePattern, $reference)) {
-                return redirect('/')->with('error', 'Invalid payment reference format');
-            }
-
-            // Try to find transaction with this reference
-            $transaction = $this->findTransactionByReference($reference);
-
-            if ($transaction) {
-                $ticketIds = json_decode($transaction->ticket_ids, true) ?? [];
-
-                // Clear cart as above
-                if (auth()->check()) {
-                    \App\Models\Cart::where('user_id', auth()->id())->delete();
-                } else {
-                    Session::forget('cart_items');
-                    Session::forget('tname');
-                    Session::forget('tprice');
-                    Session::forget('tquantity');
-                    Session::forget('eventname');
-                    Session::forget('totalprice');
-                    Session::forget('timage');
-                }
-
-                // Log the successful transaction retrieval
-                \Log::info('Successfully retrieved transaction for reference', [
-                    'reference' => $reference,
-                    'transaction_id' => $transaction->id
-                ]);
-
-                // Update transaction reference if needed
-                $this->ensureTransactionReference($transaction, $reference);
-
-                // Get recommendations based on this transaction
-                $recommendations = $this->getRecommendations($transaction->user_id, $transaction->email);
-
-                return view('Success', [
-                    'ticketIds' => $ticketIds,
-                    'eventName' => $transaction->eventname,
-                    'quantity' => $transaction->quantity,
-                    'amount' => $transaction->amount / 100, // Convert amount to naira
-                    'reference' => $reference,
-                    'customerName' => $transaction->firstname . ' ' . $transaction->lastname,
-                    'customerEmail' => $transaction->email,
-                    'customerPhone' => $transaction->phone,
-                    'subtotal' => $transaction->amount / 100,
-                    'serviceFee' => ($transaction->amount / 100) * 0.05,
-                    'totalAmount' => ($transaction->amount / 100) * 1.05,
-                    'orderItems' => [
-                        [
-                            'name' => 'Ticket',
-                            'event' => $transaction->eventname,
-                            'quantity' => $transaction->quantity,
-                            'price' => ($transaction->amount / 100) / $transaction->quantity,
-                            'total' => $transaction->amount / 100
-                        ]
-                    ],
-                    'recommendations' => $recommendations
-                ]);
-            }
-
-            // If we still don't have transaction details but we have the reference,
-            // Show a generic success page
-            return view('Success', [
-                'ticketIds' => [],
-                'eventName' => 'Your Event',
-                'quantity' => 1,
-                'amount' => 0,
-                'manual_verification' => true,
-                'reference' => $reference
-            ]);
-        } else {
-            // Nothing valid found, redirect home with error
-            return redirect('/')->with('error', 'No payment information found');
         }
     }
 
@@ -931,8 +685,11 @@ class PaymentController extends Controller
             'test_ref' => $testOrder['ref']
         ]);
 
-        // Redirect to success page
-        return redirect()->route('success');
+        // Redirect to home with payment success parameters
+        return redirect()->route('home', [
+            'payment_success' => true,
+            'reference' => $testOrder['ref']
+        ]);
     }
 }
 
